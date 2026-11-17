@@ -2,6 +2,7 @@
 //! `docs/modelo-de-datos.md`. Solo lee. La fuente de este equipo es el registro de Windows; la carpeta elegida a
 //! mano llega con #34 y el agente de Battle.net con #35.
 
+use crate::addons::{Addons, descubrir_addons};
 use crate::bpsv;
 use crate::descubrimiento::{Cuentas, descubrir};
 use crate::disco::{leer_texto, subcarpetas};
@@ -57,6 +58,8 @@ pub struct VersionJuego {
     pub interfaz: Option<String>,
     /// Vacío si la versión no está soportada: no se mira dentro.
     pub cuentas: Cuentas,
+    /// Vacío si la versión no está soportada.
+    pub addons: Addons,
 }
 
 const BUILD_INFO: &str = ".build.info";
@@ -65,6 +68,8 @@ const COLUMNA_FLAVOR: &str = "Product Flavor";
 const CARPETA_WTF: &str = "WTF";
 const CARPETA_ACCOUNT: &str = "Account";
 const CONFIG_WTF: &str = "Config.wtf";
+const CARPETA_INTERFACE: &str = "Interface";
+const CARPETA_ADDONS: &str = "AddOns";
 const PREFIJO_INTERFAZ: &str = "SET engineSurveyPatch ";
 
 /// Instalaciones de este equipo, buscadas en todas las fuentes disponibles.
@@ -131,14 +136,19 @@ fn leer_version(
     let wtf = ruta.join(CARPETA_WTF);
     let soportado = Producto::desde_flavor(&producto);
     // De una versión no soportada solo se dice que existe: no se mira dentro.
-    let (cuentas, interfaz) = match soportado {
+    let (cuentas, addons, interfaz) = match soportado {
         Some(p) => (
             descubrir(&wtf.join(CARPETA_ACCOUNT), p)?,
+            descubrir_addons(&ruta.join(CARPETA_INTERFACE).join(CARPETA_ADDONS), p)?,
             leer_texto(&wtf.join(CONFIG_WTF))?.and_then(|t| interfaz_de(&t)),
         ),
         None => (
             Cuentas {
                 cuentas: Vec::new(),
+                ignoradas: 0,
+            },
+            Addons {
+                addons: Vec::new(),
                 ignoradas: 0,
             },
             None,
@@ -151,6 +161,7 @@ fn leer_version(
         carpeta,
         producto,
         cuentas,
+        addons,
     })
 }
 
@@ -221,6 +232,9 @@ mod tests {
         ] {
             let wtf = raiz.join(carpeta).join("WTF");
             create_dir_all(wtf.join("Account/1#1")).unwrap();
+            let details = raiz.join(carpeta).join("Interface/AddOns/Details");
+            create_dir_all(&details).unwrap();
+            write(details.join("Details.toc"), "## Title: Details!").unwrap();
             write(
                 raiz.join(carpeta).join(FLAVOR_INFO),
                 format!("Product Flavor!STRING:0\r\n{flavor}\r\n"),
@@ -265,7 +279,7 @@ mod tests {
         assert!(
             versiones
                 .iter()
-                .all(|v| v.soportada && v.cuentas.cuentas.len() == 1)
+                .all(|v| v.soportada && v.cuentas.cuentas.len() == 1 && v.addons.addons.len() == 1)
         );
     }
 
@@ -301,6 +315,7 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         instalacion_de_prueba(tmp.path());
         create_dir_all(tmp.path().join("_classic_/WTF/Account/1#1")).unwrap();
+        create_dir_all(tmp.path().join("_classic_/Interface/AddOns/Details")).unwrap();
         write(
             tmp.path().join("_classic_/WTF/Config.wtf"),
             "SET engineSurveyPatch \"11507\"",
@@ -322,6 +337,7 @@ mod tests {
         assert_eq!(clasica.producto, "wow_classic");
         assert!(!clasica.soportada);
         assert!(clasica.cuentas.cuentas.is_empty());
+        assert!(clasica.addons.addons.is_empty());
         assert_eq!(clasica.interfaz, None);
     }
 
@@ -352,6 +368,10 @@ mod tests {
         assert_eq!(
             json[0]["versiones"][0]["cuentas"]["cuentas"][0]["reinosIgnorados"],
             0
+        );
+        assert_eq!(
+            json[0]["versiones"][0]["addons"]["addons"][0]["titulo"],
+            "Details!"
         );
         assert!(json[0]["raiz"].is_string());
     }

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-import { pedirInstalaciones, type Cuenta, type Instalacion, type VersionJuego } from "./nucleo";
+import { pedirInstalaciones, type Addon, type Cuenta, type Instalacion, type VersionJuego } from "./nucleo";
 import { mensajeDeError } from "./textos/errores";
 
 type Estado =
@@ -60,6 +60,7 @@ function BloqueVersion({ version }: Readonly<{ version: VersionJuego }>) {
       {cuentas.map((cuenta) => (
         <BloqueCuenta key={cuenta.carpeta} cuenta={cuenta} />
       ))}
+      {version.soportada && <BloqueAddons addons={version.addons} />}
     </section>
   );
 }
@@ -81,6 +82,28 @@ function BloqueCuenta({ cuenta }: Readonly<{ cuenta: Cuenta }>) {
       </ul>
     </section>
   );
+}
+
+/** Plegado: una versión puede traer más de 100 addons. */
+function BloqueAddons({ addons }: Readonly<{ addons: VersionJuego["addons"] }>) {
+  const { t } = useTranslation();
+  return (
+    <details>
+      <summary>{t("instalaciones.addons", { count: addons.addons.length })}</summary>
+      {addons.ignoradas > 0 && <p>{t("instalaciones.addonsIgnorados", { count: addons.ignoradas })}</p>}
+      <ul>
+        {addons.addons.map((addon) => (
+          <li key={addon.carpeta}>{nombreDeAddon(t, addon)}</li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+/** El título del `.toc` o, si no trae, la carpeta; con la versión si la hay. */
+function nombreDeAddon(t: TFunction, addon: Addon): string {
+  const titulo = addon.titulo ?? addon.carpeta;
+  return addon.version === null ? titulo : t("instalaciones.addon", { titulo, version: addon.version });
 }
 
 /** Nombre legible de los productos conocidos; los demás, tal cual vienen de `.flavor.info`. */
