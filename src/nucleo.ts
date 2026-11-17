@@ -29,7 +29,7 @@ export function esErrorNucleo(valor: unknown): valor is ErrorNucleo {
   return typeof valor === "object" && valor !== null && "codigo" in valor && "datos" in valor;
 }
 
-/** Lo que devuelve `detectar_instalaciones` (`src-tauri/src/deteccion.rs` y `descubrimiento.rs`). */
+/** Lo que devuelve `detectar_instalaciones` (`src-tauri/src/deteccion.rs`, `descubrimiento.rs` y `addons.rs`). */
 export interface Instalacion {
   raiz: string;
   fuente: "registro";
@@ -43,6 +43,19 @@ export interface VersionJuego {
   build: string | null;
   interfaz: string | null;
   cuentas: { cuentas: Cuenta[]; ignoradas: number };
+  addons: { addons: Addon[]; ignoradas: number };
+}
+
+/** Un addon instalado, con lo que dice su `.toc`. Lo que el `.toc` no trae llega vacío, nunca inventado. */
+export interface Addon {
+  carpeta: string;
+  toc: string;
+  titulo: string | null;
+  version: string | null;
+  enlace: string | null;
+  dependencias: string[];
+  svCuenta: string[];
+  svPersonaje: string[];
 }
 
 export interface Cuenta {

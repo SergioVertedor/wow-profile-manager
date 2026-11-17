@@ -157,6 +157,13 @@ Una carpeta de `Interface/AddOns/` con su `.toc`.
 | `titulo`, `version`, `enlace`, `dependencias` | `.toc`. De 62 addons medidos: `Version` en 58, enlace en 27 y dependencias en 34 [V] |
 | `svCuenta`, `svPersonaje` | `## SavedVariables` y `## SavedVariablesPerCharacter` del `.toc` |
 
+- El juego solo carga un `.toc` con el nombre de su carpeta: una carpeta `X-bak` con `X.toc` no se carga [V].
+  Primero se busca el del tipo de juego y después el general: Forever `<carpeta>_Camelot.toc` [V] (hay addons
+  que solo traen ese) y Retail `<carpeta>_Mainline.toc` [I]; si no, `<carpeta>.toc`. Las carpetas sin `.toc`
+  cargable se cuentan, no se listan.
+- Del `.toc` se lee: `Title` (sin códigos de color `|c…|r`), `Version`, `X-Website` como enlace, `Dependencies`
+  y `RequiredDeps` como dependencias (`OptionalDeps` no lo es), `SavedVariables` y `SavedVariablesPerCharacter`.
+  Las claves no distinguen mayúsculas; BOM y CRLF no afectan [V: 226 `.toc` medidos].
 - El `.toc` es una pista: lo que cuenta es qué ficheros hay en disco [V].
 - Un `SavedVariables` es AceDB si su tabla tiene `profileKeys` y `profiles` [I]. Se decide por los datos, no
   por la librería que trae el addon.

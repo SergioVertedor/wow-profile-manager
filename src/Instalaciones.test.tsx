@@ -3,7 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { I18nextProvider } from "react-i18next";
 import Instalaciones from "./Instalaciones";
-import type { Instalacion, VersionJuego } from "./nucleo";
+import type { Addon, Instalacion, VersionJuego } from "./nucleo";
 import { crearTextos, type Idioma } from "./textos";
 
 afterEach(() => {
@@ -39,7 +39,12 @@ const FOREVER: VersionJuego = {
       },
     ],
   },
+  addons: { addons: [], ignoradas: 0 },
 };
+
+function addon(carpeta: string, titulo: string | null, version: string | null): Addon {
+  return { carpeta, toc: `${carpeta}.toc`, titulo, version, enlace: null, dependencias: [], svCuenta: [], svPersonaje: [] };
+}
 
 const CUENTA = FOREVER.cuentas.cuentas[0];
 
@@ -89,6 +94,30 @@ describe("Instalaciones", () => {
     expect(screen.getByText("This app does not support this game version.")).toBeDefined();
     expect(screen.getByText("World of Warcraft (Retail) · _retail_")).toBeDefined();
     expect(screen.getByText("Open the game once with this version: until then it cannot be exported.")).toBeDefined();
+  });
+
+  it("enseña los addons con su versión, la carpeta si el .toc no trae título y las carpetas saltadas", async () => {
+    const conAddons: VersionJuego = {
+      ...FOREVER,
+      addons: { addons: [addon("APR", "Azeroth Pilot Reloaded", "v7.7.1"), addon("SinTitulo", null, null)], ignoradas: 1 },
+    };
+    pintar("es", () => instalacion(conAddons));
+
+    expect(await screen.findByText("2 addons instalados")).toBeDefined();
+    expect(
+      screen.getByText("1 carpeta de Interface/AddOns no tiene un .toc que el juego cargue y se ha saltado."),
+    ).toBeDefined();
+    expect(screen.getByText("Azeroth Pilot Reloaded · v7.7.1")).toBeDefined();
+    expect(screen.getByText("SinTitulo")).toBeDefined();
+  });
+
+  it("no enseña addons de una versión no soportada y usa el singular", async () => {
+    const unAddon: VersionJuego = { ...FOREVER, addons: { addons: [addon("Details", "Details!", null)], ignoradas: 0 } };
+    const clasica: VersionJuego = { ...unAddon, carpeta: "_classic_", producto: "wow_classic", soportada: false };
+    pintar("en", () => instalacion(unAddon, clasica));
+
+    expect(await screen.findByText("1 addon installed")).toBeDefined();
+    expect(screen.getAllByText("Details!")).toHaveLength(1);
   });
 
   it("si no hay ninguna instalación, lo dice", async () => {
