@@ -10,6 +10,8 @@ use std::path::Path;
 pub enum ErrorNucleo {
     /// No se pudo leer un fichero o una carpeta. `detalle` es el mensaje del sistema operativo.
     LecturaFallida { ruta: String, detalle: String },
+    /// El sistema no pudo abrir un enlace (por ejemplo, sin navegador por defecto).
+    EnlaceNoAbierto { url: String, detalle: String },
 }
 
 impl ErrorNucleo {

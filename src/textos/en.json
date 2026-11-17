@@ -2,6 +2,10 @@
   "cargando": "Loading…",
   "cabecera": "{{nombre}} {{version}}",
   "errorNucleo": "Could not reach the core: {{mensaje}}",
+  "nav": {
+    "instalaciones": "Installations",
+    "acercaDe": "About"
+  },
   "instalaciones": {
     "titulo": "WoW installations",
     "buscando": "Looking for WoW installations…",
@@ -22,12 +26,21 @@
     "reinosIgnorados_other": "{{count}} realm folders belong to the other game version and were skipped.",
     "personaje": "{{personaje}} · {{reino}}"
   },
+  "acercaDe": {
+    "titulo": "About",
+    "autoria": "{{nombre}}, by {{autor}} — ",
+    "licencia": "Free software under the GNU General Public License v3.0. It comes with NO WARRANTY.",
+    "verLicencia": "Read the license",
+    "koFi": "If the app is useful to you, you can support it on Ko-fi.",
+    "marca": "{{nombre}} is not made, endorsed or supported by Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment, Inc."
+  },
   "productos": {
     "wow": "World of Warcraft (Retail)",
     "wowf": "WoW Forever"
   },
   "errores": {
     "lecturaFallida": "Could not read {{ruta}}: {{detalle}}",
-    "desconocido": "Unexpected error: {{mensaje}}"
+    "desconocido": "Unexpected error: {{mensaje}}",
+    "enlaceNoAbierto": "Could not open {{url}}: {{detalle}}"
   }
 }

@@ -10,6 +10,10 @@ import type { Idioma } from "./textos";
 export interface InfoApp {
   nombre: string;
   version: string;
+  autor: string;
+  repositorio: string;
+  koFi: string;
+  licencia: string;
 }
 
 export function pedirInfoApp(): Promise<InfoApp> {
@@ -17,7 +21,9 @@ export function pedirInfoApp(): Promise<InfoApp> {
 }
 
 /** Error del núcleo: código estable y sus datos (`src-tauri/src/error.rs`). */
-export type ErrorNucleo = { codigo: "lecturaFallida"; datos: { ruta: string; detalle: string } };
+export type ErrorNucleo =
+  | { codigo: "lecturaFallida"; datos: { ruta: string; detalle: string } }
+  | { codigo: "enlaceNoAbierto"; datos: { url: string; detalle: string } };
 
 export function esErrorNucleo(valor: unknown): valor is ErrorNucleo {
   return typeof valor === "object" && valor !== null && "codigo" in valor && "datos" in valor;
@@ -53,6 +59,13 @@ export interface Personaje {
 
 export function pedirInstalaciones(): Promise<Instalacion[]> {
   return invoke<Instalacion[]>("detectar_instalaciones");
+}
+
+/** Enlaces que sabe abrir el núcleo (`src-tauri/src/enlaces.rs`). La interfaz nunca le pasa una URL. */
+export type Enlace = "repositorio" | "koFi" | "licencia";
+
+export function abrirEnlace(enlace: Enlace): Promise<void> {
+  return invoke("abrir_enlace", { enlace });
 }
 
 /** Idioma de la interfaz de Windows. Si el núcleo no responde, inglés: la app tiene que poder arrancar igual. */
