@@ -41,7 +41,9 @@ No escribe en `WTF` y no entra en el historial.
    pide a quien importa (ver [Seleccionar](#3-seleccionar)).
 
 4. **Datos del perfil.** Nombre (obligatorio) y descripción.
-5. **Resumen.** Lo que va a viajar, el tamaño y los avisos.
+5. **Resumen.** Lo que va a viajar, el tamaño y los avisos. Siempre incluye una nota: **el contenido de los
+   botones de las barras de acción no viaja** (lo guarda el servidor [V]). Sí viajan la disposición de las
+   barras, las teclas de cada botón y las macros.
    - Si alguna pieza ya contiene `@@WOWPROFILE:`, se quita del paquete y se dice cuál.
    - Bloquea si se pasa de los límites del formato (256 piezas, 32 MiB por pieza, 128 MiB en total).
 6. **Guardar.** Diálogo de guardar con `<nombre>.wowprofile` propuesto. Se escribe a un temporal y se renombra:
@@ -127,8 +129,9 @@ deja cerrar la ventana sin avisar.
 
 ### 6. Resultado
 
-- **Completa**: qué se escribió y el siguiente paso, entrar al juego con ese personaje y comprobarlo. Botón
-  «Deshacer».
+- **Completa**: qué se escribió y el siguiente paso, entrar al juego con ese personaje y comprobarlo. Recuerda
+  que las habilidades de los botones las coloca el jugador: el perfil trae la disposición y las teclas, no el
+  contenido. Botón «Deshacer».
 - **Fallida y restaurada**: qué falló. El `WTF` está como antes.
 - **Fallida sin restaurar**: qué falló, qué ficheros quedaron mal y dónde están las copias para restaurarlas a
   mano. No debería pasar nunca, pero si pasa se dice todo.
