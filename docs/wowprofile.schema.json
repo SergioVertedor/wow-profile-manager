@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SergioVertedor/wow-profile-manager/blob/develop/docs/wowprofile.schema.json",
+  "title": "Manifiesto .wowprofile 1.x",
+  "description": "manifest.json de un paquete .wowprofile, versión mayor 1. Ver docs/formato-wowprofile.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formato", "perfil", "origen", "addons", "entradas"],
+  "properties": {
+    "formato": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nombre", "version"],
+      "properties": {
+        "nombre": { "const": "wowprofile" },
+        "version": { "type": "string", "pattern": "^1\\.(0|[1-9][0-9]*)$" }
+      }
+    },
+    "perfil": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nombre", "creado"],
+      "properties": {
+        "nombre": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "descripcion": { "type": "string", "maxLength": 500 },
+        "creado": { "type": "string", "format": "date-time", "pattern": "Z$" }
+      }
+    },
+    "origen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["producto", "build", "interfaz"],
+      "properties": {
+        "producto": { "enum": ["wowf", "wow"] },
+        "build": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "interfaz": { "type": "integer", "minimum": 1 },
+        "clase": { "type": "string", "pattern": "^[A-Z]{2,20}$" }
+      }
+    },
+    "addons": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/addon" }
+    },
+    "entradas": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/entrada" }
+    }
+  },
+  "$defs": {
+    "idAddon": {
+      "description": "Nombre de la carpeta del addon en Interface/AddOns.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_!.\\-]{1,64}$",
+      "not": { "pattern": "^\\.+$" }
+    },
+    "addon": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "titulo"],
+      "properties": {
+        "id": { "$ref": "#/$defs/idAddon" },
+        "titulo": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "version": { "type": "string", "maxLength": 64 },
+        "enlace": { "type": "string", "format": "uri", "pattern": "^https://", "maxLength": 300 },
+        "dependencias": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/idAddon" }
+        }
+      }
+    },
+    "entrada": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "categoria", "tipo", "ambito", "destino", "sha256", "bytes"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+        "categoria": {
+          "enum": [
+            "macros", "teclas", "teclas-clic", "opciones", "chat", "ventanas",
+            "modo-edicion", "addons-activos", "config-addon", "marcos-banda"
+          ]
+        },
+        "tipo": { "enum": ["fichero", "fichero-filtrado", "perfil-acedb", "adaptador"] },
+        "ambito": { "enum": ["personaje", "cuenta"] },
+        "destino": {
+          "description": "Ruta lógica relativa al personaje destino o a su cuenta. Nunca una ruta de disco.",
+          "type": "string",
+          "pattern": "^(personaje|cuenta)/(SavedVariables/)?[A-Za-z0-9_!\\-]+(\\.[A-Za-z0-9_!\\-]+)*\\.(txt|wtf|lua)$"
+        },
+        "addon": { "$ref": "#/$defs/idAddon" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "bytes": { "type": "integer", "minimum": 0, "maximum": 33554432 },
+        "marcadores": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["PERSONAJE", "REINO"] }
+        },
+        "claves_quitadas": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "type": "string", "minLength": 1, "maxLength": 128 }
+        },
+        "variable": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,127}$" },
+        "perfil": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "adaptador": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+            "version": { "type": "integer", "minimum": 1 }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "tipo": { "const": "fichero-filtrado" } } },
+          "then": { "required": ["claves_quitadas"] }
+        },
+        {
+          "if": { "properties": { "tipo": { "const": "perfil-acedb" } } },
+          "then": {
+            "required": ["addon", "variable", "perfil"],
+            "properties": { "ambito": { "const": "cuenta" }, "categoria": { "const": "config-addon" } }
+          }
+        },
+        {
+          "if": { "properties": { "tipo": { "const": "adaptador" } } },
+          "then": { "required": ["adaptador"] }
+        },
+        {
+          "if": { "properties": { "categoria": { "const": "config-addon" } } },
+          "then": { "required": ["addon"] }
+        }
+      ]
+    }
+  }
+}

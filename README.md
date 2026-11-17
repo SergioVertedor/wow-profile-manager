@@ -10,7 +10,8 @@ permite deshacer.
 > **Estado: Fase 2 (diseño técnico).** Aún no hay código de la aplicación.
 > Stack decidido: Tauri 2 + Rust, con `full_moon` para leer y escribir las
 > `SavedVariables`. Lo medido en la Fase 1 está en
-> [`docs/compatibilidad-wow-forever.md`](docs/compatibilidad-wow-forever.md).
+> [`docs/compatibilidad-wow-forever.md`](docs/compatibilidad-wow-forever.md), y el
+> formato de los paquetes en [`docs/formato-wowprofile.md`](docs/formato-wowprofile.md).
 
 ## Desarrollo
 
