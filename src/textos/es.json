@@ -1,5 +1,33 @@
 {
   "cargando": "Cargando…",
   "cabecera": "{{nombre}} {{version}}",
-  "errorNucleo": "No se pudo contactar con el núcleo: {{mensaje}}"
+  "errorNucleo": "No se pudo contactar con el núcleo: {{mensaje}}",
+  "instalaciones": {
+    "titulo": "Instalaciones de WoW",
+    "buscando": "Buscando instalaciones de WoW…",
+    "ninguna": "No se ha encontrado ninguna instalación de WoW en este equipo.",
+    "fuente": {
+      "registro": "Encontrada en el registro de Windows"
+    },
+    "build": "Build {{build}}",
+    "version": "{{producto}} · {{carpeta}}",
+    "noSoportada": "La app no es compatible con esta versión del juego.",
+    "sinInterfaz": "Abre el juego una vez con esta versión: hasta entonces no se puede exportar.",
+    "cuentasIgnoradas_one": "{{count}} carpeta de WTF/Account no es una cuenta y se ha saltado.",
+    "cuentasIgnoradas_other": "{{count}} carpetas de WTF/Account no son cuentas y se han saltado.",
+    "sinCuentas": "Todavía no hay cuentas: entra al juego una vez.",
+    "cuenta_one": "Cuenta {{carpeta}} · {{count}} personaje",
+    "cuenta_other": "Cuenta {{carpeta}} · {{count}} personajes",
+    "reinosIgnorados_one": "{{count}} carpeta de reino es de la otra versión del juego y se ha saltado.",
+    "reinosIgnorados_other": "{{count}} carpetas de reino son de la otra versión del juego y se han saltado.",
+    "personaje": "{{personaje}} · {{reino}}"
+  },
+  "productos": {
+    "wow": "World of Warcraft (Retail)",
+    "wowf": "WoW Forever"
+  },
+  "errores": {
+    "lecturaFallida": "No se pudo leer {{ruta}}: {{detalle}}",
+    "desconocido": "Error inesperado: {{mensaje}}"
+  }
 }

@@ -25,13 +25,13 @@ describe("App", () => {
     const pedidos: string[] = [];
     mockIPC((comando) => {
       pedidos.push(comando);
-      return { nombre: "WoW Profile Manager", version: "9.9.9" };
+      return comando === "info_app" ? { nombre: "WoW Profile Manager", version: "9.9.9" } : [];
     });
 
     pintar("es");
 
-    expect(await screen.findByRole("heading")).toHaveProperty("textContent", "WoW Profile Manager 9.9.9");
-    expect(pedidos).toEqual(["info_app"]);
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveProperty("textContent", "WoW Profile Manager 9.9.9");
+    expect(pedidos).toContain("info_app");
   });
 
   it.each([
@@ -44,7 +44,9 @@ describe("App", () => {
 
     pintar(idioma);
 
-    expect((await screen.findByRole("alert")).textContent).toBe(esperado);
+    // También falla la lista de instalaciones: aquí solo importa la alerta de la cabecera, y que sea una.
+    const alertas = (await screen.findAllByRole("alert")).filter((a) => a.textContent === esperado);
+    expect(alertas).toHaveLength(1);
   });
 
   it("mientras carga, lo dice en el idioma elegido", () => {
@@ -53,5 +55,6 @@ describe("App", () => {
     pintar("en");
 
     expect(screen.getByText("Loading…")).toBeDefined();
+    expect(screen.getByText("Looking for WoW installations…")).toBeDefined();
   });
 });

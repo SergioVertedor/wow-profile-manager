@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import Instalaciones from "./Instalaciones";
 import { pedirInfoApp, type InfoApp } from "./nucleo";
 
 type Estado =
@@ -24,6 +25,7 @@ function App() {
         <h1>{t("cabecera", { nombre: estado.info.nombre, version: estado.info.version })}</h1>
       )}
       {estado.tipo === "error" && <p role="alert">{t("errorNucleo", { mensaje: estado.mensaje })}</p>}
+      <Instalaciones />
     </main>
   );
 }
