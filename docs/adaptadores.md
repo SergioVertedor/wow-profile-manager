@@ -55,22 +55,38 @@ reglas genéricas se equivocarían, por ejemplo porque llevan progreso o datos d
 
 Para cada addon con datos, se usa lo primero que aplique:
 
+Se decide **por pieza**: cada variable de cuenta y cada fichero por personaje. Un mismo addon puede tener piezas
+que caen en reglas distintas.
+
 1. **Adaptador escrito** para ese `addon`.
 2. **AceDB detectado**: la variable de cuenta tiene `profileKeys` y `profiles`. Viaja el perfil que usa el
    personaje (`perfil-acedb`).
-3. **Genérico de cuenta**: fichero de cuenta que no menciona a ningún personaje de la cuenta. Viaja entero, pero
-   afecta a todos los personajes del destino: la app enseña qué sobrescribe y solo lo aplica si el usuario
-   acepta.
-4. **Genérico por personaje**: fichero por personaje sin adaptador. Se ofrece **desmarcado** y con el aviso
-   «puede incluir progreso o datos de otros jugadores».
+3. **Genérico de cuenta**: fichero de cuenta que no menciona a ningún personaje de la cuenta. Se ofrece entero,
+   **desmarcado**, con el aviso base. En el destino afecta a todos los personajes: la app enseña qué sobrescribe y
+   solo lo aplica si el usuario acepta.
+4. **Genérico por personaje**: fichero por personaje sin adaptador. Se ofrece **desmarcado** y con el aviso base.
 5. **Genérico de cuenta con personajes**: fichero de cuenta que menciona personajes y no es AceDB. Se ofrece
-   entero, **desmarcado**, con el aviso «puede llevar progreso o datos de otros personajes, y afecta a todos los
-   personajes de la cuenta del destino». Si el usuario lo marca, la app enseña qué sobrescribe y pide
-   confirmación.
+   entero, **desmarcado**, con el aviso base y «menciona a personajes de esta cuenta». Como la 3, en el destino
+   afecta a todos los personajes y pide confirmación.
+
+Aviso base de las reglas 3, 4 y 5: «puede llevar progreso, estado o datos de otros jugadores».
 
 **Regla dura:** ningún adaptador escrito incluye datos de otros jugadores (nombres, GUID, conversaciones, listas
-de enemigos o de compañeros de grupo). Las reglas genéricas 4 y 5 no pueden garantizarlo, y por eso van
+de enemigos o de compañeros de grupo). Las reglas genéricas 3, 4 y 5 no pueden garantizarlo, y por eso van
 desmarcadas y con aviso: decide el usuario.
+
+Por qué la 3 tampoco: un nombre suelto de otro jugador es una cadena como cualquier otra, y ninguna comprobación
+sobre el texto puede asegurar que no esté. Medido en una instalación [V]: de 31 ficheros de cuenta en los que no
+aparecía ningún personaje de la cuenta con su formato habitual, 3 sí guardaban personajes (un GUID de jugador y
+claves `Nombre-Reino` sin apellido).
+
+**Pistas.** Al exportar, la app busca en los ficheros de las reglas genéricas lo que sí se puede reconocer: GUID de
+jugador (`Player-<servidor>-<id>`) y claves con forma de personaje en cualquier formato (`Nombre Apellido`,
+`Nombre-Reino`, `Nombre - Reino`). Si encuentra alguna, el aviso lo dice («parece contener otros jugadores»).
+Las pistas **nunca marcan una entrada**: que no haya pistas no demuestra nada.
+
+Para no obligar a ir addon a addon, la selección tiene una acción «marcar todos» por cada tipo de regla genérica.
+No marca las piezas con pistas: esas se marcan una a una, viendo su aviso.
 
 ## Cómo se escribe un adaptador
 

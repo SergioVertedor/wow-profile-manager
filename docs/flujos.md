@@ -32,13 +32,18 @@ No escribe en `WTF` y no entra en el historial.
    | qué | por defecto |
    |---|---|
    | macros, teclas, teclas de clic, opciones, chat, ventanas, Modo Edición, addons activos, marcos de banda | marcado |
-   | addon con adaptador escrito o AceDB | marcado |
-   | addon con genérico de cuenta (no menciona personajes) | marcado |
-   | addon con genérico por personaje o de cuenta con personajes | **desmarcado**, con el aviso de su regla |
+   | pieza de un addon que sale de una regla de adaptador o de una variable AceDB | marcado |
+   | pieza de un addon que sale de una regla genérica (de cuenta, por personaje o de cuenta con personajes) | **desmarcado**, con el aviso de su regla y las pistas que se hayan encontrado ([detalle](adaptadores.md#orden-de-decisión)) |
    | addon con `noExportar` o sin datos | no aparece |
 
-   Exportar algo que en el destino afecta a toda la cuenta no tiene riesgo para quien exporta: la confirmación se
-   pide a quien importa (ver [Seleccionar](#3-seleccionar)).
+   Se decide **por pieza, no por addon**: un mismo addon puede tener una variable AceDB, que viaja marcada, y otro
+   fichero que cae en una regla genérica, que viaja desmarcado.
+
+   «Marcar todos» marca de una vez las piezas genéricas de un tipo, **salvo las que tienen pistas** de otros
+   jugadores: esas se marcan una a una, viendo su aviso.
+
+   Una pieza genérica viaja tal cual, sin sustituir marcadores: puede llevar el nombre del personaje de origen y
+   datos de otros jugadores. El aviso lo dice, porque el que se expone al marcarla es quien exporta.
 
 4. **Datos del perfil.** Nombre (obligatorio) y descripción.
 5. **Resumen.** Lo que va a viajar, el tamaño y los avisos. Siempre incluye una nota: **el contenido de los
@@ -95,10 +100,11 @@ Las entradas del paquete, por categoría y, en `config-addon`, por addon. Para c
 | caso | por defecto |
 |---|---|
 | entrada normal | marcada |
+| `config-addon` de tipo `fichero` (salió de una regla genérica) | **desmarcada**, con aviso: puede llevar estado o datos de otros jugadores. El paquete no lleva firma, así que no se fía de lo que eligió quien exportó |
 | categoría o tipo desconocidos (paquete de una versión menor más nueva) | desmarcada, con aviso |
 | adaptador desconocido o de una versión anterior | desmarcada, con aviso |
 | addon del destino fuera del rango `versionesAddon` del adaptador (se compara con la versión instalada en el destino) | desmarcada, con aviso |
-| addon no instalado en el destino | marcada, con el aviso «falta el addon» y su enlace si viene en el paquete [V: el cliente conserva el `SavedVariables` de un addon desinstalado; [H] lo carga al instalarlo] |
+| addon no instalado en el destino | como si estuviera instalado (marcada, o desmarcada si es de tipo `fichero`), con el aviso «falta el addon» y su enlace si viene en el paquete [V: el cliente conserva el `SavedVariables` de un addon desinstalado; [H] lo carga al instalarlo] |
 | entrada que afecta a toda la cuenta del destino: genéricos de cuenta y reglas de adaptador de `ambito: cuenta` que no se limitan a `soloPersonaje` | **sin decidir**: el jugador tiene que aceptarla o quitarla antes de aplicar |
 | perfil AceDB con un nombre que ya existe en el destino | **sin decidir**: renombrar (propone `<nombre> (2)`) o sobrescribir |
 
@@ -114,7 +120,7 @@ Es el plan de importación. Cinco grupos, los del encargo:
 | grupo | qué contiene | detalle |
 |---|---|---|
 | **Nuevos** | ficheros que no existían | ruta y tamaño |
-| **Modificados** | ficheros que se sobrescriben o en los que se fusiona un perfil | macros y teclas: elemento a elemento (macro añadida, cambiada o quitada; tecla cambiada). Lua: qué perfil o qué claves cambian. Los que afectan a toda la cuenta van marcados |
+| **Modificados** | ficheros que se sobrescriben o en los que se fusiona un perfil | macros y teclas: elemento a elemento (macro añadida, cambiada o quitada; tecla cambiada). Lua: qué perfil o qué claves cambian. Los que afectan a toda la cuenta se señalan aparte |
 | **Sin cambios** | entradas cuyo resultado es idéntico a lo que ya hay | no se escriben |
 | **Conflictos** | lo que sigue sin decidir | no se puede aplicar hasta resolverlos |
 | **Incompatibles** | entradas que no se pueden aplicar, con el motivo | no se escriben |
