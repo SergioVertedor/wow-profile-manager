@@ -16,7 +16,8 @@ permite deshacer.
 > formato de los paquetes en [`docs/formato-wowprofile.md`](docs/formato-wowprofile.md) y el
 > modelo de datos en [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md). Los adaptadores de
 > addons, en [`docs/adaptadores.md`](docs/adaptadores.md), y los flujos de exportación e
-> importación, con los backups, en [`docs/flujos.md`](docs/flujos.md).
+> importación, con los backups, en [`docs/flujos.md`](docs/flujos.md). La arquitectura, en
+> [`docs/arquitectura.md`](docs/arquitectura.md).
 
 ## Desarrollo
 
