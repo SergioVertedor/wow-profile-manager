@@ -12,7 +12,8 @@ permite deshacer.
 > `SavedVariables`. Lo medido en la Fase 1 está en
 > [`docs/compatibilidad-wow-forever.md`](docs/compatibilidad-wow-forever.md), y el
 > formato de los paquetes en [`docs/formato-wowprofile.md`](docs/formato-wowprofile.md) y el
-> modelo de datos en [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md).
+> modelo de datos en [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md). Los adaptadores de
+> addons, en [`docs/adaptadores.md`](docs/adaptadores.md).
 
 ## Desarrollo
 
