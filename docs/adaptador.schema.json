@@ -8,7 +8,7 @@
   "required": ["id", "version", "addon", "medido"],
   "if": {
     "required": ["reglas"],
-    "properties": { "reglas": { "contains": { "required": ["excluir"] } } }
+    "properties": { "reglas": { "contains": { "anyOf": [{ "required": ["excluir"] }, { "required": ["entera"] }] } } }
   },
   "then": { "required": ["versionesAddon"] },
   "properties": {

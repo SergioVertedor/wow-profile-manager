@@ -94,17 +94,17 @@ desmarcadas y con aviso: decide el usuario.
 
 | campo | qué viaja |
 |---|---|
-| `"entera": true` | la variable completa |
+| `"entera": true` | la variable completa. **Exige `versionesAddon`** (ver abajo) |
 | `"incluir": [rutas]` | solo esas claves |
 | `"excluir": [rutas]` | todo menos esas claves. **Exige `versionesAddon`** (ver abajo) |
 | `"perfilAcedb": true` | el perfil AceDB del personaje (solo en variables de cuenta) |
 
-- **Se prefiere `incluir`.** Es una lista blanca también dentro de la variable: si el addon añade una clave en una
-  actualización, no viaja hasta que alguien la añade al adaptador. Con `excluir`, una clave nueva viaja sin que
-  nadie lo haya decidido, aunque sea estado o datos de otros personajes. Por eso `excluir` solo se acepta con
-  `versionesAddon`: fuera de esas versiones medidas, la entrada se ofrece desmarcada.
-- `entera` es para variables que el propio addon dedica a configuración (por ejemplo, WIM y Auctionator separan
-  configuración y estado en variables distintas). Si una variable mezcla las dos cosas, se usa `incluir`.
+- **Regla para cualquier adaptador: lo que no se ha nombrado no viaja sin una versión medida.**
+  - `incluir` y `perfilAcedb` solo dejan pasar lo que nombran (claves concretas, o el perfil). Una clave que el
+    addon añada en una actualización no viaja hasta que alguien la añade al adaptador.
+  - `entera` y `excluir` dejan pasar claves que nadie ha listado. Por eso el schema los rechaza si el adaptador no
+    declara `versionesAddon`, y la app, con otra versión instalada, ofrece la entrada desmarcada y con aviso.
+  - Se prefiere `incluir`: no envejece con cada actualización del addon.
 - `soloPersonaje` (opcional, junto a `entera`, `incluir` o `excluir`): rutas de tablas indexadas por personaje.
   Solo viaja la entrada del personaje de origen y, al importar, se escribe con la clave del destino.
 - `clavePersonaje`: cómo escribe el addon esa clave. `nombre-apellido` (`"Nombre Apellido"`, como AceDB en
@@ -168,9 +168,10 @@ salvo que se diga otra cosa: se lee el nombre y el contenido, no el código del 
 ```json
 {
   "id": "wim",
-  "version": 1,
+  "version": 2,
   "addon": "WIM",
-  "medido": "Cuenta: WIM3_Data (42 claves de opciones: ventanas, colores, sonidos, reglas), WIM3_Filters y WIM3_ChatFilters son configuración; WIM3_History, WIM3_HistoryArchive y WIM3_Cache guardan conversaciones y otros jugadores. Por personaje: WIM3_DebugLog y WIM3_Snapshots.",
+  "versionesAddon": ["3.19.7"],
+  "medido": "WIM 3.19.7. Cuenta: WIM3_Data (42 claves de opciones: ventanas, colores, sonidos, reglas), WIM3_Filters y WIM3_ChatFilters son configuración; WIM3_History, WIM3_HistoryArchive y WIM3_Cache guardan conversaciones y otros jugadores. Por personaje: WIM3_DebugLog y WIM3_Snapshots.",
   "reglas": [
     { "ambito": "cuenta", "variable": "WIM3_Data", "entera": true },
     { "ambito": "cuenta", "variable": "WIM3_Filters", "entera": true },
