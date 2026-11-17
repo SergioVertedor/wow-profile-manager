@@ -49,7 +49,6 @@ classDiagram
       carpetaReino
       carpetaPersonaje
       nombreEnDatos
-      deOtraVersion
     }
     class AddonInstalado {
       carpeta
@@ -124,7 +123,6 @@ Una carpeta `WTF/Account/<cuenta>/<reino>/<personaje>/`.
 |---|---|
 | `carpetaReino`, `carpetaPersonaje` | **identidad**, junto con la cuenta |
 | `nombreEnDatos` | cómo aparece en los `SavedVariables`; **se resuelve**, puede quedar sin resolver |
-| `deOtraVersion` | la carpeta de reino no es de esta versión del juego |
 
 **El nombre de la carpeta no es el nombre del personaje** [V]. En un mismo reino conviven una carpeta con `ø`
 en el nombre y otra con el nombre en ASCII y un sufijo hexadecimal (`…8D31D`). Por eso:
@@ -138,10 +136,13 @@ en el nombre y otra con el nombre en ASCII y un sufijo hexadecimal (`…8D31D`).
 - El nombre interno del reino en Forever (`CAMWOW EU5 Realm 4 PvP`) no aparece en ninguna ruta [V]. Si un
   adaptador lo necesita, sale de los datos del propio destino.
 
-**Reinos de otra versión.** Hay jugadores que copian carpetas del `WTF` de Retail al de Forever para aprovechar
-la configuración de addons [V: caso real]. En Forever, los personajes están en carpetas de reino numéricas
-(`93`) [V en una instalación; H como regla general]. Las demás carpetas se marcan `deOtraVersion`: se muestran
-aparte, con aviso, y no se ofrecen como destino por defecto.
+**Reinos de otra versión.** Dentro del `WTF` de una versión puede haber carpetas de reino copiadas a mano de la
+otra [V: medido una vez]. Retail y Forever no se mezclan, así que esas carpetas no se listan; se dice cuántas se
+ignoran, igual que con las cuentas que no tienen forma de cuenta.
+- En Forever, los personajes están en carpetas de reino numéricas (`93`) [V en una instalación; H como regla
+  general]. En Retail, la carpeta de reino es el nombre del reino [V].
+- Como la regla de Forever es [H], el recuento de carpetas ignoradas está siempre a la vista: si la regla se
+  equivoca en alguna instalación, se nota.
 
 **Destino válido.** El personaje destino tiene que haber entrado al juego al menos una vez, porque el cliente
 crea su carpeta al entrar [I]. Si no existe, la app lo explica; no crea carpetas de personaje.
@@ -195,7 +196,7 @@ tal cual, así que lo que se ve es exactamente lo que se hará.
 | parte | qué lleva |
 |---|---|
 | `cambios` | uno por fichero: ruta real, acción (`crear`, `sobrescribir` o `fusionar` un perfil), hash del fichero leído (o «no existía»), contenido nuevo y su hash, entrada de origen, y si afecta a toda la cuenta |
-| `avisos` | no impiden aplicar: clase distinta, versión del juego distinta, falta un addon, adaptador desconocido |
+| `avisos` | no impiden aplicar: clase distinta, interfaz distinta dentro de la misma versión del juego, falta un addon, adaptador desconocido |
 | `bloqueos` | impiden aplicar: WoW abierto, paquete inválido, destino inexistente |
 
 Reglas:
