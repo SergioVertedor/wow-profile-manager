@@ -30,6 +30,12 @@ git switch develop
 4. PR a `develop`.
 5. Releases: `release/x.y.z` → `main` + tag.
 
+## Cómo se hace
+
+Este proyecto se desarrolla con ayuda de herramientas de IA. Las decisiones y las pruebas en el juego las hace
+una persona, y todo lo que dice el proyecto sobre WoW Forever está medido en una
+instalación real, no supuesto.
+
 ## Apoyar el proyecto
 
 Si te resulta útil, puedes invitarme a un café en [Ko-fi](https://ko-fi.com/tonotabidev).
