@@ -18,7 +18,7 @@ export default function AcercaDe({ info }: Readonly<{ info: InfoApp }>) {
 
   return (
     <section className={css.pantalla}>
-      <h2 className={css.titulo}>{t("acercaDe.titulo")}</h2>
+      <h1 className={css.titulo}>{t("acercaDe.titulo")}</h1>
       <div className={css.pergamino}>
         <p className={css.version}>{t("cabecera", { nombre: info.nombre, version: info.version })}</p>
         <p>

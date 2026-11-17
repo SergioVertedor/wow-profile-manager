@@ -1,0 +1,131 @@
+/* El escenario: el personaje bajo un foco de luz dorada, como en la selección de personaje. La única audacia. */
+.escenario {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+  padding: var(--espacio-10) var(--espacio-8) var(--espacio-6);
+  overflow-y: auto;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 0%, var(--oro-foco) 0%, transparent 70%),
+    radial-gradient(ellipse 90% 60% at 50% 115%, var(--arcano-foco) 0%, transparent 70%),
+    var(--color-superficie);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-l);
+  box-shadow: inset 0 1px 0 var(--luz-borde);
+  text-align: center;
+}
+
+.retrato {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 7.25rem;
+  height: 7.25rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, var(--color-retrato-luz) 0%, var(--color-hundido) 80%);
+  box-shadow:
+    0 0 0 2px var(--color-oro),
+    0 0 0 7px var(--oro-halo),
+    0 12px 40px var(--oro-foco);
+  color: var(--color-oro-claro);
+  font-size: var(--texto-monograma);
+  font-weight: 600;
+  font-variation-settings: var(--abocinado);
+  animation: aparecer 320ms ease-out;
+}
+
+.nombre {
+  max-width: 100%;
+  margin-top: var(--espacio-6);
+  color: var(--color-nombre);
+  font-size: var(--texto-xl);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.sub {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: var(--espacio-1);
+  color: var(--color-texto-2);
+}
+
+.sub span + span::before {
+  content: "·";
+  margin: 0 var(--espacio-2);
+  color: var(--color-texto-3);
+}
+
+.datos {
+  display: flex;
+  justify-content: center;
+  margin: var(--espacio-6) 0 0;
+}
+
+.datos div {
+  min-width: 8rem;
+  padding: 0 var(--espacio-5);
+}
+
+.datos div + div {
+  border-left: 1px solid var(--color-linea);
+}
+
+.datos dt {
+  color: var(--color-texto-3);
+  font-size: var(--texto-pequeno);
+}
+
+.datos dd {
+  margin: 0;
+  font-size: var(--texto-m);
+  font-weight: 600;
+}
+
+.addons {
+  width: 100%;
+  max-width: var(--ancho-texto);
+  margin-top: var(--espacio-6);
+  text-align: left;
+}
+
+.addons summary {
+  width: max-content;
+  margin: 0 auto;
+  padding: var(--espacio-1) var(--espacio-3);
+  border-radius: var(--radio-pildora);
+  color: var(--color-oro);
+  font-size: var(--texto-control);
+  cursor: pointer;
+}
+
+.addons summary:hover {
+  background: var(--oro-velo);
+}
+
+.addons ul {
+  columns: 2;
+  column-gap: var(--espacio-8);
+  margin: var(--espacio-3) 0 0;
+  padding: var(--espacio-3) var(--espacio-4);
+  border-top: 1px solid var(--color-linea);
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+  list-style: none;
+}
+
+.addons li {
+  padding: 2px 0;
+  break-inside: avoid;
+}
+
+/* Al cambiar de personaje, el retrato aparece; respeta `prefers-reduced-motion` desde la base. */
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}

@@ -4,49 +4,44 @@
   "errorNucleo": "Could not reach the core: {{mensaje}}",
   "nav": {
     "etiqueta": "Views",
-    "instalaciones": "Installations",
+    "personajes": "Characters",
     "acercaDe": "About"
   },
-  "instalaciones": {
-    "titulo": "WoW installations",
+  "personajes": {
+    "titulo": "Characters",
     "buscando": "Looking for WoW installations…",
     "ninguna": "No WoW installation found on this computer.",
+    "versiones": "Game version",
     "fuente": {
       "registro": "Found in the Windows registry"
     },
-    "build": "Build {{build}}",
-    "version": "{{producto}} · {{carpeta}}",
+    "build": "Build",
+    "addons": "Addons",
     "noSoportada": "This app does not support this game version.",
     "sinInterfaz": "Open the game once with this version: until then it cannot be exported.",
+    "sinCuentas": "No accounts yet: log in to the game once.",
     "cuentasIgnoradas_one": "{{count}} folder in WTF/Account is not an account and was skipped.",
     "cuentasIgnoradas_other": "{{count}} folders in WTF/Account are not accounts and were skipped.",
-    "sinCuentas": "No accounts yet: log in to the game once.",
-    "cuenta_one": "Account {{carpeta}} · {{count}} character",
-    "cuenta_other": "Account {{carpeta}} · {{count}} characters",
-    "reinosIgnorados_one": "{{count}} realm folder belongs to the other game version and was skipped.",
-    "reinosIgnorados_other": "{{count}} realm folders belong to the other game version and were skipped.",
-    "personaje": {
-      "datos": "<nombre/> · {{carpeta}}",
-      "carpeta": "<nombre/> (guessed from the folder) · {{carpeta}}",
-      "sinResolver": "{{carpeta}} · <nombre>name not resolved</nombre>"
-    },
-    "addons_one": "{{count}} addon installed",
-    "addons_other": "{{count}} addons installed",
     "addonsIgnorados_one": "{{count}} folder in Interface/AddOns has no .toc the game loads and was skipped.",
     "addonsIgnorados_other": "{{count}} folders in Interface/AddOns have no .toc the game loads and were skipped.",
+    "verAddons_one": "Show the installed addon",
+    "verAddons_other": "Show the {{count}} installed addons",
     "addon": "{{titulo}} · {{version}}"
   },
-  "marco": {
-    "etiqueta": "Character sheet",
-    "vacio": "Pick a character from the list to see their sheet.",
-    "origen": {
-      "datos": "Name confirmed in the game data",
-      "carpeta": "Name guessed from the folder",
-      "sinResolver": "Name not resolved: only the folder is known"
-    },
-    "version": "Version",
-    "cuenta": "Account",
-    "carpeta": "Folder"
+  "plantel": {
+    "etiqueta": "Characters in the account",
+    "elegirCuenta": "Account",
+    "cuenta": "Account {{numero}}",
+    "personajes_one": "{{count}} character",
+    "personajes_other": "{{count}} characters",
+    "buscar": "Search characters",
+    "sinResultados": "No character matches “{{consulta}}”.",
+    "sinPersonajes": "This account has no characters yet: log in to the game with one.",
+    "reinosIgnorados_one": "{{count}} realm folder belongs to the other game version and was skipped.",
+    "reinosIgnorados_other": "{{count}} realm folders belong to the other game version and were skipped."
+  },
+  "ficha": {
+    "etiqueta": "Selected character"
   },
   "acercaDe": {
     "titulo": "About",
@@ -64,5 +59,6 @@
     "lecturaFallida": "Could not read {{ruta}}: {{detalle}}",
     "desconocido": "Unexpected error: {{mensaje}}",
     "enlaceNoAbierto": "Could not open {{url}}: {{detalle}}"
-  }
+  },
+  "versionApp": "Version {{version}}"
 }

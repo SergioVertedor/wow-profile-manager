@@ -1,9 +1,5 @@
-/* Base global: fuentes empaquetadas, fondo, foco visible y movimiento reducido. Los componentes usan CSS Modules. */
-@import "@fontsource/alegreya-sans/400.css";
-@import "@fontsource/alegreya-sans/500.css";
-@import "@fontsource/alegreya-sans/700.css";
-@import "@fontsource/alegreya-sc/500.css";
-@import "@fontsource/alegreya-sc/700.css";
+/* Base global: fuente empaquetada, fondo, foco visible y movimiento reducido. Los componentes usan CSS Modules. */
+@import "@fontsource-variable/commissioner/full.css";
 @import "./tokens.css";
 
 *,
@@ -20,11 +16,11 @@ body,
 }
 
 body {
-  background: radial-gradient(ellipse at 30% 0%, var(--color-pizarra) 0%, var(--color-abismo) 60%) fixed,
-    var(--color-abismo);
-  color: var(--color-pergamino);
-  font-family: var(--fuente-texto);
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: var(--fuente);
   font-size: var(--texto-base);
+  font-variation-settings: var(--liso);
   line-height: var(--interlineado);
   -webkit-font-smoothing: antialiased;
 }
@@ -32,20 +28,22 @@ body {
 h1,
 h2,
 h3,
-h4,
-h5 {
+h4 {
   margin: 0;
-  font-family: var(--fuente-titulo);
-  font-weight: 500;
-  line-height: 1.2;
+  font-weight: 600;
+  font-variation-settings: var(--abocinado);
+  line-height: 1.15;
 }
 
 p {
   margin: 0;
 }
 
-button {
+button,
+input,
+select {
   font: inherit;
+  font-variation-settings: inherit;
   color: inherit;
 }
 
@@ -59,19 +57,20 @@ a {
   outline-offset: 2px;
 }
 
-/* WebView2 es Chromium: barra de desplazamiento fina, a juego con los marcos. */
+/* WebView2 es Chromium: barra de desplazamiento fina y discreta. */
 ::-webkit-scrollbar {
   width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-abismo);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-oro-tenue);
-  border: 2px solid var(--color-abismo);
-  border-radius: 5px;
+  background: var(--color-linea-control);
+  border: 3px solid transparent;
+  border-radius: var(--radio-pildora);
+  background-clip: content-box;
 }
 
 @media (prefers-reduced-motion: reduce) {
