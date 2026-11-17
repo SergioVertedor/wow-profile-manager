@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { I18nextProvider } from "react-i18next";
 import Instalaciones from "./Instalaciones";
@@ -76,6 +76,60 @@ describe("Instalaciones", () => {
       "Goldberg Sp (deducido de la carpeta) · 93/Goldberg-Sp",
       "93/Goldber8D31D · nombre sin resolver",
     ]);
+  });
+
+  it("cada nombre lleva la calidad de su origen: datos raro, carpeta poco común, sin resolver pobre", async () => {
+    pintar("es", () => instalacion(FOREVER));
+
+    const filas = await screen.findAllByRole("button", { pressed: false });
+    expect(filas.map((fila) => fila.dataset.calidad)).toEqual(["raro", "pocoComun", "pobre"]);
+  });
+
+  it("sin elegir, el marco invita a elegir; al elegir, enseña la ficha de ese personaje", async () => {
+    pintar("es", () => instalacion(FOREVER));
+
+    const marco = await screen.findByRole("region", { name: "Ficha del personaje" });
+    expect(marco.textContent).toBe("Elige un personaje de la lista para ver su ficha.");
+
+    fireEvent.click(screen.getByRole("button", { name: /Goldberg Sp/ }));
+
+    const ficha = screen.getByRole("region", { name: "Ficha del personaje" });
+    expect(within(ficha).getByRole("heading", { name: "Goldberg Sp" }).dataset.calidad).toBe("pocoComun");
+    expect(within(ficha).getByText("Nombre deducido de la carpeta")).toBeDefined();
+    expect(within(ficha).getByText("WoW Forever")).toBeDefined();
+    expect(within(ficha).getByText("93/Goldberg-Sp")).toBeDefined();
+    expect(screen.getByRole("button", { name: /Goldberg Sp/ }).getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("elegir otro personaje desmarca el anterior y cambia la ficha", async () => {
+    pintar("es", () => instalacion(FOREVER));
+
+    fireEvent.click(await screen.findByRole("button", { name: /Goldberg Joestar/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Goldberg Sp/ }));
+
+    expect(screen.getAllByRole("button", { pressed: true }).map((b) => b.textContent)).toEqual([
+      "Goldberg Sp (deducido de la carpeta) · 93/Goldberg-Sp",
+    ]);
+    const ficha = screen.getByRole("region", { name: "Ficha del personaje" });
+    expect(within(ficha).getByRole("heading", { name: "Goldberg Sp" })).toBeDefined();
+  });
+
+  it("un personaje sin resolver se enseña por su carpeta y con «?» de retrato", async () => {
+    pintar("en", () => instalacion(FOREVER));
+
+    fireEvent.click(await screen.findByRole("button", { name: /Goldber8D31D/ }));
+
+    const ficha = screen.getByRole("region", { name: "Character sheet" });
+    expect(within(ficha).getByRole("heading", { name: "Goldber8D31D" }).dataset.calidad).toBe("pobre");
+    expect(within(ficha).getByText("Name not resolved: only the folder is known")).toBeDefined();
+    expect(within(ficha).getByText("?")).toBeDefined();
+  });
+
+  it("sin instalaciones no hay marco de personaje", async () => {
+    pintar("en", () => []);
+
+    expect(await screen.findByText("No WoW installation found on this computer.")).toBeDefined();
+    expect(screen.queryByRole("region", { name: "Character sheet" })).toBeNull();
   });
 
   it("usa el singular con un solo personaje", async () => {

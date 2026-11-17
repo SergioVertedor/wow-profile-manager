@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HardDrive, ScrollText, type LucideIcon } from "lucide-react";
 import AcercaDe from "./AcercaDe";
+import css from "./App.module.css";
 import Instalaciones from "./Instalaciones";
 import { pedirInfoApp, type InfoApp } from "./nucleo";
 
@@ -11,6 +13,8 @@ type Estado =
 
 /** Vistas de la ventana. Con dos basta un estado; cuando lleguen los flujos con pasos se medirá un router. */
 type Vista = "instalaciones" | "acercaDe";
+
+const ICONOS: Record<Vista, LucideIcon> = { instalaciones: HardDrive, acercaDe: ScrollText };
 
 function App() {
   const { t } = useTranslation();
@@ -24,21 +28,29 @@ function App() {
   }, []);
 
   return (
-    <main>
-      <header>
-        {estado.tipo === "cargando" && <p>{t("cargando")}</p>}
-        {estado.tipo === "listo" && (
-          <h1>{t("cabecera", { nombre: estado.info.nombre, version: estado.info.version })}</h1>
-        )}
-        {estado.tipo === "error" && <p role="alert">{t("errorNucleo", { mensaje: estado.mensaje })}</p>}
-        <nav>
+    <div className={css.armazon}>
+      <aside className={css.barra}>
+        <header className={css.marca}>
+          {estado.tipo === "cargando" && <p className={css.secundario}>{t("cargando")}</p>}
+          {estado.tipo === "listo" && (
+            <h1 className={css.titulo}>{t("cabecera", { nombre: estado.info.nombre, version: estado.info.version })}</h1>
+          )}
+          {estado.tipo === "error" && (
+            <p role="alert" className={css.alerta}>
+              {t("errorNucleo", { mensaje: estado.mensaje })}
+            </p>
+          )}
+        </header>
+        <nav className={css.navegacion} aria-label={t("nav.etiqueta")}>
           <BotonVista vista="instalaciones" actual={vista} elegir={setVista} />
           {estado.tipo === "listo" && <BotonVista vista="acercaDe" actual={vista} elegir={setVista} />}
         </nav>
-      </header>
-      {vista === "instalaciones" && <Instalaciones />}
-      {vista === "acercaDe" && estado.tipo === "listo" && <AcercaDe info={estado.info} />}
-    </main>
+      </aside>
+      <main className={css.contenido}>
+        {vista === "instalaciones" && <Instalaciones />}
+        {vista === "acercaDe" && estado.tipo === "listo" && <AcercaDe info={estado.info} />}
+      </main>
+    </div>
   );
 }
 
@@ -48,8 +60,10 @@ function BotonVista({
   elegir,
 }: Readonly<{ vista: Vista; actual: Vista; elegir: (vista: Vista) => void }>) {
   const { t } = useTranslation();
+  const Icono = ICONOS[vista];
   return (
-    <button type="button" aria-pressed={vista === actual} onClick={() => elegir(vista)}>
+    <button type="button" className={css.pestana} aria-pressed={vista === actual} onClick={() => elegir(vista)}>
+      <Icono aria-hidden size={18} strokeWidth={1.75} />
       {t(`nav.${vista}`)}
     </button>
   );

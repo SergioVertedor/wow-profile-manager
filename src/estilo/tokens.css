@@ -1,0 +1,65 @@
+/*
+ * Tokens de la identidad visual (spec 016). Ningún color ni fuente fuera de este fichero; las medidas salen de la
+ * escala de espaciado, salvo trazos finos (bordes, rombos) en px.
+ *
+ * Inspiración: las ventanas del juego (piedra oscura, borde dorado, texto pergamino) y los colores de calidad de
+ * objeto usados como información. Nada de material de Blizzard: fuentes OFL y colores propios.
+ *
+ * Contraste medido (WCAG) sobre abismo / pizarra / pizarra alta. Todo texto ≥ 4,5:1:
+ *   pergamino 13,51 / 11,54 / 9,97 · pergamino tenue 6,92 / 5,91 / 5,10 · oro 7,66 / 6,54 / 5,65
+ *   alerta 6,58 / 5,62 / 4,86 · aviso 8,09 / 6,91 / 5,97
+ *   raro (texto) 6,42 / 5,48 / 4,74 · poco común 13,45 · pobre 6,78 / 5,79 / 5,00
+ * Raro #0070DD y épico #A335EE no llegan a 4,5 en texto (3,82 y 3,77): en texto se usan sus variantes aclaradas.
+ */
+:root {
+  /* Superficies */
+  --color-abismo: #10141f;
+  --color-pizarra: #1c2333;
+  --color-pizarra-alta: #252e42;
+
+  /* Texto y marcos */
+  --color-pergamino: #e8dcc0;
+  --color-pergamino-tenue: #a79e8a;
+  --color-oro: #c9a24a;
+  --color-oro-tenue: #7a6430; /* solo bordes decorativos (3,23 sobre abismo); los de estado van en oro */
+  --color-alerta: #ff6b5e;
+  --color-aviso: #e0a030;
+  --color-sombra: rgb(0 0 0 / 55%);
+  --color-sombra-honda: rgb(0 0 0 / 70%);
+
+  /* Calidades de objeto: marca (bordes, puntos) y texto */
+  --calidad-pobre: #9d9d9d;
+  --calidad-poco-comun: #1eff00;
+  --calidad-raro: #0070dd;
+  --calidad-raro-texto: #3d9bff;
+  --calidad-epico: #a335ee;
+  --calidad-epico-texto: #c27bf5;
+  --calidad-legendario: #ff8000;
+
+  /* Tipografía: escala modular 1,25 sobre 16 px */
+  --fuente-titulo: "Alegreya SC", "Palatino Linotype", serif;
+  --fuente-texto: "Alegreya Sans", "Segoe UI", sans-serif;
+  --texto-pequeno: 0.8rem;
+  --texto-base: 1rem;
+  --texto-m: 1.25rem;
+  --texto-l: 1.563rem;
+  --texto-xl: 1.953rem;
+  --interlineado: 1.45;
+
+  /* Espaciado: múltiplos de 4 px */
+  --espacio-1: 0.25rem;
+  --espacio-2: 0.5rem;
+  --espacio-3: 0.75rem;
+  --espacio-4: 1rem;
+  --espacio-6: 1.5rem;
+  --espacio-8: 2rem;
+
+  /* Marcos */
+  --radio-marco: 3px;
+  --borde-marco: 1px solid var(--color-oro-tenue);
+  --sombra-marco: inset 0 0 0 1px var(--color-sombra), 0 2px 8px var(--color-sombra);
+  --ancho-barra: 13rem;
+  --ancho-lectura: 46rem;
+  --ancho-texto: 38rem;
+  --duracion: 160ms;
+}

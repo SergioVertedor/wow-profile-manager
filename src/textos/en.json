@@ -3,6 +3,7 @@
   "cabecera": "{{nombre}} {{version}}",
   "errorNucleo": "Could not reach the core: {{mensaje}}",
   "nav": {
+    "etiqueta": "Views",
     "instalaciones": "Installations",
     "acercaDe": "About"
   },
@@ -25,15 +26,27 @@
     "reinosIgnorados_one": "{{count}} realm folder belongs to the other game version and was skipped.",
     "reinosIgnorados_other": "{{count}} realm folders belong to the other game version and were skipped.",
     "personaje": {
-      "datos": "{{nombre}} · {{carpeta}}",
-      "carpeta": "{{nombre}} (guessed from the folder) · {{carpeta}}",
-      "sinResolver": "{{carpeta}} · name not resolved"
+      "datos": "<nombre/> · {{carpeta}}",
+      "carpeta": "<nombre/> (guessed from the folder) · {{carpeta}}",
+      "sinResolver": "{{carpeta}} · <nombre>name not resolved</nombre>"
     },
     "addons_one": "{{count}} addon installed",
     "addons_other": "{{count}} addons installed",
     "addonsIgnorados_one": "{{count}} folder in Interface/AddOns has no .toc the game loads and was skipped.",
     "addonsIgnorados_other": "{{count}} folders in Interface/AddOns have no .toc the game loads and were skipped.",
     "addon": "{{titulo}} · {{version}}"
+  },
+  "marco": {
+    "etiqueta": "Character sheet",
+    "vacio": "Pick a character from the list to see their sheet.",
+    "origen": {
+      "datos": "Name confirmed in the game data",
+      "carpeta": "Name guessed from the folder",
+      "sinResolver": "Name not resolved: only the folder is known"
+    },
+    "version": "Version",
+    "cuenta": "Account",
+    "carpeta": "Folder"
   },
   "acercaDe": {
     "titulo": "About",
