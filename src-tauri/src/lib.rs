@@ -1,6 +1,7 @@
 //! Núcleo de WoW Profile Manager. Los módulos siguen `docs/arquitectura.md`; los comandos de Tauri son la única
 //! puerta de entrada desde la interfaz y no contienen lógica: delegan en módulos que se prueban sin Tauri.
 
+mod idioma;
 mod info;
 
 pub use info::NOMBRE_APP;
@@ -11,11 +12,18 @@ fn info_app() -> info::InfoApp {
     info::info_app()
 }
 
+/// Devuelve el idioma de la interfaz de Windows (`"es"` o `"en"`). Los mensajes del núcleo no se traducen aquí:
+/// viajan como un código y sus datos, y la interfaz los traduce con `src/textos/`.
+#[tauri::command]
+fn idioma_interfaz() -> idioma::Idioma {
+    idioma::idioma_sistema()
+}
+
 /// Registra los comandos que puede llamar la interfaz. Es genérico sobre el runtime para que los tests de
 /// `tests/comandos.rs` usen el runtime simulado de Tauri y llamen a los comandos por su nombre, igual que la
 /// interfaz.
 pub fn con_comandos<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
-    builder.invoke_handler(tauri::generate_handler![info_app])
+    builder.invoke_handler(tauri::generate_handler![info_app, idioma_interfaz])
 }
 
 /// Arranca la aplicación. Si Tauri no puede abrir la ventana, no hay nada que hacer salvo terminar con un error.

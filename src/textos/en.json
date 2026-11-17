@@ -1,0 +1,5 @@
+{
+  "cargando": "Loading…",
+  "cabecera": "{{nombre}} {{version}}",
+  "errorNucleo": "Could not reach the core: {{mensaje}}"
+}

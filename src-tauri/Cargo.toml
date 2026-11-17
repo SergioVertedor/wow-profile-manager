@@ -20,6 +20,7 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sys-locale = "0.3"
 
 [dev-dependencies]
 # Runtime simulado de Tauri: los tests llaman a los comandos por su nombre sin abrir ventanas.

@@ -32,6 +32,12 @@ fn info_app_responde_por_su_nombre_con_los_campos_de_la_interfaz() {
 }
 
 #[test]
+fn idioma_interfaz_responde_es_o_en() {
+    let respuesta = invocar("idioma_interfaz").unwrap();
+    assert!(respuesta == "es" || respuesta == "en", "{respuesta}");
+}
+
+#[test]
 fn un_comando_que_no_existe_da_error() {
     assert!(invocar("no_existe").is_err());
 }
