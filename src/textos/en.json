@@ -1,5 +1,33 @@
 {
   "cargando": "Loading…",
   "cabecera": "{{nombre}} {{version}}",
-  "errorNucleo": "Could not reach the core: {{mensaje}}"
+  "errorNucleo": "Could not reach the core: {{mensaje}}",
+  "instalaciones": {
+    "titulo": "WoW installations",
+    "buscando": "Looking for WoW installations…",
+    "ninguna": "No WoW installation found on this computer.",
+    "fuente": {
+      "registro": "Found in the Windows registry"
+    },
+    "build": "Build {{build}}",
+    "version": "{{producto}} · {{carpeta}}",
+    "noSoportada": "This app does not support this game version.",
+    "sinInterfaz": "Open the game once with this version: until then it cannot be exported.",
+    "cuentasIgnoradas_one": "{{count}} folder in WTF/Account is not an account and was skipped.",
+    "cuentasIgnoradas_other": "{{count}} folders in WTF/Account are not accounts and were skipped.",
+    "sinCuentas": "No accounts yet: log in to the game once.",
+    "cuenta_one": "Account {{carpeta}} · {{count}} character",
+    "cuenta_other": "Account {{carpeta}} · {{count}} characters",
+    "reinosIgnorados_one": "{{count}} realm folder belongs to the other game version and was skipped.",
+    "reinosIgnorados_other": "{{count}} realm folders belong to the other game version and were skipped.",
+    "personaje": "{{personaje}} · {{reino}}"
+  },
+  "productos": {
+    "wow": "World of Warcraft (Retail)",
+    "wowf": "WoW Forever"
+  },
+  "errores": {
+    "lecturaFallida": "Could not read {{ruta}}: {{detalle}}",
+    "desconocido": "Unexpected error: {{mensaje}}"
+  }
 }
