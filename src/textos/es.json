@@ -4,49 +4,44 @@
   "errorNucleo": "No se pudo contactar con el núcleo: {{mensaje}}",
   "nav": {
     "etiqueta": "Vistas",
-    "instalaciones": "Instalaciones",
+    "personajes": "Personajes",
     "acercaDe": "Acerca de"
   },
-  "instalaciones": {
-    "titulo": "Instalaciones de WoW",
+  "personajes": {
+    "titulo": "Personajes",
     "buscando": "Buscando instalaciones de WoW…",
     "ninguna": "No se ha encontrado ninguna instalación de WoW en este equipo.",
+    "versiones": "Versión del juego",
     "fuente": {
       "registro": "Encontrada en el registro de Windows"
     },
-    "build": "Build {{build}}",
-    "version": "{{producto}} · {{carpeta}}",
+    "build": "Build",
+    "addons": "Addons",
     "noSoportada": "La app no es compatible con esta versión del juego.",
     "sinInterfaz": "Abre el juego una vez con esta versión: hasta entonces no se puede exportar.",
+    "sinCuentas": "Todavía no hay cuentas: entra al juego una vez.",
     "cuentasIgnoradas_one": "{{count}} carpeta de WTF/Account no es una cuenta y se ha saltado.",
     "cuentasIgnoradas_other": "{{count}} carpetas de WTF/Account no son cuentas y se han saltado.",
-    "sinCuentas": "Todavía no hay cuentas: entra al juego una vez.",
-    "cuenta_one": "Cuenta {{carpeta}} · {{count}} personaje",
-    "cuenta_other": "Cuenta {{carpeta}} · {{count}} personajes",
-    "reinosIgnorados_one": "{{count}} carpeta de reino es de la otra versión del juego y se ha saltado.",
-    "reinosIgnorados_other": "{{count}} carpetas de reino son de la otra versión del juego y se han saltado.",
-    "personaje": {
-      "datos": "<nombre/> · {{carpeta}}",
-      "carpeta": "<nombre/> (deducido de la carpeta) · {{carpeta}}",
-      "sinResolver": "{{carpeta}} · <nombre>nombre sin resolver</nombre>"
-    },
-    "addons_one": "{{count}} addon instalado",
-    "addons_other": "{{count}} addons instalados",
     "addonsIgnorados_one": "{{count}} carpeta de Interface/AddOns no tiene un .toc que el juego cargue y se ha saltado.",
     "addonsIgnorados_other": "{{count}} carpetas de Interface/AddOns no tienen un .toc que el juego cargue y se han saltado.",
+    "verAddons_one": "Ver el addon instalado",
+    "verAddons_other": "Ver los {{count}} addons instalados",
     "addon": "{{titulo}} · {{version}}"
   },
-  "marco": {
-    "etiqueta": "Ficha del personaje",
-    "vacio": "Elige un personaje de la lista para ver su ficha.",
-    "origen": {
-      "datos": "Nombre confirmado en los datos del juego",
-      "carpeta": "Nombre deducido de la carpeta",
-      "sinResolver": "Nombre sin resolver: solo se conoce la carpeta"
-    },
-    "version": "Versión",
-    "cuenta": "Cuenta",
-    "carpeta": "Carpeta"
+  "plantel": {
+    "etiqueta": "Personajes de la cuenta",
+    "elegirCuenta": "Cuenta",
+    "cuenta": "Cuenta {{numero}}",
+    "personajes_one": "{{count}} personaje",
+    "personajes_other": "{{count}} personajes",
+    "buscar": "Buscar personaje",
+    "sinResultados": "Ningún personaje coincide con «{{consulta}}».",
+    "sinPersonajes": "Esta cuenta aún no tiene personajes: entra al juego con uno.",
+    "reinosIgnorados_one": "{{count}} carpeta de reino es de la otra versión del juego y se ha saltado.",
+    "reinosIgnorados_other": "{{count}} carpetas de reino son de la otra versión del juego y se han saltado."
+  },
+  "ficha": {
+    "etiqueta": "Personaje elegido"
   },
   "acercaDe": {
     "titulo": "Acerca de",
@@ -64,5 +59,6 @@
     "lecturaFallida": "No se pudo leer {{ruta}}: {{detalle}}",
     "desconocido": "Error inesperado: {{mensaje}}",
     "enlaceNoAbierto": "No se pudo abrir {{url}}: {{detalle}}"
-  }
+  },
+  "versionApp": "Versión {{version}}"
 }

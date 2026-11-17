@@ -21,7 +21,7 @@ function pintar(idioma: Idioma) {
 }
 
 describe("App", () => {
-  it("pide info_app y enseña nombre y versión", async () => {
+  it("pide info_app y enseña nombre y versión en la barra", async () => {
     const pedidos: string[] = [];
     mockIPC((comando) => {
       pedidos.push(comando);
@@ -30,7 +30,8 @@ describe("App", () => {
 
     pintar("es");
 
-    expect(await screen.findByRole("heading", { level: 1 })).toHaveProperty("textContent", "WoW Profile Manager 9.9.9");
+    expect(await screen.findByText("WoW Profile Manager")).toBeDefined();
+    expect(screen.getByText("Versión 9.9.9")).toBeDefined();
     expect(pedidos).toContain("info_app");
   });
 
@@ -58,7 +59,7 @@ describe("App", () => {
     expect(screen.getByText("Looking for WoW installations…")).toBeDefined();
   });
 
-  it("lleva a «Acerca de» y vuelve a las instalaciones", async () => {
+  it("lleva a «Acerca de» y vuelve a los personajes", async () => {
     mockIPC((comando) =>
       comando === "info_app"
         ? {
@@ -75,11 +76,11 @@ describe("App", () => {
     pintar("es");
 
     fireEvent.click(await screen.findByRole("button", { name: "Acerca de" }));
-    expect(screen.getByRole("heading", { name: "Acerca de" })).toBeDefined();
-    expect(screen.queryByRole("heading", { name: "Instalaciones de WoW" })).toBeNull();
+    expect(screen.getByRole("heading", { level: 1, name: "Acerca de" })).toBeDefined();
+    expect(screen.queryByRole("heading", { level: 1, name: "Personajes" })).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Instalaciones" }));
-    expect(screen.getByRole("heading", { name: "Instalaciones de WoW" })).toBeDefined();
-    expect(screen.getByRole("button", { name: "Instalaciones" }).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Personajes" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Personajes" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Personajes" }).getAttribute("aria-pressed")).toBe("true");
   });
 });

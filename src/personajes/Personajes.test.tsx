@@ -1,0 +1,273 @@
+import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
+import { I18nextProvider } from "react-i18next";
+import type { Addon, Cuenta, Instalacion, Personaje, VersionJuego } from "../nucleo";
+import { crearTextos, type Idioma } from "../textos";
+import Personajes from "./Personajes";
+
+afterEach(() => {
+  cleanup();
+  clearMocks();
+});
+
+function pintar(idioma: Idioma, respuesta: () => unknown) {
+  mockIPC((comando) => (comando === "detectar_instalaciones" ? respuesta() : undefined));
+  render(
+    <I18nextProvider i18n={crearTextos(idioma)}>
+      <Personajes />
+    </I18nextProvider>,
+  );
+}
+
+function pj(carpetaReino: string, carpetaPersonaje: string, texto: string | null = null): Personaje {
+  return { carpetaReino, carpetaPersonaje, nombreEnDatos: texto === null ? null : { texto, origen: "datos" } };
+}
+
+function addon(carpeta: string, titulo: string | null, version: string | null): Addon {
+  return { carpeta, toc: `${carpeta}.toc`, titulo, version, enlace: null, dependencias: [], svCuenta: [], svPersonaje: [] };
+}
+
+const FOREVER: VersionJuego = {
+  carpeta: "_forever_",
+  producto: "wowf",
+  soportada: true,
+  build: "1.60.1.70938",
+  interfaz: "16001",
+  cuentas: {
+    ignoradas: 1,
+    cuentas: [
+      {
+        carpeta: "107710745#1",
+        reinosIgnorados: 2,
+        personajes: [
+          pj("93", "Goldberg-Joestar", "Goldberg Joestar"),
+          pj("93", "Goldberg-Sp", "Goldberg Sp"),
+          pj("93", "Goldber8D31D"),
+        ],
+      },
+    ],
+  },
+  addons: { addons: [addon("APR", "Azeroth Pilot Reloaded", "v7.7.1"), addon("SinTitulo", null, null)], ignoradas: 1 },
+};
+
+const RETAIL_CUENTA_1: Cuenta = {
+  carpeta: "107710745#1",
+  reinosIgnorados: 0,
+  personajes: [
+    pj("Dun Modr", "Allagan"),
+    pj("Dun Modr", "Apañerouno"),
+    pj("C'Thun", "Angharad"),
+    ...Array.from({ length: 9 }, (_, i) => pj("C'Thun", `Relleno${i}`)),
+  ],
+};
+
+const RETAIL: VersionJuego = {
+  ...FOREVER,
+  carpeta: "_retail_",
+  producto: "wow",
+  build: "12.1.5.70961",
+  cuentas: { ignoradas: 0, cuentas: [RETAIL_CUENTA_1, { carpeta: "107710745#2", reinosIgnorados: 0, personajes: [pj("Uldum", "Mordekaiser")] }] },
+  addons: { addons: [], ignoradas: 0 },
+};
+
+function instalacion(...versiones: VersionJuego[]): Instalacion[] {
+  return [{ raiz: "C:\\Juegos\\World of Warcraft", fuente: "registro", versiones }];
+}
+
+const ficha = () => screen.getByRole("region", { name: /Personaje elegido|Selected character/ });
+const lista = () => screen.getByRole("region", { name: /Personajes de la cuenta|Characters in the account/ });
+const versiones = () => screen.getByRole("group", { name: /Versión del juego|Game version/ });
+
+describe("Personajes", () => {
+  it("elige sin preguntar el primer personaje de la primera versión con personajes", async () => {
+    pintar("es", () => instalacion(FOREVER, RETAIL));
+
+    await screen.findByRole("heading", { level: 1, name: "Personajes" });
+    expect(within(ficha()).getByRole("heading", { name: "Goldberg Joestar" })).toBeDefined();
+    expect(within(lista()).getByRole("button", { name: "Goldberg Joestar" }).getAttribute("aria-pressed")).toBe("true");
+    expect(within(versiones()).getByRole("button", { name: "WoW Forever 3" }).getAttribute("aria-pressed")).toBe("true");
+    expect(within(versiones()).getByRole("button", { name: "World of Warcraft (Retail) 13" })).toBeDefined();
+  });
+
+  it("en Forever no hay reinos: ni en la ficha ni en la lista", async () => {
+    pintar("es", () => instalacion(FOREVER));
+
+    await screen.findByRole("heading", { name: "Goldberg Joestar" });
+    expect(within(ficha()).queryByText("93")).toBeNull();
+    expect(within(ficha()).getByText("Cuenta 1")).toBeDefined();
+    expect(within(lista()).queryByRole("heading", { name: /93/ })).toBeNull();
+  });
+
+  it("un nombre sin resolver se enseña por su carpeta, sin etiqueta de origen", async () => {
+    pintar("es", () => instalacion(FOREVER));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Goldber8D31D" }));
+
+    expect(within(ficha()).getByRole("heading", { name: "Goldber8D31D" })).toBeDefined();
+    expect(screen.queryByText(/deducido|sin resolver/)).toBeNull();
+  });
+
+  it("elegir otro personaje desmarca el anterior y cambia la ficha", async () => {
+    pintar("es", () => instalacion(FOREVER));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Goldberg Sp" }));
+
+    expect(within(lista()).getAllByRole("button", { pressed: true }).map((b) => b.textContent)).toEqual(["GGoldberg Sp"]);
+    expect(within(ficha()).getByRole("heading", { name: "Goldberg Sp" })).toBeDefined();
+  });
+
+  it("con una sola cuenta no hay desplegable; dice su carpeta y cuántos personajes tiene", async () => {
+    pintar("es", () => instalacion(FOREVER));
+
+    await screen.findByRole("heading", { name: "Goldberg Joestar" });
+    expect(within(lista()).getByRole("heading", { name: "Cuenta 1" })).toBeDefined();
+    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(within(lista()).getByText("107710745#1")).toBeDefined();
+    expect(within(lista()).getByText("3 personajes")).toBeDefined();
+  });
+
+  it("al cambiar de versión, se elige el primer personaje de su primera cuenta", async () => {
+    pintar("en", () => instalacion(FOREVER, RETAIL));
+
+    fireEvent.click(within(await screen.findByRole("group", { name: "Game version" })).getByRole("button", { name: /Retail/ }));
+
+    expect(within(ficha()).getByRole("heading", { name: "Allagan" })).toBeDefined();
+    expect(within(ficha()).getByText("Dun Modr")).toBeDefined();
+    expect(within(ficha()).getByText("Account 1")).toBeDefined();
+  });
+
+  it("con varias cuentas, el desplegable cambia la lista y elige el primero de la nueva", async () => {
+    pintar("en", () => instalacion(RETAIL));
+
+    const cuenta = await screen.findByRole("combobox", { name: "Account" });
+    expect(within(cuenta).getAllByRole("option").map((o) => o.textContent)).toEqual(["Account 1", "Account 2"]);
+
+    fireEvent.change(cuenta, { target: { value: "107710745#2" } });
+
+    expect(within(ficha()).getByRole("heading", { name: "Mordekaiser" })).toBeDefined();
+    expect(within(ficha()).getByText("Account 2")).toBeDefined();
+    expect(within(lista()).getByText("1 character")).toBeDefined();
+  });
+
+  it("fuera de Forever agrupa por reino, con su recuento", async () => {
+    pintar("en", () => instalacion(RETAIL));
+
+    await screen.findByRole("heading", { name: "Allagan" });
+    const reinos = within(lista()).getAllByRole("heading", { level: 3 }).map((h) => h.textContent);
+    expect(reinos).toEqual(["Dun Modr2", "C'Thun10"]);
+    expect(within(screen.getByRole("region", { name: "Dun Modr" })).getAllByRole("button").map((b) => b.textContent)).toEqual([
+      "AAllagan",
+      "AApañerouno",
+    ]);
+  });
+
+  it("con más de 10 personajes hay buscador: sin mayúsculas ni acentos, y avisa si no hay nada", async () => {
+    pintar("es", () => instalacion(RETAIL));
+
+    const buscar = await screen.findByRole("searchbox", { name: "Buscar personaje" });
+    fireEvent.change(buscar, { target: { value: "APANE" } });
+    expect(within(lista()).getAllByRole("button").map((b) => b.textContent)).toEqual(["AApañerouno"]);
+
+    fireEvent.change(buscar, { target: { value: "zz" } });
+    expect(within(lista()).getByText("Ningún personaje coincide con «zz».")).toBeDefined();
+  });
+
+  it("con 10 personajes o menos no hay buscador", async () => {
+    pintar("es", () => instalacion(FOREVER));
+
+    await screen.findByRole("heading", { name: "Goldberg Joestar" });
+    expect(screen.queryByRole("searchbox")).toBeNull();
+  });
+
+  it("la ficha dice addons y build, y los addons se despliegan", async () => {
+    pintar("es", () => instalacion(FOREVER));
+
+    await screen.findByRole("heading", { name: "Goldberg Joestar" });
+    expect(within(ficha()).getByText("1.60.1.70938")).toBeDefined();
+    expect(within(ficha()).getByText("Ver los 2 addons instalados")).toBeDefined();
+    expect(within(ficha()).getByText("Azeroth Pilot Reloaded · v7.7.1")).toBeDefined();
+    expect(within(ficha()).getByText("SinTitulo")).toBeDefined();
+  });
+
+  it("dice lo que se ha saltado: cuentas, reinos y addons, con su plural", async () => {
+    pintar("es", () => instalacion(FOREVER));
+
+    await screen.findByRole("heading", { name: "Goldberg Joestar" });
+    expect(screen.getByText("1 carpeta de WTF/Account no es una cuenta y se ha saltado.")).toBeDefined();
+    expect(screen.getByText("2 carpetas de reino son de la otra versión del juego y se han saltado.")).toBeDefined();
+    expect(
+      screen.getByText("1 carpeta de Interface/AddOns no tiene un .toc que el juego cargue y se ha saltado."),
+    ).toBeDefined();
+    expect(screen.getByText("C:\\Juegos\\World of Warcraft — Encontrada en el registro de Windows")).toBeDefined();
+  });
+
+  it("una versión no compatible se puede elegir y dice por qué no hay personajes", async () => {
+    const clasica: VersionJuego = {
+      ...FOREVER,
+      carpeta: "_classic_",
+      producto: "wow_classic",
+      soportada: false,
+      cuentas: { ignoradas: 0, cuentas: [] },
+    };
+    pintar("en", () => instalacion(FOREVER, clasica));
+
+    fireEvent.click(within(await screen.findByRole("group", { name: "Game version" })).getByRole("button", { name: "wow_classic 0" }));
+
+    expect(screen.getByText("This app does not support this game version.")).toBeDefined();
+    expect(screen.queryByRole("region", { name: "Selected character" })).toBeNull();
+    expect(screen.queryByText(/Interface\/AddOns/)).toBeNull();
+  });
+
+  it("avisa de una versión sin interfaz y de una sin cuentas", async () => {
+    const sinInterfaz: VersionJuego = { ...FOREVER, interfaz: null };
+    const sinCuentas: VersionJuego = { ...FOREVER, carpeta: "_retail_", producto: "wow", cuentas: { ignoradas: 0, cuentas: [] } };
+    pintar("en", () => instalacion(sinInterfaz, sinCuentas));
+
+    expect(await screen.findByText("Open the game once with this version: until then it cannot be exported.")).toBeDefined();
+
+    fireEvent.click(within(versiones()).getByRole("button", { name: /Retail/ }));
+    expect(screen.getByText("No accounts yet: log in to the game once.")).toBeDefined();
+  });
+
+  it("una cuenta sin personajes lo dice en la lista", async () => {
+    const vacia: VersionJuego = {
+      ...FOREVER,
+      cuentas: { ignoradas: 0, cuentas: [{ carpeta: "1#1", reinosIgnorados: 0, personajes: [] }] },
+    };
+    pintar("es", () => instalacion(vacia));
+
+    expect(await screen.findByText("Esta cuenta aún no tiene personajes: entra al juego con uno.")).toBeDefined();
+    expect(screen.queryByRole("region", { name: "Personaje elegido" })).toBeNull();
+  });
+
+  it("si no hay ninguna instalación, lo dice", async () => {
+    pintar("en", () => []);
+
+    expect(await screen.findByText("No WoW installation found on this computer.")).toBeDefined();
+  });
+
+  it("traduce el error del núcleo con su código y sus datos", async () => {
+    pintar("es", () => {
+      throw { codigo: "lecturaFallida", datos: { ruta: "C:\\WoW\\WTF", detalle: "Acceso denegado" } };
+    });
+
+    expect((await screen.findByRole("alert")).textContent).toBe("No se pudo leer C:\\WoW\\WTF: Acceso denegado");
+  });
+
+  it("un código de error que la interfaz no conoce no se enseña como clave", async () => {
+    pintar("en", () => {
+      throw { codigo: "codigoFuturo", datos: {} };
+    });
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Unexpected error: codigoFuturo");
+  });
+
+  it("un fallo que no es del núcleo se enseña como inesperado, sin ocultarlo", async () => {
+    pintar("en", () => {
+      throw new Error("canal roto");
+    });
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Unexpected error: Error: canal roto");
+  });
+});

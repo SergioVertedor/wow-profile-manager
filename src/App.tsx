@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HardDrive, ScrollText, type LucideIcon } from "lucide-react";
+import { Info, Users, type LucideIcon } from "lucide-react";
 import AcercaDe from "./AcercaDe";
 import css from "./App.module.css";
-import Instalaciones from "./Instalaciones";
 import { pedirInfoApp, type InfoApp } from "./nucleo";
+import Personajes from "./personajes/Personajes";
 
 type Estado =
   | { tipo: "cargando" }
@@ -12,14 +12,14 @@ type Estado =
   | { tipo: "error"; mensaje: string };
 
 /** Vistas de la ventana. Con dos basta un estado; cuando lleguen los flujos con pasos se medirá un router. */
-type Vista = "instalaciones" | "acercaDe";
+type Vista = "personajes" | "acercaDe";
 
-const ICONOS: Record<Vista, LucideIcon> = { instalaciones: HardDrive, acercaDe: ScrollText };
+const ICONOS: Record<Vista, LucideIcon> = { personajes: Users, acercaDe: Info };
 
 function App() {
   const { t } = useTranslation();
   const [estado, setEstado] = useState<Estado>({ tipo: "cargando" });
-  const [vista, setVista] = useState<Vista>("instalaciones");
+  const [vista, setVista] = useState<Vista>("personajes");
 
   useEffect(() => {
     pedirInfoApp()
@@ -30,24 +30,24 @@ function App() {
   return (
     <div className={css.armazon}>
       <aside className={css.barra}>
-        <header className={css.marca}>
+        <div className={css.marca}>
+          <Emblema />
           {estado.tipo === "cargando" && <p className={css.secundario}>{t("cargando")}</p>}
-          {estado.tipo === "listo" && (
-            <h1 className={css.titulo}>{t("cabecera", { nombre: estado.info.nombre, version: estado.info.version })}</h1>
-          )}
+          {estado.tipo === "listo" && <p className={css.nombreApp}>{estado.info.nombre}</p>}
           {estado.tipo === "error" && (
             <p role="alert" className={css.alerta}>
               {t("errorNucleo", { mensaje: estado.mensaje })}
             </p>
           )}
-        </header>
+        </div>
         <nav className={css.navegacion} aria-label={t("nav.etiqueta")}>
-          <BotonVista vista="instalaciones" actual={vista} elegir={setVista} />
+          <BotonVista vista="personajes" actual={vista} elegir={setVista} />
           {estado.tipo === "listo" && <BotonVista vista="acercaDe" actual={vista} elegir={setVista} />}
         </nav>
+        {estado.tipo === "listo" && <p className={css.pie}>{t("versionApp", { version: estado.info.version })}</p>}
       </aside>
       <main className={css.contenido}>
-        {vista === "instalaciones" && <Instalaciones />}
+        {vista === "personajes" && <Personajes />}
         {vista === "acercaDe" && estado.tipo === "listo" && <AcercaDe info={estado.info} />}
       </main>
     </div>
@@ -66,6 +66,31 @@ function BotonVista({
       <Icono aria-hidden size={18} strokeWidth={1.75} />
       {t(`nav.${vista}`)}
     </button>
+  );
+}
+
+/** Id del degradado del emblema: sale una sola vez en la ventana, así que basta uno fijo. */
+const DEGRADADO = "emblema-oro";
+
+/** Emblema propio de la app: un escudo con un galón. Dibujo original, nada de material de Blizzard. */
+function Emblema() {
+  return (
+    <svg className={css.emblema} width="34" height="34" viewBox="0 0 34 34" aria-hidden>
+      <defs>
+        <linearGradient id={DEGRADADO} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" className={css.emblemaAlto} />
+          <stop offset="1" className={css.emblemaBajo} />
+        </linearGradient>
+      </defs>
+      <path d="M17 2 L30 8 V17 C30 25 24 30 17 32 C10 30 4 25 4 17 V8 Z" stroke={`url(#${DEGRADADO})`} strokeWidth="2" />
+      <path
+        d="M11 13 L17 23 L23 13"
+        stroke={`url(#${DEGRADADO})`}
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
