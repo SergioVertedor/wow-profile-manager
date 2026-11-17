@@ -7,8 +7,10 @@ ordenador, elige qué importar y a qué personaje suyo aplicarlo. Antes de
 escribir, la app hace backup y muestra la vista previa de los cambios; después
 permite deshacer.
 
-> **Estado: Fase 1 (investigación).** Aún no hay código de la aplicación. El
-> stack (Tauri 2 + Rust + React como primera candidata) **no está decidido**.
+> **Estado: Fase 2 (diseño técnico).** Aún no hay código de la aplicación.
+> Stack decidido: Tauri 2 + Rust, con `full_moon` para leer y escribir las
+> `SavedVariables`. Lo medido en la Fase 1 está en
+> [`docs/compatibilidad-wow-forever.md`](docs/compatibilidad-wow-forever.md).
 
 ## Desarrollo
 
