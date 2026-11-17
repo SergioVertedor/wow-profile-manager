@@ -77,8 +77,20 @@ para no tocar al resto de personajes de esa cuenta.
 
 ### Categorías
 
-`macros`, `teclas`, `teclas-clic`, `opciones`, `chat`, `ventanas`, `modo-edicion`, `addons-activos`,
-`config-addon` y `marcos-banda`. Una versión menor puede añadir más (por ejemplo, barras de acción).
+Una versión menor puede añadir más (por ejemplo, barras de acción).
+
+| categoría | tipo | `destino` |
+|---|---|---|
+| `macros` | `fichero` | `personaje/macros-cache.txt` o `cuenta/macros-cache.txt` (macros generales) |
+| `teclas` | `fichero` | `personaje/bindings-cache.wtf` (también si en el origen eran de cuenta) |
+| `teclas-clic` | `fichero` | `personaje/click-bindings-cache.txt` |
+| `opciones` | `fichero-filtrado` | `personaje/config-cache.wtf` o `cuenta/config-cache.wtf` |
+| `chat` | `fichero-filtrado` | `personaje/chat-cache.txt` |
+| `ventanas` | `fichero` | `personaje/layout-local.txt` |
+| `modo-edicion` | `fichero` (qué diseño usa) y `adaptador` `modo-edicion` (el diseño) | `personaje/edit-mode-cache-character.txt` y `cuenta/edit-mode-cache-account.txt` |
+| `addons-activos` | `fichero-filtrado` | `personaje/AddOns.txt` |
+| `config-addon` | `perfil-acedb`, `fichero` o `adaptador` | `cuenta/SavedVariables/<addon>.lua` o `personaje/SavedVariables/<addon>.lua` |
+| `marcos-banda` | `fichero` | `personaje/CUFProfiles.txt` |
 
 ### Tipos de entrada
 
