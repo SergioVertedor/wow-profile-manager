@@ -33,8 +33,17 @@ const FOREVER: VersionJuego = {
         carpeta: "1#1",
         reinosIgnorados: 2,
         personajes: [
-          { carpetaReino: "93", carpetaPersonaje: "Goldberg-Joestar" },
-          { carpetaReino: "93", carpetaPersonaje: "Goldberg-Sp" },
+          {
+            carpetaReino: "93",
+            carpetaPersonaje: "Goldberg-Joestar",
+            nombreEnDatos: { texto: "Goldberg Joestar", origen: "datos" },
+          },
+          {
+            carpetaReino: "93",
+            carpetaPersonaje: "Goldberg-Sp",
+            nombreEnDatos: { texto: "Goldberg Sp", origen: "carpeta" },
+          },
+          { carpetaReino: "93", carpetaPersonaje: "Goldber8D31D", nombreEnDatos: null },
         ],
       },
     ],
@@ -59,12 +68,13 @@ describe("Instalaciones", () => {
     expect(await screen.findByText("WoW Forever · _forever_")).toBeDefined();
     expect(screen.getByText("Encontrada en el registro de Windows")).toBeDefined();
     expect(screen.getByText("Build 1.60.1.70938")).toBeDefined();
-    expect(screen.getByText("Cuenta 1#1 · 2 personajes")).toBeDefined();
+    expect(screen.getByText("Cuenta 1#1 · 3 personajes")).toBeDefined();
     expect(screen.getByText("1 carpeta de WTF/Account no es una cuenta y se ha saltado.")).toBeDefined();
     expect(screen.getByText("2 carpetas de reino son de la otra versión del juego y se han saltado.")).toBeDefined();
     expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
-      "Goldberg-Joestar · 93",
-      "Goldberg-Sp · 93",
+      "Goldberg Joestar · 93/Goldberg-Joestar",
+      "Goldberg Sp (deducido de la carpeta) · 93/Goldberg-Sp",
+      "93/Goldber8D31D · nombre sin resolver",
     ]);
   });
 

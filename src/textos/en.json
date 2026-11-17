@@ -24,7 +24,11 @@
     "cuenta_other": "Account {{carpeta}} · {{count}} characters",
     "reinosIgnorados_one": "{{count}} realm folder belongs to the other game version and was skipped.",
     "reinosIgnorados_other": "{{count}} realm folders belong to the other game version and were skipped.",
-    "personaje": "{{personaje}} · {{reino}}",
+    "personaje": {
+      "datos": "{{nombre}} · {{carpeta}}",
+      "carpeta": "{{nombre}} (guessed from the folder) · {{carpeta}}",
+      "sinResolver": "{{carpeta}} · name not resolved"
+    },
     "addons_one": "{{count}} addon installed",
     "addons_other": "{{count}} addons installed",
     "addonsIgnorados_one": "{{count}} folder in Interface/AddOns has no .toc the game loads and was skipped.",

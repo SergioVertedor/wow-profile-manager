@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-import { pedirInstalaciones, type Addon, type Cuenta, type Instalacion, type VersionJuego } from "./nucleo";
+import { pedirInstalaciones, type Addon, type Cuenta, type Instalacion, type Personaje, type VersionJuego } from "./nucleo";
 import { mensajeDeError } from "./textos/errores";
 
 type Estado =
@@ -75,13 +75,20 @@ function BloqueCuenta({ cuenta }: Readonly<{ cuenta: Cuenta }>) {
       )}
       <ul>
         {cuenta.personajes.map((p) => (
-          <li key={`${p.carpetaReino}/${p.carpetaPersonaje}`}>
-            {t("instalaciones.personaje", { personaje: p.carpetaPersonaje, reino: p.carpetaReino })}
-          </li>
+          <li key={`${p.carpetaReino}/${p.carpetaPersonaje}`}>{textoDePersonaje(t, p)}</li>
         ))}
       </ul>
     </section>
   );
+}
+
+/** El nombre en los datos y su carpeta; si se dedujo de la carpeta o no se resolvió, lo dice. */
+function textoDePersonaje(t: TFunction, personaje: Personaje): string {
+  const carpeta = `${personaje.carpetaReino}/${personaje.carpetaPersonaje}`;
+  const nombre = personaje.nombreEnDatos;
+  return nombre === null
+    ? t("instalaciones.personaje.sinResolver", { carpeta })
+    : t(`instalaciones.personaje.${nombre.origen}`, { nombre: nombre.texto, carpeta });
 }
 
 /** Plegado: una versión puede traer más de 100 addons. */

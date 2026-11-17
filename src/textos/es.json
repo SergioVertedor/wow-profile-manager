@@ -24,7 +24,11 @@
     "cuenta_other": "Cuenta {{carpeta}} · {{count}} personajes",
     "reinosIgnorados_one": "{{count}} carpeta de reino es de la otra versión del juego y se ha saltado.",
     "reinosIgnorados_other": "{{count}} carpetas de reino son de la otra versión del juego y se han saltado.",
-    "personaje": "{{personaje}} · {{reino}}",
+    "personaje": {
+      "datos": "{{nombre}} · {{carpeta}}",
+      "carpeta": "{{nombre}} (deducido de la carpeta) · {{carpeta}}",
+      "sinResolver": "{{carpeta}} · nombre sin resolver"
+    },
     "addons_one": "{{count}} addon instalado",
     "addons_other": "{{count}} addons instalados",
     "addonsIgnorados_one": "{{count}} carpeta de Interface/AddOns no tiene un .toc que el juego cargue y se ha saltado.",

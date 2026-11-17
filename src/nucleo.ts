@@ -64,10 +64,11 @@ export interface Cuenta {
   reinosIgnorados: number;
 }
 
-/** La identidad es la carpeta; el nombre del personaje desde los datos llega con #37. */
+/** La identidad es la carpeta. `nombreEnDatos` es `null` si no se pudo resolver: nunca se inventa. */
 export interface Personaje {
   carpetaReino: string;
   carpetaPersonaje: string;
+  nombreEnDatos: { texto: string; origen: "datos" | "carpeta" } | null;
 }
 
 export function pedirInstalaciones(): Promise<Instalacion[]> {

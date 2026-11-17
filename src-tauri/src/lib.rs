@@ -3,6 +3,7 @@
 
 mod addons;
 mod bpsv;
+mod claves_personaje;
 mod descubrimiento;
 mod deteccion;
 mod disco;

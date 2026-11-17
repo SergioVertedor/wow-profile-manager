@@ -31,6 +31,32 @@ pub fn subcarpetas(carpeta: &Path) -> Result<Vec<Subcarpeta>, ErrorNucleo> {
     Ok(resultado)
 }
 
+/// Ficheros directos de `carpeta` con esa extensión (sin distinguir mayúsculas), ordenados por ruta. Si la carpeta
+/// no existe, no hay ficheros.
+pub fn ficheros_con_extension(
+    carpeta: &Path,
+    extension: &str,
+) -> Result<Vec<PathBuf>, ErrorNucleo> {
+    if !carpeta.is_dir() {
+        return Ok(Vec::new());
+    }
+    let entradas = std::fs::read_dir(carpeta).map_err(|e| ErrorNucleo::lectura(carpeta, &e))?;
+    let mut resultado = Vec::new();
+    for entrada in entradas {
+        let ruta = entrada
+            .map_err(|e| ErrorNucleo::lectura(carpeta, &e))?
+            .path();
+        let coincide = ruta
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case(extension));
+        if coincide && ruta.is_file() {
+            resultado.push(ruta);
+        }
+    }
+    resultado.sort();
+    Ok(resultado)
+}
+
 /// Lee un fichero de texto si existe. Los bytes que no son UTF-8 se sustituyen: estos ficheros son ASCII y basta
 /// con no fallar si alguno no lo es.
 pub fn leer_texto(ruta: &Path) -> Result<Option<String>, ErrorNucleo> {

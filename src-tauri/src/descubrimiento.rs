@@ -2,10 +2,12 @@
 //! `docs/modelo-de-datos.md`. Solo lee. Lo que no encaja en las reglas no se lista, pero se cuenta, para que un
 //! error de regla se note.
 
+use crate::claves_personaje::claves_de_personaje;
 use crate::deteccion::Producto;
 use crate::disco::subcarpetas;
 use crate::error::ErrorNucleo;
 use serde::Serialize;
+use std::collections::HashSet;
 use std::path::Path;
 
 /// Carpeta de cada cuenta y de cada personaje que guarda `SavedVariables` y no es un reino.
@@ -30,12 +32,29 @@ pub struct Cuenta {
 }
 
 /// La identidad de un personaje es su carpeta (cuenta, reino y personaje), nunca su nombre: el nombre de la
-/// carpeta no siempre es el del personaje (`Goldber8D31D`). El nombre desde los datos llega con #37.
+/// carpeta no siempre es el del personaje (`Goldber8D31D`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Personaje {
     pub carpeta_reino: String,
     pub carpeta_personaje: String,
+    /// Cómo se llama en los `SavedVariables`. `None`: sin resolver; se preguntará, nunca se inventa.
+    pub nombre_en_datos: Option<NombreResuelto>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NombreResuelto {
+    pub texto: String,
+    pub origen: OrigenNombre,
+}
+
+/// `Datos`: la clave existe en los `SavedVariables` de la cuenta. `Carpeta`: deducido de la carpeta, sin confirmar.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OrigenNombre {
+    Datos,
+    Carpeta,
 }
 
 /// Descubre las cuentas de `carpeta_account` (`<versión>/WTF/Account`). Si no existe, no hay cuentas.
@@ -53,6 +72,7 @@ pub fn descubrir(carpeta_account: &Path, producto: Producto) -> Result<Cuentas, 
 }
 
 fn leer_cuenta(carpeta: String, ruta: &Path, producto: Producto) -> Result<Cuenta, ErrorNucleo> {
+    let claves = claves_de_personaje(&ruta.join(CARPETA_SAVED_VARIABLES))?;
     let mut personajes = Vec::new();
     let mut reinos_ignorados = 0;
     for reino in subcarpetas(ruta)? {
@@ -65,6 +85,12 @@ fn leer_cuenta(carpeta: String, ruta: &Path, producto: Producto) -> Result<Cuent
         }
         for personaje in subcarpetas(&reino.ruta)? {
             personajes.push(Personaje {
+                nombre_en_datos: resolver_nombre(
+                    &reino.nombre,
+                    &personaje.nombre,
+                    producto,
+                    &claves,
+                ),
                 carpeta_reino: reino.nombre.clone(),
                 carpeta_personaje: personaje.nombre,
             });
@@ -74,6 +100,35 @@ fn leer_cuenta(carpeta: String, ruta: &Path, producto: Producto) -> Result<Cuent
         carpeta,
         personajes,
         reinos_ignorados,
+    })
+}
+
+/// Orden de `docs/modelo-de-datos.md`: el candidato de la carpeta, confirmado si es una clave de los datos.
+fn resolver_nombre(
+    carpeta_reino: &str,
+    carpeta_personaje: &str,
+    producto: Producto,
+    claves: &HashSet<String>,
+) -> Option<NombreResuelto> {
+    let texto = candidato(carpeta_reino, carpeta_personaje, producto)?;
+    let origen = if claves.contains(&texto) {
+        OrigenNombre::Datos
+    } else {
+        OrigenNombre::Carpeta
+    };
+    Some(NombreResuelto { texto, origen })
+}
+
+/// Cómo se llamaría en los datos según su carpeta: Forever `Nombre-Apellido` → `"Nombre Apellido"` [V], Retail
+/// `"Nombre - Reino"` [V]. Una carpeta con cifras lleva el final del GUID (`Goldber8D31D`) [V] y los nombres de WoW
+/// no llevan cifras [I]: de ella no sale ningún nombre.
+fn candidato(carpeta_reino: &str, carpeta_personaje: &str, producto: Producto) -> Option<String> {
+    if carpeta_personaje.chars().any(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    Some(match producto {
+        Producto::Forever => carpeta_personaje.replace('-', " "),
+        Producto::Retail => format!("{carpeta_personaje} - {carpeta_reino}"),
     })
 }
 
@@ -108,11 +163,29 @@ mod tests {
         }
     }
 
-    fn personaje(reino: &str, nombre: &str) -> Personaje {
+    fn personaje(reino: &str, carpeta: &str, nombre: Option<(&str, OrigenNombre)>) -> Personaje {
         Personaje {
             carpeta_reino: reino.into(),
-            carpeta_personaje: nombre.into(),
+            carpeta_personaje: carpeta.into(),
+            nombre_en_datos: nombre.map(|(texto, origen)| NombreResuelto {
+                texto: texto.into(),
+                origen,
+            }),
         }
+    }
+
+    fn acedb(raiz: &Path, cuenta: &str, claves: &[&str]) {
+        let campos: String = claves
+            .iter()
+            .map(|c| format!("[\"{c}\"] = \"Default\", "))
+            .collect();
+        let carpeta = raiz.join(cuenta).join(CARPETA_SAVED_VARIABLES);
+        create_dir_all(&carpeta).unwrap();
+        std::fs::write(
+            carpeta.join("Plater.lua"),
+            format!("PlaterDB = {{ profileKeys = {{ {campos} }}, profiles = {{}} }}"),
+        )
+        .unwrap();
     }
 
     #[test]
@@ -131,6 +204,11 @@ mod tests {
             ],
         );
         std::fs::write(tmp.path().join("1#1/macros-cache.txt"), "").unwrap();
+        acedb(
+            tmp.path(),
+            "1#1",
+            &["Goldberg Joestar", "Maxander - Dun Modr"],
+        );
 
         let resultado = descubrir(tmp.path(), Producto::Forever).unwrap();
 
@@ -142,8 +220,16 @@ mod tests {
         assert_eq!(
             cuenta.personajes,
             [
-                personaje("93", "Earthcaller-Goldberg"),
-                personaje("93", "Goldberg-Joestar")
+                personaje(
+                    "93",
+                    "Earthcaller-Goldberg",
+                    Some(("Earthcaller Goldberg", OrigenNombre::Carpeta))
+                ),
+                personaje(
+                    "93",
+                    "Goldberg-Joestar",
+                    Some(("Goldberg Joestar", OrigenNombre::Datos))
+                )
             ]
         );
     }
@@ -159,6 +245,11 @@ mod tests {
                 "2#3/93/Goldberg-Joestar",
             ],
         );
+        acedb(
+            tmp.path(),
+            "2#3",
+            &["Gøldberg - C'Thun", "Gøldberg - Sanguino"],
+        );
 
         let cuenta = &descubrir(tmp.path(), Producto::Retail).unwrap().cuentas[0];
 
@@ -166,8 +257,12 @@ mod tests {
         assert_eq!(
             cuenta.personajes,
             [
-                personaje("C'Thun", "Gøldberg"),
-                personaje("Sanguino", "Goldber8D31D")
+                personaje(
+                    "C'Thun",
+                    "Gøldberg",
+                    Some(("Gøldberg - C'Thun", OrigenNombre::Datos))
+                ),
+                personaje("Sanguino", "Goldber8D31D", None)
             ]
         );
     }
@@ -195,8 +290,17 @@ mod tests {
 
     #[test]
     fn se_serializa_en_camel_case() {
-        let json = serde_json::to_value(personaje("93", "Goldberg-Joestar")).unwrap();
+        let json = serde_json::to_value(personaje(
+            "93",
+            "Goldberg-Joestar",
+            Some(("Goldberg Joestar", OrigenNombre::Datos)),
+        ))
+        .unwrap();
         assert_eq!(json["carpetaReino"], "93");
         assert_eq!(json["carpetaPersonaje"], "Goldberg-Joestar");
+        assert_eq!(json["nombreEnDatos"]["texto"], "Goldberg Joestar");
+        assert_eq!(json["nombreEnDatos"]["origen"], "datos");
+        let sin = serde_json::to_value(personaje("Sanguino", "Bison2D457", None)).unwrap();
+        assert!(sin["nombreEnDatos"].is_null());
     }
 }
