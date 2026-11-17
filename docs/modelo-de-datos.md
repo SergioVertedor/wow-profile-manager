@@ -30,7 +30,7 @@ classDiagram
     PlanImportacion "1" *-- "0..*" Cambio
     PlanImportacion "1" *-- "0..*" Aviso
     Operacion --> PlanImportacion : ejecuta
-    Operacion "1" *-- "1" Backup
+    Operacion "1" *-- "0..*" Copia
 
     class Instalacion {
       raiz
@@ -64,8 +64,8 @@ classDiagram
       bloqueos
     }
     class Operacion {
-      fecha
-      resultado
+      creada
+      estado
     }
 ```
 
@@ -219,12 +219,13 @@ Es lo único que escribe:
 
 | campo | qué es |
 |---|---|
-| `fecha`, `destino`, `paquete` | qué se importó, dónde y cuándo (nombre del perfil, no el fichero) |
-| `backup` | por cada fichero tocado: su contenido anterior y su hash, o «no existía» |
-| `resultado` | `completa` o `fallida-restaurada` |
+| `creada`, `destino`, `paquete` | cuándo, dónde y qué se importó (nombre del perfil y hash del fichero) |
+| `cambios` | por cada fichero tocado: `antes` (su copia y su hash, o «no existía») y `despues` |
+| `estado` | `completa`, `deshecha`, `fallida-restaurada`… (lista completa en [`flujos.md`](flujos.md#estados)) |
 
-**Deshacer** restaura el backup de una operación. Antes comprueba que los ficheros siguen con el hash que dejó
-la operación. Si el juego los ha cambiado desde entonces, lo avisa y deja elegir.
+**Deshacer** restaura el backup de una operación, y es a su vez otra operación. Antes compara los ficheros con el
+hash que dejó la operación. Lo normal es que no coincidan, porque el juego los reescribe al salir: la app lo
+explica y deja elegir.
 
-Dónde se guardan las operaciones y los backups (SQLite o ficheros) se decide aparte, dentro de la carpeta de
-datos de la app.
+Las operaciones y sus backups se guardan como ficheros, una carpeta por operación, dentro de la carpeta de datos
+de la app. El detalle, el orden de escritura y el historial están en [`flujos.md`](flujos.md).
