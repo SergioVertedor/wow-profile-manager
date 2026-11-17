@@ -7,6 +7,32 @@ con [`adaptador.schema.json`](adaptador.schema.json). Las piezas que produce son
 
 Marcas: **[V]** verificado, **[I]** inferencia, **[H]** hipótesis.
 
+## Qué es AceDB
+
+AceDB-3.0 es una librería de la colección Ace3 que muchos addons llevan dentro para guardar su configuración.
+Organiza los `SavedVariables` del addon en **perfiles con nombre**, y por eso se puede llevar la configuración de
+un personaje a otro sin conocer el addon:
+
+```lua
+DominosDB = {
+  ["profileKeys"] = {                       -- qué perfil usa cada personaje
+    ["Nombre Apellido"] = "Default",
+    ["Otro Personaje"] = "Tanque",
+  },
+  ["profiles"] = {                          -- la configuración de cada perfil
+    ["Default"] = { --[[ barras, posiciones, opciones… ]] },
+    ["Tanque"] = { --[[ … ]] },
+  },
+  ["char"] = {                              -- estado de cada personaje: no viaja
+    ["Nombre Apellido"] = { --[[ … ]] },
+  },
+}
+```
+
+Exportar = copiar el perfil que usa el personaje (`profiles["Default"]`). Importar = añadirlo al fichero del
+destino y apuntar **solo** el `profileKeys` del personaje destino a ese perfil. Los demás personajes del destino
+no se enteran [V: probado en el juego].
+
 ## Por qué hacen falta
 
 Medido en una instalación de Forever, con 45 addons que guardan datos [V]:
@@ -23,9 +49,13 @@ Medido en una instalación de Forever, con 45 addons que guardan datos [V]:
 
 ## Orden de decisión
 
+La app sirve para **cualquier addon**, también los que nadie ha mirado nunca: las reglas 2 a 5 son genéricas y
+no necesitan adaptador. Los adaptadores escritos (regla 1) son solo las **excepciones**: addons en los que las
+reglas genéricas se equivocarían, por ejemplo porque llevan progreso o datos de otros jugadores.
+
 Para cada addon con datos, se usa lo primero que aplique:
 
-1. **Adaptador del catálogo** con ese `addon`.
+1. **Adaptador escrito** para ese `addon`.
 2. **AceDB detectado**: la variable de cuenta tiene `profileKeys` y `profiles`. Viaja el perfil que usa el
    personaje (`perfil-acedb`).
 3. **Genérico de cuenta**: fichero de cuenta que no menciona a ningún personaje de la cuenta. Viaja entero, pero
@@ -33,11 +63,14 @@ Para cada addon con datos, se usa lo primero que aplique:
    acepta.
 4. **Genérico por personaje**: fichero por personaje sin adaptador. Se ofrece **desmarcado** y con el aviso
    «puede incluir progreso o datos de otros jugadores».
-5. **Sin adaptador**: fichero de cuenta que menciona personajes y no es AceDB. No se ofrece; la app lo lista como
-   «sin adaptador».
+5. **Genérico de cuenta con personajes**: fichero de cuenta que menciona personajes y no es AceDB. Se ofrece
+   entero, **desmarcado**, con el aviso «puede llevar progreso o datos de otros personajes, y afecta a todos los
+   personajes de la cuenta del destino». Si el usuario lo marca, la app enseña qué sobrescribe y pide
+   confirmación.
 
-**Regla dura:** ningún adaptador del catálogo incluye datos de otros jugadores (nombres, GUID, conversaciones,
-listas de enemigos o de compañeros de grupo).
+**Regla dura:** ningún adaptador escrito incluye datos de otros jugadores (nombres, GUID, conversaciones, listas
+de enemigos o de compañeros de grupo). Las reglas genéricas 4 y 5 no pueden garantizarlo, y por eso van
+desmarcadas y con aviso: decide el usuario.
 
 ## Cómo se escribe un adaptador
 
@@ -84,9 +117,10 @@ listas de enemigos o de compañeros de grupo).
 - Si la versión instalada del addon no está en `versionesAddon`, la entrada se ofrece desmarcada y con aviso.
 - Los ficheros se leen y se escriben como datos (Lua sin ejecutar), con cambios mínimos.
 
-## Catálogo inicial
+## Adaptadores escritos (excepciones medidas)
 
-Medido el 2026-11-17 en Forever 1.60.1. La clasificación de cada clave como preferencia o estado es **[I]**
+Addons en los que las reglas genéricas se equivocarían, medidos el 2026-11-17 en Forever 1.60.1. La lista
+crece con cada addon que se mida (los populares, en la Fase 5) y con los que proponga cualquiera por PR. La clasificación de cada clave como preferencia o estado es **[I]**
 salvo que se diga otra cosa: se lee el nombre y el contenido, no el código del addon.
 
 ### ForeverDungeonJournal
@@ -281,4 +315,4 @@ app, `modo-edicion`, porque no se puede describir con rutas de tabla. Su formato
 
 - Adaptadores de addons populares no medidos aquí (WeakAuras, Plater, Details!, Baganator, Questie, Bartender4,
   TradeSkillMaster…).
-- Comprobar en el juego cada adaptador del catálogo, como se hizo con AceDB.
+- Comprobar en el juego cada adaptador escrito, como se hizo con AceDB.
