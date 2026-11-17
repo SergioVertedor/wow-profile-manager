@@ -25,7 +25,20 @@ permite deshacer.
 git clone https://github.com/SergioVertedor/wow-profile-manager.git
 cd wow-profile-manager
 git switch develop
+npm ci
 ```
+
+Requisitos (Windows): [Node.js](https://nodejs.org/) 24, [Rust](https://rustup.rs/) estable y las
+[herramientas de compilación de C++ de Visual Studio](https://tauri.app/start/prerequisites/). WebView2 ya viene
+con Windows 11.
+
+| qué | comando |
+|---|---|
+| Arrancar en modo desarrollo | `npm run tauri dev` |
+| Interfaz: tipos, linter y tests | `npm run typecheck`, `npm run lint`, `npm test` |
+| Núcleo: formato, linter y tests (en `src-tauri/`) | `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test` |
+
+La CI corre todo eso en Windows en cada PR.
 
 ## Flujo
 
