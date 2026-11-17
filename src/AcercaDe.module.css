@@ -1,0 +1,52 @@
+/* Acerca de: un solo marco de lectura y el aviso de marca debajo, discreto pero visible. */
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  max-width: var(--ancho-lectura);
+}
+
+.titulo {
+  color: var(--color-oro);
+  font-size: var(--texto-l);
+}
+
+.pergamino {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  max-width: var(--ancho-texto);
+  padding: var(--espacio-6);
+  background: var(--color-pizarra);
+  border: var(--borde-marco);
+  border-radius: var(--radio-marco);
+  box-shadow: var(--sombra-marco);
+}
+
+.version {
+  color: var(--color-oro);
+  font-family: var(--fuente-titulo);
+  font-size: var(--texto-m);
+}
+
+.koFi {
+  display: flex;
+  gap: var(--espacio-2);
+  align-items: baseline;
+}
+
+.koFi svg {
+  flex: none;
+  align-self: center;
+  color: var(--color-oro);
+}
+
+.alerta {
+  color: var(--color-alerta);
+}
+
+.marca {
+  max-width: var(--ancho-texto);
+  color: var(--color-pergamino-tenue);
+  font-size: var(--texto-pequeno);
+}

@@ -1,0 +1,72 @@
+/* Armazón: barra lateral (como las pestañas de un libro de hechizos) y contenido con su propio scroll. */
+.armazon {
+  display: grid;
+  grid-template-columns: var(--ancho-barra) 1fr;
+  height: 100%;
+}
+
+.barra {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-6);
+  padding: var(--espacio-6) 0;
+  background: linear-gradient(180deg, var(--color-pizarra) 0%, var(--color-abismo) 100%);
+  border-right: var(--borde-marco);
+  box-shadow: inset -1px 0 0 var(--color-sombra);
+}
+
+.marca {
+  padding: 0 var(--espacio-4);
+}
+
+.titulo {
+  color: var(--color-oro);
+  font-size: var(--texto-m);
+  font-weight: 700;
+}
+
+.secundario {
+  color: var(--color-pergamino-tenue);
+  font-size: var(--texto-pequeno);
+}
+
+.alerta {
+  color: var(--color-alerta);
+  font-size: var(--texto-pequeno);
+}
+
+.navegacion {
+  display: flex;
+  flex-direction: column;
+}
+
+.pestana {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  padding: var(--espacio-2) var(--espacio-4);
+  border: 0;
+  border-left: 3px solid transparent;
+  background: none;
+  color: var(--color-pergamino-tenue);
+  font-size: var(--texto-base);
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--duracion), background-color var(--duracion);
+}
+
+.pestana:hover {
+  color: var(--color-pergamino);
+  background: var(--color-pizarra-alta);
+}
+
+.pestana[aria-pressed="true"] {
+  border-left-color: var(--color-oro);
+  background: var(--color-pizarra-alta);
+  color: var(--color-oro);
+}
+
+.contenido {
+  overflow-y: auto;
+  padding: var(--espacio-8);
+}

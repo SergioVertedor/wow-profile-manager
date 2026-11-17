@@ -1,0 +1,84 @@
+/* Base global: fuentes empaquetadas, fondo, foco visible y movimiento reducido. Los componentes usan CSS Modules. */
+@import "@fontsource/alegreya-sans/400.css";
+@import "@fontsource/alegreya-sans/500.css";
+@import "@fontsource/alegreya-sans/700.css";
+@import "@fontsource/alegreya-sc/500.css";
+@import "@fontsource/alegreya-sc/700.css";
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: radial-gradient(ellipse at 30% 0%, var(--color-pizarra) 0%, var(--color-abismo) 60%) fixed,
+    var(--color-abismo);
+  color: var(--color-pergamino);
+  font-family: var(--fuente-texto);
+  font-size: var(--texto-base);
+  line-height: var(--interlineado);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  margin: 0;
+  font-family: var(--fuente-titulo);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--color-oro);
+  text-underline-offset: 0.2em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-oro);
+  outline-offset: 2px;
+}
+
+/* WebView2 es Chromium: barra de desplazamiento fina, a juego con los marcos. */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-abismo);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-oro-tenue);
+  border: 2px solid var(--color-abismo);
+  border-radius: 5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

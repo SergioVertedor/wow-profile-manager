@@ -3,6 +3,7 @@
   "cabecera": "{{nombre}} {{version}}",
   "errorNucleo": "No se pudo contactar con el núcleo: {{mensaje}}",
   "nav": {
+    "etiqueta": "Vistas",
     "instalaciones": "Instalaciones",
     "acercaDe": "Acerca de"
   },
@@ -25,15 +26,27 @@
     "reinosIgnorados_one": "{{count}} carpeta de reino es de la otra versión del juego y se ha saltado.",
     "reinosIgnorados_other": "{{count}} carpetas de reino son de la otra versión del juego y se han saltado.",
     "personaje": {
-      "datos": "{{nombre}} · {{carpeta}}",
-      "carpeta": "{{nombre}} (deducido de la carpeta) · {{carpeta}}",
-      "sinResolver": "{{carpeta}} · nombre sin resolver"
+      "datos": "<nombre/> · {{carpeta}}",
+      "carpeta": "<nombre/> (deducido de la carpeta) · {{carpeta}}",
+      "sinResolver": "{{carpeta}} · <nombre>nombre sin resolver</nombre>"
     },
     "addons_one": "{{count}} addon instalado",
     "addons_other": "{{count}} addons instalados",
     "addonsIgnorados_one": "{{count}} carpeta de Interface/AddOns no tiene un .toc que el juego cargue y se ha saltado.",
     "addonsIgnorados_other": "{{count}} carpetas de Interface/AddOns no tienen un .toc que el juego cargue y se han saltado.",
     "addon": "{{titulo}} · {{version}}"
+  },
+  "marco": {
+    "etiqueta": "Ficha del personaje",
+    "vacio": "Elige un personaje de la lista para ver su ficha.",
+    "origen": {
+      "datos": "Nombre confirmado en los datos del juego",
+      "carpeta": "Nombre deducido de la carpeta",
+      "sinResolver": "Nombre sin resolver: solo se conoce la carpeta"
+    },
+    "version": "Versión",
+    "cuenta": "Cuenta",
+    "carpeta": "Carpeta"
   },
   "acercaDe": {
     "titulo": "Acerca de",

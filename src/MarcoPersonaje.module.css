@@ -1,0 +1,129 @@
+/* El marco del personaje: doble borde dorado con remaches en las esquinas, como las ventanas del juego. */
+.marco {
+  --calidad-marca: var(--color-oro-tenue);
+
+  position: sticky;
+  top: var(--espacio-2);
+  z-index: 1;
+  display: flex;
+  gap: var(--espacio-6);
+  align-items: center;
+  margin: 0 0 var(--espacio-8);
+  padding: var(--espacio-6);
+  background: linear-gradient(180deg, var(--color-pizarra-alta) 0%, var(--color-pizarra) 100%);
+  border: 1px solid var(--color-oro);
+  border-radius: var(--radio-marco);
+  outline: 1px solid var(--color-oro-tenue);
+  outline-offset: 3px;
+  box-shadow: var(--sombra-marco);
+  animation: aparecer var(--duracion) ease-out;
+}
+
+/* Remaches: dos rombos dorados en las esquinas superiores. */
+.marco::before,
+.marco::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  width: 8px;
+  height: 8px;
+  background: var(--color-oro);
+  transform: rotate(45deg);
+}
+
+.marco::before {
+  left: -5px;
+}
+
+.marco::after {
+  right: -5px;
+}
+
+.marco[data-calidad="raro"] {
+  --calidad-marca: var(--calidad-raro);
+}
+
+.marco[data-calidad="pocoComun"] {
+  --calidad-marca: var(--calidad-poco-comun);
+}
+
+.marco[data-calidad="pobre"] {
+  --calidad-marca: var(--calidad-pobre);
+}
+
+.vacio {
+  justify-content: center;
+  min-height: 8rem;
+  color: var(--color-pergamino-tenue);
+  font-style: italic;
+  animation: none;
+}
+
+.retrato {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 6rem;
+  height: 6rem;
+  border: 3px solid var(--color-oro);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--color-pizarra-alta) 0%, var(--color-abismo) 75%);
+  box-shadow: 0 0 0 3px var(--calidad-marca), inset 0 0 12px var(--color-sombra-honda);
+  color: var(--color-oro);
+  font-family: var(--fuente-titulo);
+  font-size: var(--texto-xl);
+  font-weight: 700;
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+  min-width: 0;
+}
+
+.nombre {
+  font-size: var(--texto-xl);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.nombre[data-calidad="raro"] {
+  color: var(--calidad-raro-texto);
+}
+
+.nombre[data-calidad="pocoComun"] {
+  color: var(--calidad-poco-comun);
+}
+
+.nombre[data-calidad="pobre"] {
+  color: var(--calidad-pobre);
+}
+
+.origen {
+  color: var(--color-pergamino-tenue);
+  font-size: var(--texto-pequeno);
+}
+
+.detalles {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 var(--espacio-4);
+  margin: var(--espacio-2) 0 0;
+}
+
+.detalles dt {
+  color: var(--color-pergamino-tenue);
+}
+
+.detalles dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
