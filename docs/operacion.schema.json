@@ -1,0 +1,503 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SergioVertedor/wow-profile-manager/blob/develop/docs/operacion.schema.json",
+  "title": "operacion.json, esquema 1",
+  "description": "Diario y backup de una operación que escribe en el WTF (importar o deshacer). Ver docs/flujos.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "esquema",
+    "id",
+    "tipo",
+    "creada",
+    "estado",
+    "destino",
+    "cambios"
+  ],
+  "properties": {
+    "esquema": {
+      "const": 1
+    },
+    "id": {
+      "$ref": "#/$defs/idOperacion"
+    },
+    "tipo": {
+      "enum": [
+        "importacion",
+        "deshacer"
+      ]
+    },
+    "creada": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "terminada": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "estado": {
+      "enum": [
+        "preparando",
+        "copiada",
+        "escribiendo",
+        "completa",
+        "deshecha",
+        "cancelada",
+        "fallida-restaurada",
+        "fallida-sin-restaurar"
+      ]
+    },
+    "deshace": {
+      "$ref": "#/$defs/idOperacion"
+    },
+    "deshechaPor": {
+      "$ref": "#/$defs/idOperacion"
+    },
+    "error": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "paquete": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nombre",
+        "sha256"
+      ],
+      "properties": {
+        "nombre": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "destino": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raizVersion",
+        "producto",
+        "cuenta",
+        "carpetaReino",
+        "carpetaPersonaje"
+      ],
+      "properties": {
+        "raizVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "producto": {
+          "enum": [
+            "wowf",
+            "wow"
+          ]
+        },
+        "cuenta": {
+          "type": "string",
+          "pattern": "^[0-9]+#[0-9]+$",
+          "maxLength": 64
+        },
+        "carpetaReino": {
+          "$ref": "#/$defs/segmento"
+        },
+        "carpetaPersonaje": {
+          "$ref": "#/$defs/segmento"
+        },
+        "nombreEnDatos": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        }
+      }
+    },
+    "cambios": {
+      "type": "array",
+      "maxItems": 512,
+      "items": {
+        "$ref": "#/$defs/cambio"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "tipo": {
+            "const": "importacion"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "paquete"
+        ],
+        "not": {
+          "required": [
+            "deshace"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tipo": {
+            "const": "deshacer"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "deshace"
+        ],
+        "not": {
+          "required": [
+            "paquete"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "estado": {
+            "const": "deshecha"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "deshechaPor"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "deshechaPor"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "estado": {
+            "enum": [
+              "fallida-restaurada",
+              "fallida-sin-restaurar"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "error"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "estado": {
+            "enum": [
+              "completa",
+              "deshecha",
+              "cancelada",
+              "fallida-restaurada",
+              "fallida-sin-restaurar"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "terminada"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "terminada"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tipo": {
+            "const": "deshacer"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "cambios": {
+            "items": {
+              "properties": {
+                "accion": {
+                  "enum": [
+                    "restaurar",
+                    "borrar"
+                  ]
+                }
+              },
+              "not": {
+                "required": [
+                  "entrada"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "cambios": {
+            "items": {
+              "properties": {
+                "accion": {
+                  "enum": [
+                    "crear",
+                    "sobrescribir",
+                    "fusionar"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "idOperacion": {
+      "type": "string",
+      "pattern": "^[0-9]{8}-[0-9]{6}-[0-9a-f]{8}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "segmento": {
+      "description": "Un nombre de carpeta. Sin separadores ni caracteres prohibidos en Windows, sin punto o espacio final (excluye . y ..) y sin nombres de dispositivo.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "pattern": "^[^/\\:*?\"<>|]*[^/\\:*?\"<>|. ]$",
+      "not": {
+        "pattern": "^([Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][0-9]|[Ll][Pp][Tt][0-9])(\\..*)?$"
+      }
+    },
+    "ruta": {
+      "description": "Relativa a raizVersion, con / y siempre dentro de WTF/Account/. Mismas reglas que segmento en cada segmento.",
+      "type": "string",
+      "maxLength": 1024,
+      "pattern": "^WTF/Account/[^/\\:*?\"<>|]+(/[^/\\:*?\"<>|]+)+$",
+      "not": {
+        "anyOf": [
+          {
+            "pattern": "(^|/)[^/]*[. ](/|$)"
+          },
+          {
+            "pattern": "(^|/)([Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][0-9]|[Ll][Pp][Tt][0-9])(\\.[^/]*)?(/|$)"
+          }
+        ]
+      }
+    },
+    "cambio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ruta",
+        "accion",
+        "deCuenta",
+        "antes",
+        "despues"
+      ],
+      "properties": {
+        "ruta": {
+          "$ref": "#/$defs/ruta"
+        },
+        "accion": {
+          "enum": [
+            "crear",
+            "sobrescribir",
+            "fusionar",
+            "restaurar",
+            "borrar"
+          ]
+        },
+        "deCuenta": {
+          "type": "boolean"
+        },
+        "entrada": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+        },
+        "antes": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "existia"
+              ],
+              "properties": {
+                "existia": {
+                  "const": false
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "existia",
+                "sha256",
+                "bytes",
+                "copia"
+              ],
+              "properties": {
+                "existia": {
+                  "const": true
+                },
+                "sha256": {
+                  "$ref": "#/$defs/sha256"
+                },
+                "bytes": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "copia": {
+                  "type": "string",
+                  "pattern": "^copias/[0-9]{1,4}$"
+                }
+              }
+            }
+          ]
+        },
+        "despues": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "existe"
+              ],
+              "properties": {
+                "existe": {
+                  "const": false
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "existe",
+                "sha256",
+                "bytes"
+              ],
+              "properties": {
+                "existe": {
+                  "const": true
+                },
+                "sha256": {
+                  "$ref": "#/$defs/sha256"
+                },
+                "bytes": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "accion": {
+                "const": "crear"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "antes": {
+                "properties": {
+                  "existia": {
+                    "const": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "accion": {
+                "enum": [
+                  "sobrescribir",
+                  "fusionar"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "antes": {
+                "properties": {
+                  "existia": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "accion": {
+                "const": "borrar"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "despues": {
+                "properties": {
+                  "existe": {
+                    "const": false
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "despues": {
+                "properties": {
+                  "existe": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
