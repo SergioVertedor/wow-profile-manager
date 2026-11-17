@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { pedirInfoApp, textoCabecera, type InfoApp } from "./nucleo";
+import { useTranslation } from "react-i18next";
+import { pedirInfoApp, type InfoApp } from "./nucleo";
 
 type Estado =
   | { tipo: "cargando" }
@@ -7,6 +8,7 @@ type Estado =
   | { tipo: "error"; mensaje: string };
 
 function App() {
+  const { t } = useTranslation();
   const [estado, setEstado] = useState<Estado>({ tipo: "cargando" });
 
   useEffect(() => {
@@ -17,9 +19,11 @@ function App() {
 
   return (
     <main>
-      {estado.tipo === "cargando" && <p>Cargando…</p>}
-      {estado.tipo === "listo" && <h1>{textoCabecera(estado.info)}</h1>}
-      {estado.tipo === "error" && <p role="alert">No se pudo contactar con el núcleo: {estado.mensaje}</p>}
+      {estado.tipo === "cargando" && <p>{t("cargando")}</p>}
+      {estado.tipo === "listo" && (
+        <h1>{t("cabecera", { nombre: estado.info.nombre, version: estado.info.version })}</h1>
+      )}
+      {estado.tipo === "error" && <p role="alert">{t("errorNucleo", { mensaje: estado.mensaje })}</p>}
     </main>
   );
 }

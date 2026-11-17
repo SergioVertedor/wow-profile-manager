@@ -1,0 +1,5 @@
+{
+  "cargando": "Cargando…",
+  "cabecera": "{{nombre}} {{version}}",
+  "errorNucleo": "No se pudo contactar con el núcleo: {{mensaje}}"
+}
