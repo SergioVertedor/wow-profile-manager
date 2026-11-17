@@ -77,7 +77,8 @@ para no tocar al resto de personajes de esa cuenta.
 
 ### Categorías
 
-Una versión menor puede añadir más (por ejemplo, barras de acción).
+Una versión menor puede añadir más. El contenido de los botones de las barras de acción no será una: no está
+en ningún fichero, lo guarda el servidor.
 
 | categoría | tipo | `destino` |
 |---|---|---|

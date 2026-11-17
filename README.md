@@ -2,7 +2,9 @@
 
 Gestor de perfiles de configuración para **WoW Forever**, en Windows. Sirve para
 exportar la configuración de un personaje (addons, su configuración, macros,
-teclas y barras) a un único fichero `.wowprofile`. Otro jugador, en otro
+teclas y disposición de las barras) a un único fichero `.wowprofile`. Lo que hay
+dentro de cada botón no viaja: lo guarda el servidor del juego, y cada jugador
+coloca sus habilidades. Otro jugador, en otro
 ordenador, elige qué importar y a qué personaje suyo aplicarlo. Antes de
 escribir, la app hace backup y muestra la vista previa de los cambios; después
 permite deshacer.
