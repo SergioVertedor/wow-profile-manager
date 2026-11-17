@@ -28,3 +28,12 @@ git switch develop
 3. Implementar, con tests.
 4. PR a `develop`.
 5. Releases: `release/x.y.z` → `main` + tag.
+
+## Apoyar el proyecto
+
+Si te resulta útil, puedes invitarme a un café en [Ko-fi](https://ko-fi.com/tonotabidev).
+
+## Licencia
+
+[GNU GPL v3](LICENSE), con un término adicional de atribución (sección 7(b)): las versiones modificadas que se
+distribuyan deben mostrar en su interfaz el crédito al proyecto original. Detalles en [`NOTICE.md`](NOTICE.md).
