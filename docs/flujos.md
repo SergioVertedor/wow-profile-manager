@@ -20,8 +20,7 @@ Marcas: **[V]** verificado, **[I]** inferencia, **[H]** hipótesis.
 
 No escribe en `WTF` y no entra en el historial.
 
-1. **Origen.** El jugador elige versión del juego, cuenta y personaje. Los personajes `deOtraVersion` salen
-   aparte, con aviso.
+1. **Origen.** El jugador elige versión del juego, cuenta y personaje.
 2. **Lectura.** La app lee los ficheros del personaje y de su cuenta, y decide qué ofrece de cada addon con el
    orden de [`adaptadores.md`](adaptadores.md#orden-de-decisión).
    - Con WoW abierto se puede exportar, avisando de que lo cambiado en la sesión actual no está en disco hasta
@@ -73,11 +72,13 @@ categorías y addons trae.
 
 ### 2. Elegir el destino
 
-Versión del juego → cuenta → personaje.
+Cuenta → personaje, **solo de la versión del juego del paquete** (`origen.producto`). Retail y Forever no se
+mezclan: un paquete de Forever solo ofrece personajes de Forever, y uno de Retail, de Retail.
 
-- No se ofrecen por defecto los personajes `deOtraVersion`.
-- Si el destino es de otro producto que el origen (Forever ↔ Retail), aviso. La política entre versiones se
-  decide aparte.
+- Si en este equipo no hay ninguna instalación de ese producto, la app dice de qué versión es el paquete y no
+  ofrece destinos. No es un error del paquete.
+- Si la versión es la misma pero la interfaz no (`origen.interfaz` distinta de la del destino, por ejemplo tras
+  una actualización del juego), se ofrece con aviso.
 - Si la clase de origen se conoce y no coincide con la del destino, aviso. Nunca bloquea.
 - Si el personaje no tiene carpeta, la app explica que tiene que entrar al juego una vez con él [I]. No crea
   carpetas de personaje.

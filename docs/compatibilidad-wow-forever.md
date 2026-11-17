@@ -86,7 +86,9 @@ Ninguna documentación oficial de Blizzard describe estos ficheros: lo que hay a
 | Barras de acción | ninguno | servidor | — | no se puede por ficheros | [V] |
 
 Macros de un personaje de Retail copiadas a uno de Forever funcionaron [V]. La configuración de addons entre
-versiones necesita traducir claves (`"Nombre - Reino"` en Retail, `"Nombre Apellido"` en Forever).
+versiones necesitaría traducir claves (`"Nombre - Reino"` en Retail, `"Nombre Apellido"` en Forever). Aun así, la
+app no mezcla versiones: un perfil solo se importa en la versión de la que salió (ver
+[`flujos.md`](flujos.md#2-elegir-el-destino)).
 
 ## Criterios de importación
 
