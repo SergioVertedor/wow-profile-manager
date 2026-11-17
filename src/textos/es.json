@@ -2,6 +2,10 @@
   "cargando": "Cargando…",
   "cabecera": "{{nombre}} {{version}}",
   "errorNucleo": "No se pudo contactar con el núcleo: {{mensaje}}",
+  "nav": {
+    "instalaciones": "Instalaciones",
+    "acercaDe": "Acerca de"
+  },
   "instalaciones": {
     "titulo": "Instalaciones de WoW",
     "buscando": "Buscando instalaciones de WoW…",
@@ -22,12 +26,21 @@
     "reinosIgnorados_other": "{{count}} carpetas de reino son de la otra versión del juego y se han saltado.",
     "personaje": "{{personaje}} · {{reino}}"
   },
+  "acercaDe": {
+    "titulo": "Acerca de",
+    "autoria": "{{nombre}}, de {{autor}} — ",
+    "licencia": "Software libre bajo la GNU General Public License v3.0. Se distribuye SIN NINGUNA GARANTÍA.",
+    "verLicencia": "Leer la licencia",
+    "koFi": "Si la app te resulta útil, puedes apoyarla en Ko-fi.",
+    "marca": "{{nombre}} no está hecho, respaldado ni apoyado por Blizzard Entertainment. World of Warcraft es una marca de Blizzard Entertainment, Inc."
+  },
   "productos": {
     "wow": "World of Warcraft (Retail)",
     "wowf": "WoW Forever"
   },
   "errores": {
     "lecturaFallida": "No se pudo leer {{ruta}}: {{detalle}}",
-    "desconocido": "Error inesperado: {{mensaje}}"
+    "desconocido": "Error inesperado: {{mensaje}}",
+    "enlaceNoAbierto": "No se pudo abrir {{url}}: {{detalle}}"
   }
 }

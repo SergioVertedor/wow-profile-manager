@@ -5,6 +5,7 @@ mod bpsv;
 mod descubrimiento;
 mod deteccion;
 mod disco;
+mod enlaces;
 mod error;
 mod idioma;
 mod info;
@@ -31,6 +32,12 @@ async fn detectar_instalaciones() -> Result<Vec<deteccion::Instalacion>, error::
     deteccion::detectar_en_el_sistema()
 }
 
+/// Abre en el navegador uno de los enlaces conocidos. La interfaz no puede pasar una URL: solo el nombre del enlace.
+#[tauri::command]
+fn abrir_enlace(enlace: enlaces::Enlace) -> Result<(), error::ErrorNucleo> {
+    enlaces::abrir(enlace)
+}
+
 /// Registra los comandos que puede llamar la interfaz. Es genérico sobre el runtime para que los tests de
 /// `tests/comandos.rs` usen el runtime simulado de Tauri y llamen a los comandos por su nombre, igual que la
 /// interfaz.
@@ -38,7 +45,8 @@ pub fn con_comandos<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Bui
     builder.invoke_handler(tauri::generate_handler![
         info_app,
         idioma_interfaz,
-        detectar_instalaciones
+        detectar_instalaciones,
+        abrir_enlace
     ])
 }
 

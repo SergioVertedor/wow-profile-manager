@@ -6,6 +6,13 @@ use tauri::webview::InvokeRequest;
 use wow_profile_manager_lib::{NOMBRE_APP, con_comandos};
 
 fn invocar(comando: &str) -> Result<serde_json::Value, serde_json::Value> {
+    invocar_con(comando, serde_json::json!({}))
+}
+
+fn invocar_con(
+    comando: &str,
+    argumentos: serde_json::Value,
+) -> Result<serde_json::Value, serde_json::Value> {
     let app = con_comandos(mock_builder())
         .build(mock_context(noop_assets()))
         .unwrap();
@@ -17,7 +24,7 @@ fn invocar(comando: &str) -> Result<serde_json::Value, serde_json::Value> {
         callback: tauri::ipc::CallbackFn(0),
         error: tauri::ipc::CallbackFn(1),
         url: "http://tauri.localhost".parse().unwrap(),
-        body: tauri::ipc::InvokeBody::default(),
+        body: tauri::ipc::InvokeBody::Json(argumentos),
         headers: Default::default(),
         invoke_key: INVOKE_KEY.to_string(),
     };
@@ -35,6 +42,17 @@ fn info_app_responde_por_su_nombre_con_los_campos_de_la_interfaz() {
 fn idioma_interfaz_responde_es_o_en() {
     let respuesta = invocar("idioma_interfaz").unwrap();
     assert!(respuesta == "es" || respuesta == "en", "{respuesta}");
+}
+
+#[test]
+fn abrir_enlace_rechaza_lo_que_no_es_un_enlace_conocido() {
+    // Solo casos rechazados: uno válido abriría el navegador de quien corre los tests.
+    // El rechazo tiene que venir del enum `Enlace` (variante desconocida), no de que el comando no exista.
+    for enlace in ["https://example.com", "otro"] {
+        let error =
+            invocar_con("abrir_enlace", serde_json::json!({ "enlace": enlace })).unwrap_err();
+        assert!(error.to_string().contains("unknown variant"), "{error}");
+    }
 }
 
 #[test]

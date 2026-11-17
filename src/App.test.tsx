@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { I18nextProvider } from "react-i18next";
 import App from "./App";
@@ -56,5 +56,30 @@ describe("App", () => {
 
     expect(screen.getByText("Loading…")).toBeDefined();
     expect(screen.getByText("Looking for WoW installations…")).toBeDefined();
+  });
+
+  it("lleva a «Acerca de» y vuelve a las instalaciones", async () => {
+    mockIPC((comando) =>
+      comando === "info_app"
+        ? {
+            nombre: "WoW Profile Manager",
+            version: "9.9.9",
+            autor: "Sergio Vertedor",
+            repositorio: "https://github.com/SergioVertedor/wow-profile-manager",
+            koFi: "https://ko-fi.com/tonotabidev",
+            licencia: "https://www.gnu.org/licenses/gpl-3.0.html",
+          }
+        : [],
+    );
+
+    pintar("es");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Acerca de" }));
+    expect(screen.getByRole("heading", { name: "Acerca de" })).toBeDefined();
+    expect(screen.queryByRole("heading", { name: "Instalaciones de WoW" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Instalaciones" }));
+    expect(screen.getByRole("heading", { name: "Instalaciones de WoW" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Instalaciones" }).getAttribute("aria-pressed")).toBe("true");
   });
 });
