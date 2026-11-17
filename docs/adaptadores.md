@@ -96,9 +96,15 @@ desmarcadas y con aviso: decide el usuario.
 |---|---|
 | `"entera": true` | la variable completa |
 | `"incluir": [rutas]` | solo esas claves |
-| `"excluir": [rutas]` | todo menos esas claves |
+| `"excluir": [rutas]` | todo menos esas claves. **Exige `versionesAddon`** (ver abajo) |
 | `"perfilAcedb": true` | el perfil AceDB del personaje (solo en variables de cuenta) |
 
+- **Se prefiere `incluir`.** Es una lista blanca también dentro de la variable: si el addon añade una clave en una
+  actualización, no viaja hasta que alguien la añade al adaptador. Con `excluir`, una clave nueva viaja sin que
+  nadie lo haya decidido, aunque sea estado o datos de otros personajes. Por eso `excluir` solo se acepta con
+  `versionesAddon`: fuera de esas versiones medidas, la entrada se ofrece desmarcada.
+- `entera` es para variables que el propio addon dedica a configuración (por ejemplo, WIM y Auctionator separan
+  configuración y estado en variables distintas). Si una variable mezcla las dos cosas, se usa `incluir`.
 - `soloPersonaje` (opcional, junto a `entera`, `incluir` o `excluir`): rutas de tablas indexadas por personaje.
   Solo viaja la entrada del personaje de origen y, al importar, se escribe con la clave del destino.
 - `clavePersonaje`: cómo escribe el addon esa clave. `nombre-apellido` (`"Nombre Apellido"`, como AceDB en
@@ -196,14 +202,19 @@ salvo que se diga otra cosa: se lee el nombre y el contenido, no el código del 
 ```json
 {
   "id": "pawn",
-  "version": 1,
+  "version": 2,
   "addon": "Pawn",
-  "medido": "Cuenta: PawnCommon tiene 21 opciones y Scales; dentro de cada escala, PerCharacterOptions indexado por \"Nombre Apellido\". LastVersion y ShownGettingStarted son estado. Por personaje: PawnOptions con AutoSelectScales (preferencia) y LastVersion, LastPlayerFullName, ItemLevels y LastKeybindingsSet (estado).",
+  "medido": "Pawn 2.14.3. Cuenta: PawnCommon tiene 21 claves; 19 son opciones (Scales incluida) y LastVersion y ShownGettingStarted son estado. Dentro de cada escala, PerCharacterOptions indexado por \"Nombre Apellido\". Por personaje: PawnOptions con AutoSelectScales (preferencia) y LastVersion, LastPlayerFullName, ItemLevels y LastKeybindingsSet (estado).",
   "reglas": [
     {
       "ambito": "cuenta",
       "variable": "PawnCommon",
-      "excluir": ["LastVersion", "ShownGettingStarted"],
+      "incluir": [
+        "AlignNumbersRight", "ButtonPosition", "ColorTooltipBorder", "Debug", "Digits", "IgnoreGemsWhileLeveling",
+        "Scales", "ShowBagUpgradeAdvisor", "ShowEnchanted", "ShowItemID", "ShowItemLevelUpgrades",
+        "ShowLootUpgradeAdvisor", "ShowQuestUpgradeAdvisor", "ShowRelicUpgrades", "ShowSocketingAdvisor",
+        "ShowSpecIcons", "ShowTooltipIcons", "ShowUpgradesOnTooltips", "ShowValuesForUpgradesOnly"
+      ],
       "soloPersonaje": ["Scales/*/PerCharacterOptions/$PJ"]
     },
     { "ambito": "personaje", "variable": "PawnOptions", "incluir": ["AutoSelectScales"] }
@@ -219,21 +230,19 @@ origen; las de los demás personajes de la cuenta se quedan fuera.
 ```json
 {
   "id": "ellesmereui",
-  "version": 1,
+  "version": 2,
   "addon": "EllesmereUI",
-  "medido": "Cuenta: EllesmereUIDB, 58 claves. Tiene perfiles propios (profiles, activeProfile, profileOrder, specProfiles) que no son AceDB. Estado: chars (oro, clase, raza y nivel de cada personaje), goldLedger, _migrations, lastLoginVersion, patchDotPending, dismissedConflicts, _tbbLinkOwner y las marcas de 'ya visto' (_capturedOnce_*, *Seeded, *Seen, firstInstallPopupShown, kickTrackerIntroShown, charSheetCardStyleAdopted).",
+  "medido": "EllesmereUI 9.8.8. Cuenta: EllesmereUIDB, 58 claves. Tiene perfiles propios (profiles, activeProfile, profileOrder, specProfiles) que no son AceDB. 27 claves son configuración. Estado (31): chars (oro, clase, raza y nivel de cada personaje), goldLedger, _migrations, lastLoginVersion, patchDotPending, dismissedConflicts, _tbbLinkOwner y las marcas de 'ya visto' (_capturedOnce_*, *Seeded, *Seen, firstInstallPopupShown, kickTrackerIntroShown, charSheetCardStyleAdopted).",
   "reglas": [
     {
       "ambito": "cuenta",
       "variable": "EllesmereUIDB",
-      "excluir": [
-        "chars", "goldLedger", "_migrations", "lastLoginVersion", "patchDotPending", "dismissedConflicts",
-        "_tbbLinkOwner", "_capturedOnce_CDM", "_capturedOnce_EAB", "_capturedOnce_RF", "_castbarUnlockSeeded",
-        "bagDefaultGroupsSeeded", "bagDisabledCategoriesSeeded", "bnetToastStyleSeeded", "foreverLegacySkinSeeded",
-        "foreverLfgSkinSeeded", "foreverMicroBagSkinSeeded", "friendlyPlateVisSeeded", "lootSkinStyleSeeded",
-        "queueChoiceTradeStyleSeeded", "readyCheckStyleSeeded", "cdmButtonTipSeen", "cogSeen", "inlineCogTipSeen",
-        "rfEyeHintSeen", "sidebarUnlockTipSeen", "tutorialTipsSeen", "videoGuidesSeen", "firstInstallPopupShown",
-        "kickTrackerIntroShown", "charSheetCardStyleAdopted"
+      "incluir": [
+        "activeProfile", "autoLogging", "bagsUserChosen", "clickCast", "customColors", "fonts", "lastNonSpecProfile",
+        "panelScale", "ppUIScale", "ppUIScaleAuto", "profileKeybinds", "profileOrder", "profiles", "reskinBagBar",
+        "reskinFlagCarriers", "reskinMicroMenu", "restoreOnUninstall", "specProfiles", "spellAssignments",
+        "threatMeter", "unlockAnchors", "unlockGridMode", "unlockHeightMatch", "unlockSnapEnabled", "unlockWidthMatch",
+        "windowLookPerProfile", "windowSkinStyleSlots"
       ]
     }
   ]
