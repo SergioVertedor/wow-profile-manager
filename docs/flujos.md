@@ -208,8 +208,8 @@ stateDiagram-v2
     escribiendo --> completa
     escribiendo --> fallida_restaurada : fallo, se restaura todo
     escribiendo --> fallida_sin_restaurar : falla también la restauración
-    completa --> deshecha : su deshacer termina
-    deshecha --> completa : se deshace su deshacer
+    completa --> deshecha : deshacer
+    deshecha --> completa : rehacer
 ```
 
 En el fichero, los estados se escriben con guion: `fallida-restaurada`, `fallida-sin-restaurar`. Son finales
@@ -275,7 +275,7 @@ Deshacer devuelve los ficheros de una operación `completa` a como estaban antes
 5. Si el jugador confirma, se crea una operación `deshacer` con el mismo orden de escritura: primero copia el
    estado actual y después restaura. Cuando termina, la original pasa a `deshecha`, con `deshechaPor`.
 
-**Deshacer un deshacer** vuelve a dejar los ficheros como tras la importación. El `deshacer` pasa a `deshecha` y
+**Deshacer un deshacer** (en el diagrama, «rehacer») vuelve a dejar los ficheros como tras la importación. El `deshacer` pasa a `deshecha` y
 la importación original vuelve a `completa` (sin `deshechaPor`), así que se puede volver a deshacer.
 
 El MVP restaura cada fichero entero. Quitar solo el perfil importado de un fichero de cuenta, sin tocar el resto,
