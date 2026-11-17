@@ -133,6 +133,13 @@ en el nombre y otra con el nombre en ASCII y un sufijo hexadecimal (`…8D31D`).
      similares) y case con la carpeta.
   2. De la carpeta. En Forever, `Nombre-Apellido` → `"Nombre Apellido"` [V]. En Retail, `"Nombre - Reino"`.
   3. Si nada cuadra, se pregunta al usuario. **Nunca se inventa.**
+- Las claves de personaje de la regla 1 son las de cada tabla `profileKeys` con `profiles` al lado (AceDB), en
+  los `.lua` de `<cuenta>/SavedVariables`. En Forever la clave no lleva reino (`"Goldberg Joestar"`) [V]; en
+  Retail sí (`"Gøldberg - Sanguino"`) [V]. La coincidencia es exacta: los datos confirman el candidato de la
+  carpeta, no buscan parecidos. El resultado dice de dónde sale: `datos` o `carpeta`.
+- Una carpeta con sufijo (`Goldber8D31D`, `Bison2D457`) lleva los 5 últimos caracteres del GUID del personaje
+  (`character-list-order.txt`: `1379-0928D31D`) [V]. Los nombres de WoW no llevan cifras [I], así que de una
+  carpeta con cifras no sale ningún nombre: queda sin resolver.
 - El nombre interno del reino en Forever (`CAMWOW EU5 Realm 4 PvP`) no aparece en ninguna ruta [V]. Si un
   adaptador lo necesita, sale de los datos del propio destino.
 
