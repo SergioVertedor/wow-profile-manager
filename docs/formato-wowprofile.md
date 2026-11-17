@@ -12,6 +12,10 @@ ordenador. Este documento es el contrato entre exportar e importar. El manifiest
 2. **Configuración, no estado.** Fuera el progreso, las misiones seguidas y las tablas `char` de AceDB.
 3. **Nada privado.** Sin número de cuenta, sin reino, sin el nombre del personaje de origen y sin rutas de
    disco. El único nombre es el que el usuario pone al perfil.
+
+Los tres primeros los garantizan las piezas de AceDB y de adaptador. Una pieza de una regla genérica de
+[`adaptadores.md`](adaptadores.md#orden-de-decisión) viaja como fichero entero y puede romperlos (estado, nombres
+del origen o de otros jugadores). Por eso sale desmarcada y con aviso, y solo viaja si el usuario la marca.
 4. **El paquete no decide dónde se escribe.** Lleva rutas lógicas. La app que importa las traduce al personaje
    que elige el usuario.
 5. **Lua es dato.** Ninguna pieza se ejecuta: se lee y se reescribe como texto.
