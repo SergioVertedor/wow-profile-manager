@@ -1,0 +1,48 @@
+# Python (hooks)
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Claude Code: config local de cada máquina
+.claude/settings.local.json
+
+# Node / Rust / builds (cuando se decida el stack)
+node_modules/
+dist/
+target/
+*.log
+
+# NUNCA versionar datos reales de WoW: las pruebas usan fixtures sintéticos
+# o anonimizados en tests/fixtures/. Un WTF real lleva nombres de cuenta.
+# Anclados a la raíz: los fixtures SÍ llevan carpetas WTF/ e Interface/ de mentira.
+/WTF/
+/Interface/
+*.wowprofile
+!tests/fixtures/**/*.wowprofile
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store
+.idea/
+.vscode/
+
+# Herramientas de IA: NADA de esto se sube. Vive solo en local.
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.agents/
+AGENTS.md
+GEMINI.md
+.gemini/
+.cursor/
+.cursorrules
+.cursorignore
+.windsurfrules
+.aider*
+.continue/
+.codeium/
+.mcp.json
+.github/copilot-instructions.md
+.github/instructions/
+.github/prompts/
