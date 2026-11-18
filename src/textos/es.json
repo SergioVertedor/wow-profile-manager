@@ -15,7 +15,8 @@
     "versiones": "Versión del juego",
     "fuente": {
       "registro": "Encontrada en el registro de Windows",
-      "manual": "Añadida a mano"
+      "manual": "Añadida a mano",
+      "battlenet": "Encontrada por el agente de Battle.net"
     },
     "build": "Build",
     "addons": "Addons",
@@ -76,7 +77,8 @@
     "nombre": "Nombre de la instalación",
     "fuente": {
       "registro": "Registro de Windows",
-      "manual": "A mano"
+      "manual": "A mano",
+      "battlenet": "Agente de Battle.net"
     },
     "sinVersiones": "sin versiones del juego",
     "noEncontrada": "No encontrada: la carpeta ya no está, no se puede leer o le falta el fichero .build.info.",

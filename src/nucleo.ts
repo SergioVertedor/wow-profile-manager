@@ -43,7 +43,7 @@ export interface Deteccion {
 
 export interface Instalacion {
   raiz: string;
-  fuente: "registro" | "manual";
+  fuente: "registro" | "battlenet" | "manual";
   /** Nombre propio que le ha puesto el usuario; `null` si no tiene. */
   nombre: string | null;
   versiones: VersionJuego[];

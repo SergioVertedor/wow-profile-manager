@@ -83,12 +83,17 @@ Una carpeta raíz de WoW en este equipo.
 | `nombre` | nombre propio que pone el usuario («Casa»); sin él, «Instalación N» junto a la ruta |
 | `versiones` | las subcarpetas con juego dentro |
 
-**Detección**, en este orden. Se juntan los resultados y se quitan las rutas repetidas:
+**Detección**, en este orden. Se juntan los resultados y se quitan las rutas repetidas (sin distinguir mayúsculas,
+separador final ni `/` de `\`), y gana la primera fuente:
 
 1. **Registro de Windows**: `Uninstall\World of Warcraft`, valor `InstallLocation` [V].
 2. **Agente de Battle.net**: `C:\ProgramData\Battle.net\Agent\product.db` lista cada raíz con sus subcarpetas
    y versiones [V]. Es un formato binario sin documentar: se usa como **pista** y nunca se da por buena una ruta
-   sin comprobarla en disco.
+   sin comprobarla en disco. Si no existe o no se entiende, se sigue sin él y sin error visible.
+   Medido: es **protobuf** sin esquema publicado [V]. El campo `1`, repetido, es un producto instalado; dentro, `2` es
+   el código (`agent`, `bna`, `wow`, `wowf`…) y `3` sus ajustes de instalación, con `1` la raíz escrita con `/`
+   (`C:/Juegos/World of Warcraft`), `2` la región (`eu`) y `13` la subcarpeta (`_retail_`, `_forever_`) [V]. Solo se
+   leen los productos cuyo código empieza por `wow`; `wow` y `wowf` comparten raíz [V].
 3. **Manual**: el usuario elige una carpeta. Siempre está disponible, aunque las otras fuentes no encuentren
    nada. Se recuerda entre arranques; si deja de existir, se lista como «no encontrada» hasta que se quita.
 

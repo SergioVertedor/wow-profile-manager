@@ -15,7 +15,8 @@
     "versiones": "Game version",
     "fuente": {
       "registro": "Found in the Windows registry",
-      "manual": "Added by hand"
+      "manual": "Added by hand",
+      "battlenet": "Found by the Battle.net agent"
     },
     "build": "Build",
     "addons": "Addons",
@@ -76,7 +77,8 @@
     "nombre": "Installation name",
     "fuente": {
       "registro": "Windows registry",
-      "manual": "By hand"
+      "manual": "By hand",
+      "battlenet": "Battle.net agent"
     },
     "sinVersiones": "no game versions",
     "noEncontrada": "Not found: the folder is gone, cannot be read or is missing its .build.info file.",

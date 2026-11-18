@@ -3,11 +3,12 @@
 use crate::error::ErrorNucleo;
 use std::path::{Path, PathBuf};
 
-/// Clave con la que se compara una ruta. Windows no distingue mayúsculas en las rutas y acepta un separador final:
-/// `C:\WoW\` y `c:\wow` son la misma carpeta.
+/// Clave con la que se compara una ruta. Windows no distingue mayúsculas, acepta `/` como separador y un separador
+/// final: `C:\WoW\`, `c:\wow` y `C:/WoW` son la misma carpeta.
 pub fn clave_de_ruta(ruta: &Path) -> String {
     ruta.to_string_lossy()
-        .trim_end_matches(['\\', '/'])
+        .replace('/', "\\")
+        .trim_end_matches('\\')
         .to_lowercase()
 }
 
@@ -78,6 +79,18 @@ pub fn leer_texto(ruta: &Path) -> Result<Option<String>, ErrorNucleo> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn la_clave_de_ruta_iguala_mayusculas_y_separadores() {
+        let clave = clave_de_ruta(Path::new(r"C:\Juegos\World of Warcraft"));
+        for otra in [
+            r"c:\juegos\world of warcraft\",
+            "C:/Juegos/World of Warcraft",
+            "c:/juegos/world of warcraft/",
+        ] {
+            assert_eq!(clave_de_ruta(Path::new(otra)), clave, "{otra}");
+        }
+    }
 
     #[test]
     fn lista_solo_carpetas_y_en_orden() {
