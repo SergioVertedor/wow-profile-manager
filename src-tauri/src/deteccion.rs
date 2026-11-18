@@ -398,12 +398,17 @@ impl PersonajeUbicado {
     }
 
     pub fn carpeta(&self) -> PathBuf {
+        self.carpeta_cuenta()
+            .join(&self.reino)
+            .join(&self.personaje)
+    }
+
+    /// La carpeta de su cuenta: `WTF/Account/<cuenta>`.
+    pub fn carpeta_cuenta(&self) -> PathBuf {
         self.raiz_version
             .join(CARPETA_WTF)
             .join(CARPETA_ACCOUNT)
             .join(&self.cuenta)
-            .join(&self.reino)
-            .join(&self.personaje)
     }
 }
 

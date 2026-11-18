@@ -42,7 +42,24 @@ export type ErrorNucleo =
   | { codigo: "exportacionSinVersion"; datos: Record<string, never> }
   | { codigo: "perfilNoValido"; datos: Record<string, never> }
   | { codigo: "seleccionVacia"; datos: Record<string, never> }
-  | { codigo: "paqueteDemasiadoGrande"; datos: Record<string, never> };
+  | { codigo: "paqueteDemasiadoGrande"; datos: Record<string, never> }
+  | { codigo: "paqueteInvalido"; datos: { motivo: MotivoPaquete; detalle: string } }
+  | { codigo: "versionPaquete"; datos: { version: string } }
+  | { codigo: "paqueteNoAbierto"; datos: Record<string, never> }
+  | { codigo: "destinosNoValidos"; datos: Record<string, never> };
+
+/** Qué paso de «Leer un paquete de forma segura» falló (`MotivoPaquete` en `src-tauri/src/error.rs`). */
+export type MotivoPaquete =
+  | "noEsZip"
+  | "demasiadoGrande"
+  | "demasiadasEntradas"
+  | "manifiestoIlegible"
+  | "manifiestoNoValido"
+  | "entradasDelZip"
+  | "piezaIlegible"
+  | "piezaDemasiadoGrande"
+  | "totalDemasiadoGrande"
+  | "piezaDanada";
 
 export function esErrorNucleo(valor: unknown): valor is ErrorNucleo {
   return typeof valor === "object" && valor !== null && "codigo" in valor && "datos" in valor;
@@ -205,6 +222,115 @@ export function exportarPersonaje(
   descripcion: string,
 ): Promise<Exportacion> {
   return invoke<Exportacion>("exportar_personaje", { personaje, seleccion, nombre, descripcion });
+}
+
+/** `manifest.json` de un paquete abierto (`ManifiestoLeido` en `src-tauri/src/paquetes/lectura.rs`). */
+export interface ManifiestoPaquete {
+  formato: { nombre: string; version: string };
+  perfil: { nombre: string; descripcion?: string; creado: string };
+  origen: { producto: string; build: string; interfaz: number; clase?: string };
+  addons: { id: string; titulo: string; version?: string; enlace?: string; dependencias: string[] }[];
+}
+
+/** Por qué una entrada no se importa: aún no se sabe, o su destino no es el fichero de su categoría. */
+export type MotivoIncompatible = "noSeImporta" | "destinoAjeno";
+
+/** Una entrada del paquete abierto (`EntradaResumen` en `src-tauri/src/importacion.rs`). */
+export interface EntradaPaquete {
+  id: string;
+  /** Texto: un paquete de una versión más nueva puede traer categorías que esta app no conoce. */
+  categoria: string;
+  ambito: "personaje" | "cuenta";
+  /** Se escribe en la carpeta de la cuenta: afecta a todos sus personajes y hay que decidirla en cada cuenta. */
+  deCuenta: boolean;
+  bytes: number;
+  incompatible?: MotivoIncompatible;
+}
+
+export interface ResumenPaquete {
+  /** Identifica el paquete abierto ante el núcleo; nunca se usa una ruta. */
+  sha256: string;
+  manifiesto: ManifiestoPaquete;
+  entradas: EntradaPaquete[];
+}
+
+export type Apertura = { resultado: "cancelada" } | { resultado: "abierta"; resumen: ResumenPaquete };
+
+/** Abre el diálogo de abrir desde el núcleo y lee el paquete con todas las comprobaciones del formato. */
+export function abrirPaquete(): Promise<Apertura> {
+  return invoke<Apertura>("abrir_paquete");
+}
+
+export function cerrarPaquete(): Promise<void> {
+  return invoke("cerrar_paquete");
+}
+
+/** Qué decide el jugador con una entrada de cuenta en una cuenta concreta. */
+export interface DecisionCuenta {
+  cuenta: string;
+  entrada: string;
+  aceptar: boolean;
+}
+
+export interface PedidoImportacion {
+  seleccion: string[];
+  cuentas: DecisionCuenta[];
+}
+
+export type Cambio = "anadido" | "cambiado" | "quitado";
+
+/** Una macro, tecla, opción o addon que cambia. */
+export interface Elemento {
+  nombre: string;
+  cambio: Cambio;
+  antes?: string;
+  despues?: string;
+}
+
+export type Grupo = "nuevo" | "modificado" | "sinCambios";
+
+export interface FicheroPlan {
+  entrada: string;
+  categoria: Categoria;
+  /** Ruta lógica (`personaje/…` o `cuenta/…`). */
+  destino: string;
+  deCuenta: boolean;
+  grupo: Grupo;
+  accion: "crear" | "sobrescribir" | "fusionar";
+  elementos: Elemento[];
+  /** Opciones que no se importan, o addons activados que no están instalados en el destino. */
+  apartadas: string[];
+  bytesAntes?: number;
+  bytesDespues: number;
+  /** Lo de cuenta que ya escribe otro personaje de la misma cuenta (su carpeta). */
+  escritaEn?: string;
+}
+
+export interface PlanPersonaje {
+  cuenta: string;
+  reino: string;
+  personaje: string;
+  ficheros: FicheroPlan[];
+  /** Entradas de cuenta sin decidir. */
+  conflictos: string[];
+}
+
+export interface VistaPrevia {
+  plan: {
+    personajes: PlanPersonaje[];
+    incompatibles: { entrada: string; categoria: string; motivo: MotivoIncompatible }[];
+  };
+  juegoAbierto: boolean;
+  interfazDestino?: number;
+}
+
+/** El plan de importar el paquete abierto en esos personajes. Solo lee. */
+export function pedirPlanImportacion(
+  sha256: string,
+  personajes: PersonajePedido[],
+  pedido: PedidoImportacion,
+): Promise<VistaPrevia> {
+  return invoke<VistaPrevia>("plan_importacion", { sha256, personajes, pedido });
 }
 
 /** Qué hizo el núcleo al arrancar con las operaciones que se cortaron (`Recuperacion` en `operaciones.rs`). */

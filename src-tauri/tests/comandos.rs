@@ -1,11 +1,12 @@
 //! Contrato entre la interfaz (`src/nucleo.ts`) y el núcleo: los comandos se llaman por su nombre, como hace
 //! `invoke`. Usa el runtime simulado de Tauri, sin abrir ventanas.
 
+use std::io::Write;
 use std::path::Path;
 use tauri::test::{INVOKE_KEY, get_ipc_response, mock_builder, mock_context, noop_assets};
 use tauri::webview::InvokeRequest;
 use wow_profile_manager_lib::{
-    Almacen, CARPETA_OPERACIONES, NOMBRE_APP, Operaciones, con_comandos,
+    Almacen, CARPETA_OPERACIONES, NOMBRE_APP, Operaciones, PaquetesAbiertos, con_comandos,
 };
 
 fn invocar(comando: &str) -> Result<serde_json::Value, serde_json::Value> {
@@ -26,10 +27,21 @@ fn invocar_en(
     comando: &str,
     argumentos: serde_json::Value,
 ) -> Result<serde_json::Value, serde_json::Value> {
+    invocar_con_paquetes(datos, PaquetesAbiertos::default(), comando, argumentos)
+}
+
+/// Como `invocar_en`, con un paquete ya abierto (el diálogo de abrir no tiene quien lo cierre en el runtime simulado).
+fn invocar_con_paquetes(
+    datos: &Path,
+    paquetes: PaquetesAbiertos,
+    comando: &str,
+    argumentos: serde_json::Value,
+) -> Result<serde_json::Value, serde_json::Value> {
     let app = con_comandos(
         mock_builder()
             .manage(Almacen::en(datos.to_path_buf()))
-            .manage(Operaciones::en(datos.join(CARPETA_OPERACIONES))),
+            .manage(Operaciones::en(datos.join(CARPETA_OPERACIONES)))
+            .manage(paquetes),
     )
     .build(mock_context(noop_assets()))
     .unwrap();
@@ -344,4 +356,108 @@ fn exportar_personaje_valida_antes_de_abrir_el_dialogo() {
     pedido["seleccion"] = serde_json::json!([]);
     let error = invocar_en(&datos, "exportar_personaje", pedido).unwrap_err();
     assert_eq!(error["codigo"], "seleccionVacia");
+}
+
+/// Un `.wowprofile` de Forever con una sola entrada: `AddOns.txt` con Prat-3.0 desactivado.
+fn paquete_de_prueba(ruta: &Path) {
+    use sha2::{Digest, Sha256};
+    let addons = b"Prat-3.0: disabled\r\n";
+    let hash: String = Sha256::digest(addons)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
+    let manifiesto = serde_json::json!({
+        "formato": { "nombre": "wowprofile", "version": "1.0" },
+        "perfil": { "nombre": "Druida", "creado": "2026-11-18T10:00:00Z" },
+        "origen": { "producto": "wowf", "build": "1.60.1.70938", "interfaz": 16001 },
+        "addons": [],
+        "entradas": [{
+            "id": "addons-activos", "categoria": "addons-activos", "tipo": "fichero-filtrado",
+            "ambito": "personaje", "destino": "personaje/AddOns.txt",
+            "sha256": hash, "bytes": addons.len(), "claves_quitadas": []
+        }]
+    });
+    let mut zip = zip::ZipWriter::new(std::fs::File::create(ruta).unwrap());
+    let opciones = zip::write::SimpleFileOptions::default();
+    zip.start_file("manifest.json", opciones).unwrap();
+    zip.write_all(manifiesto.to_string().as_bytes()).unwrap();
+    zip.start_file("datos/addons-activos", opciones).unwrap();
+    zip.write_all(addons).unwrap();
+    zip.finish().unwrap();
+}
+
+/// La instalación de `instalacion_con_personaje` y un paquete abierto. Devuelve los argumentos de `plan_importacion`.
+fn importacion_preparada(raiz: &Path, datos: &Path) -> (PaquetesAbiertos, serde_json::Value) {
+    let personaje = instalacion_con_personaje(raiz, datos)["personaje"].clone();
+    let ruta = raiz.join("perfil.wowprofile");
+    paquete_de_prueba(&ruta);
+    let paquetes = PaquetesAbiertos::default();
+    let resumen = serde_json::to_value(paquetes.abrir(&ruta).unwrap()).unwrap();
+    let argumentos = serde_json::json!({
+        "sha256": resumen["sha256"],
+        "personajes": [personaje],
+        "pedido": { "seleccion": ["addons-activos"], "cuentas": [] }
+    });
+    (paquetes, argumentos)
+}
+
+#[test]
+fn plan_importacion_ensena_que_cambia_sin_escribir() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (raiz, datos) = (tmp.path().join("wow"), tmp.path().join("datos"));
+    std::fs::create_dir_all(&raiz).unwrap();
+    let (paquetes, argumentos) = importacion_preparada(&raiz, &datos);
+    let addons_txt = raiz.join("_forever_/WTF/Account/1#1/93/Goldberg-Soulreaper/AddOns.txt");
+
+    let vista = invocar_con_paquetes(&datos, paquetes, "plan_importacion", argumentos).unwrap();
+
+    let fichero = &vista["plan"]["personajes"][0]["ficheros"][0];
+    assert_eq!(fichero["entrada"], "addons-activos");
+    assert_eq!(fichero["grupo"], "modificado");
+    assert_eq!(fichero["accion"], "fusionar");
+    assert_eq!(fichero["elementos"][0]["nombre"], "Prat-3.0");
+    assert_eq!(fichero["elementos"][0]["despues"], "disabled");
+    assert!(
+        fichero.get("ruta").is_none() && fichero.get("contenido").is_none(),
+        "{fichero}"
+    );
+    assert!(vista["juegoAbierto"].is_boolean());
+    assert_eq!(std::fs::read(addons_txt).unwrap(), b"Prat-3.0: enabled\r\n");
+}
+
+#[test]
+fn plan_importacion_rechaza_otro_paquete_y_destinos_no_validos() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (raiz, datos) = (tmp.path().join("wow"), tmp.path().join("datos"));
+    std::fs::create_dir_all(&raiz).unwrap();
+    let (_, argumentos) = importacion_preparada(&raiz, &datos);
+    let personaje = argumentos["personajes"][0].clone();
+    let casos = [
+        (
+            "0".repeat(64),
+            serde_json::json!([personaje]),
+            "paqueteNoAbierto",
+        ),
+        (String::new(), serde_json::json!([]), "destinosNoValidos"),
+        (
+            String::new(),
+            serde_json::json!([personaje, personaje]),
+            "destinosNoValidos",
+        ),
+    ];
+    for (sha, personajes, codigo) in casos {
+        let (paquetes, mut argumentos) = importacion_preparada(&raiz, &datos);
+        if !sha.is_empty() {
+            argumentos["sha256"] = serde_json::json!(sha);
+        }
+        argumentos["personajes"] = personajes;
+        let error =
+            invocar_con_paquetes(&datos, paquetes, "plan_importacion", argumentos).unwrap_err();
+        assert_eq!(error["codigo"], codigo);
+    }
+}
+
+#[test]
+fn cerrar_paquete_responde_por_su_nombre() {
+    assert_eq!(invocar("cerrar_paquete").unwrap(), serde_json::Value::Null);
 }

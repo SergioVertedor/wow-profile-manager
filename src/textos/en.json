@@ -7,7 +7,8 @@
     "personajes": "Characters",
     "acercaDe": "About",
     "instalaciones": "Installations",
-    "historial": "History"
+    "historial": "History",
+    "importar": "Import"
   },
   "personajes": {
     "titulo": "Characters",
@@ -84,7 +85,11 @@
     "exportacionSinVersion": "The game version or its interface number is unknown (.build.info or WTF/Config.wtf): log into the game once and try again.",
     "perfilNoValido": "The name is required and can be up to 80 characters; the description, up to 500.",
     "seleccionVacia": "Tick at least one thing to export.",
-    "paqueteDemasiadoGrande": "It is too large for a .wowprofile (at most 256 pieces, 32 MiB each and 128 MiB in total)."
+    "paqueteDemasiadoGrande": "It is too large for a .wowprofile (at most 256 pieces, 32 MiB each and 128 MiB in total).",
+    "paqueteInvalido": "The file is not a valid profile: {{motivo}}",
+    "versionPaquete": "This profile uses a newer version of the format ({{version}}). Update the app to import it.",
+    "paqueteNoAbierto": "The profile is no longer open. Open it again.",
+    "destinosNoValidos": "The chosen characters must belong to one installation and to the profile's game version."
   },
   "versionApp": "Version {{version}}",
   "instalaciones": {
@@ -227,5 +232,77 @@
     "exportando": "Saving…",
     "cerrar": "Close",
     "hecho": "Saved as {{fichero}}."
+  },
+  "motivosPaquete": {
+    "noEsZip": "it can't be opened as a .wowprofile.",
+    "demasiadoGrande": "it is too large.",
+    "demasiadasEntradas": "it contains too many files.",
+    "manifiestoIlegible": "its description is missing or unreadable.",
+    "manifiestoNoValido": "its description doesn't follow the format.",
+    "entradasDelZip": "it has extra or missing files.",
+    "piezaIlegible": "one of its files can't be read.",
+    "piezaDemasiadoGrande": "one of its files is larger than it says.",
+    "totalDemasiadoGrande": "its files are too large in total.",
+    "piezaDanada": "one of its files is damaged or was modified."
+  },
+  "importar": {
+    "titulo": "Import",
+    "abrir": "Open profile…",
+    "abrirOtro": "Open another…",
+    "explicacion": "Open a .wowprofile file to choose which characters to apply it to and see what would change. Looking changes nothing.",
+    "paquete": "Open profile",
+    "entradas_one": "{{count}} item",
+    "entradas_other": "{{count}} items",
+    "pasosEtiqueta": "Steps",
+    "pasos": {
+      "destino": "Destination",
+      "seleccion": "What to import",
+      "vistaPrevia": "Preview"
+    },
+    "atras": "Back",
+    "siguiente": "Next",
+    "sinInstalacion": "This profile is for {{version}} and this computer has no installation of that version.",
+    "instalacion": "Installation",
+    "interfazDistinta": "The profile was made with interface {{paquete}} and this installation has {{destino}}: something may not fit.",
+    "elegirDestinos": "Tick one or more characters. They can be from different accounts of this installation.",
+    "marcados_one": "{{count}} character ticked",
+    "marcados_other": "{{count}} characters ticked",
+    "queSeImporta": "What to import",
+    "deLaCuenta": "Account {{categoria}}",
+    "incompatible": {
+      "noSeImporta": "this version doesn't import it yet",
+      "destinoAjeno": "not imported: it points to a file that isn't its own"
+    },
+    "teclasSinComprobar": "Key bindings are imported as character bindings. It hasn't been checked in game yet that a character that used the account's bindings switches to these.",
+    "decisionesEtiqueta": "What affects the whole account",
+    "decisionesExplicacion": "This changes the settings of every character on the account. Decide for each one whether to apply it.",
+    "enCuenta": "{{categoria}} on account {{cuenta}} ({{personajes}})",
+    "aplicar": "Apply",
+    "noAplicar": "Don't apply",
+    "calculando": "Working out what would change…",
+    "juegoAbierto": "WoW is running. You can look at the preview, but it will have to be closed to apply.",
+    "grupos": {
+      "nuevo": "New",
+      "modificado": "Modified",
+      "sinCambios": "Unchanged",
+      "conflictos": "Undecided",
+      "incompatibles": "Not imported"
+    },
+    "sinDecidir": "{{entrada}}: decide whether to apply it on this account.",
+    "nadaQueImportar": "Nothing to import on this character.",
+    "afectaCuenta": "Affects every character on the account.",
+    "escritaEn": "Applied once for the account, with {{personaje}}.",
+    "opcionesApartadas": "Not imported, for safety or because they are state: {{lista}}.",
+    "addonsQueFaltan": "Enabled, but not installed on this computer: {{lista}}.",
+    "cambio": {
+      "anadido": "New",
+      "cambiado": "Changes",
+      "quitado": "Removed"
+    },
+    "soloVistaPrevia": "This version only shows the preview: it doesn't apply the import yet.",
+    "otrasCategorias": {
+      "config-addon": "Add-on settings",
+      "modo-edicion": "Edit Mode"
+    }
   }
 }

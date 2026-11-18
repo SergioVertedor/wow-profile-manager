@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HardDrive, History, Info, Users, type LucideIcon } from "lucide-react";
+import { HardDrive, History, Import, Info, Users, type LucideIcon } from "lucide-react";
 import AcercaDe from "./AcercaDe";
 import css from "./App.module.css";
+import Importar from "./importar/Importar";
 import Instalaciones from "./instalaciones/Instalaciones";
 import Historial from "./historial/Historial";
 import { useDeteccion } from "./instalaciones/useDeteccion";
@@ -15,11 +16,12 @@ type Estado =
   | { tipo: "listo"; info: InfoApp }
   | { tipo: "error"; mensaje: string };
 
-/** Vistas de la ventana. Con cuatro basta un estado; cuando lleguen los flujos con pasos se medirá un router. */
-type Vista = "personajes" | "instalaciones" | "historial" | "acercaDe";
+/** Vistas de la ventana. Basta un estado: los pasos de importar viven dentro de su vista, sin rutas propias. */
+type Vista = "personajes" | "importar" | "instalaciones" | "historial" | "acercaDe";
 
 const ICONOS: Record<Vista, LucideIcon> = {
   personajes: Users,
+  importar: Import,
   instalaciones: HardDrive,
   historial: History,
   acercaDe: Info,
@@ -53,6 +55,7 @@ function App() {
         </div>
         <nav className={css.navegacion} aria-label={t("nav.etiqueta")}>
           <BotonVista vista="personajes" actual={vista} elegir={setVista} />
+          <BotonVista vista="importar" actual={vista} elegir={setVista} />
           <BotonVista vista="instalaciones" actual={vista} elegir={setVista} />
           <BotonVista vista="historial" actual={vista} elegir={setVista} />
           {estado.tipo === "listo" && <BotonVista vista="acercaDe" actual={vista} elegir={setVista} />}
@@ -62,6 +65,7 @@ function App() {
       <main className={css.contenido}>
         <AvisoRecuperacion alRestaurar={deteccion.recargar} />
         {vista === "personajes" && <Personajes {...deteccion} />}
+        {vista === "importar" && <Importar {...deteccion} />}
         {vista === "instalaciones" && <Instalaciones {...deteccion} />}
         {vista === "historial" && <Historial alCambiarWtf={deteccion.recargar} />}
         {vista === "acercaDe" && estado.tipo === "listo" && <AcercaDe info={estado.info} />}

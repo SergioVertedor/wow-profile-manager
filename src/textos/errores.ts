@@ -10,6 +10,10 @@ export function mensajeDeError(t: TFunction, error: unknown): string {
     if (error.codigo === "operacionFallida" && error.datos.restaurada) {
       return t("errores.operacionFallidaRestaurada", error.datos);
     }
+    // El motivo es un código: se traduce y va dentro de la frase. El `detalle` es para diagnóstico, no se enseña.
+    if (error.codigo === "paqueteInvalido") {
+      return t("errores.paqueteInvalido", { motivo: t(`motivosPaquete.${error.datos.motivo}`) });
+    }
     const desconocido = t("errores.desconocido", { mensaje: error.codigo });
     return t(`errores.${error.codigo}`, { ...error.datos, defaultValue: desconocido });
   }

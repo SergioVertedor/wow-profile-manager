@@ -1,5 +1,6 @@
 // La lista de personajes de una cuenta (spec 017): cambio de cuenta si hay más de una, buscador si la lista es larga
-// y reinos fuera de Forever, que se pliegan y despliegan (spec 019). Se reutilizará para elegir el destino al importar.
+// y reinos fuera de Forever, que se pliegan y despliegan (spec 019). Al importar (spec 024) se marcan varios destinos:
+// con `marcados`, cada fila es una casilla y `elegirPersonaje` la alterna.
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
@@ -23,15 +24,18 @@ type Props = Readonly<{
   etiquetaCuenta: (carpeta: string) => string;
   /** «Cuenta N» o la carpeta: lo que se ve si la cuenta elegida no tiene nombre propio. */
   cuentaPorDefecto: string;
-  renombrarCuenta: (nombre: string) => Promise<void>;
+  /** Sin él, la cuenta no se renombra desde aquí. */
+  renombrarCuenta?: (nombre: string) => Promise<void>;
   elegirCuenta: (carpeta: string) => void;
   personaje: Personaje | null;
   elegirPersonaje: (clave: string) => void;
+  /** Selección múltiple: claves de personaje marcadas en esta cuenta. */
+  marcados?: ReadonlySet<string>;
 }>;
 
 export default function Plantel(props: Props) {
   const { t } = useTranslation();
-  const { cuenta, producto, personaje, elegirPersonaje } = props;
+  const { cuenta, producto, personaje, elegirPersonaje, marcados } = props;
   const [consulta, setConsulta] = useState("");
   // Solo en memoria: al cambiar de cuenta el componente se remonta (`key` en Personajes) y todo vuelve a desplegarse.
   const [plegados, setPlegados] = useState<ReadonlySet<string>>(new Set());
@@ -87,10 +91,11 @@ export default function Plantel(props: Props) {
               alternar={() => alternar(grupo.reino)}
               elegida={elegida}
               elegir={elegirPersonaje}
+              marcados={marcados}
             />
           ))
         ) : (
-          <Filas personajes={visibles} elegida={elegida} elegir={elegirPersonaje} />
+          <Filas personajes={visibles} elegida={elegida} elegir={elegirPersonaje} marcados={marcados} />
         )}
       </div>
     </section>
@@ -105,6 +110,7 @@ function GrupoReino({
   alternar,
   elegida,
   elegir,
+  marcados,
 }: Readonly<{
   reino: string;
   personajes: Personaje[];
@@ -112,6 +118,7 @@ function GrupoReino({
   alternar: () => void;
   elegida: string | null;
   elegir: (clave: string) => void;
+  marcados?: ReadonlySet<string>;
 }>) {
   const idFilas = useId();
   const Chevron = desplegado ? ChevronDown : ChevronRight;
@@ -125,7 +132,7 @@ function GrupoReino({
         </button>
       </h3>
       <div id={idFilas} hidden={!desplegado}>
-        <Filas personajes={personajes} elegida={elegida} elegir={elegir} />
+        <Filas personajes={personajes} elegida={elegida} elegir={elegir} marcados={marcados} />
       </div>
     </section>
   );
@@ -135,6 +142,9 @@ function GrupoReino({
 function CabeceraCuenta(props: Props) {
   const { t } = useTranslation();
   const { cuenta, cuentaPorDefecto, renombrarCuenta } = props;
+  if (renombrarCuenta === undefined) {
+    return <ElegirCuenta {...props} />;
+  }
   return (
     <NombreEditable
       etiqueta={t("plantel.nombreCuenta")}
@@ -175,20 +185,48 @@ function Filas({
   personajes,
   elegida,
   elegir,
-}: Readonly<{ personajes: Personaje[]; elegida: string | null; elegir: (clave: string) => void }>) {
+  marcados,
+}: Readonly<{
+  personajes: Personaje[];
+  elegida: string | null;
+  elegir: (clave: string) => void;
+  marcados?: ReadonlySet<string>;
+}>) {
   return (
     <ul className={css.filas}>
       {personajes.map((personaje) => {
         const clave = claveDePersonaje(personaje);
         const nombre = nombreVisible(personaje);
+        const contenido = (
+          <>
+            <span className={css.monograma} aria-hidden>
+              {inicial(nombre)}
+            </span>
+            <span className={css.nombre}>{nombre}</span>
+          </>
+        );
         return (
           <li key={clave}>
-            <button type="button" className={css.fila} aria-pressed={clave === elegida} onClick={() => elegir(clave)}>
-              <span className={css.monograma} aria-hidden>
-                {inicial(nombre)}
-              </span>
-              <span className={css.nombre}>{nombre}</span>
-            </button>
+            {marcados === undefined ? (
+              <button
+                type="button"
+                className={css.fila}
+                aria-pressed={clave === elegida}
+                onClick={() => elegir(clave)}
+              >
+                {contenido}
+              </button>
+            ) : (
+              <label className={css.fila} data-marcada={marcados.has(clave)}>
+                <input
+                  type="checkbox"
+                  className={css.casilla}
+                  checked={marcados.has(clave)}
+                  onChange={() => elegir(clave)}
+                />
+                {contenido}
+              </label>
+            )}
           </li>
         );
       })}

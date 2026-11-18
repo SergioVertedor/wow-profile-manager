@@ -159,9 +159,23 @@
   background: var(--blanco-velo);
 }
 
-.fila[aria-pressed="true"] {
+.fila[aria-pressed="true"],
+.fila[data-marcada="true"] {
   background: linear-gradient(90deg, var(--oro-velo), var(--oro-velo-tenue));
   box-shadow: inset 0 0 0 1px var(--oro-borde);
+}
+
+/* Selección múltiple al importar: la casilla es el control; la fila entera es su etiqueta. */
+.casilla {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-oro);
+}
+
+.fila:has(.casilla:focus-visible) {
+  outline: 2px solid var(--color-oro);
+  outline-offset: 2px;
 }
 
 .monograma {
@@ -178,7 +192,8 @@
   font-variation-settings: var(--abocinado);
 }
 
-.fila[aria-pressed="true"] .monograma {
+.fila[aria-pressed="true"] .monograma,
+.fila[data-marcada="true"] .monograma {
   color: var(--color-oro-claro);
   box-shadow: 0 0 0 1.5px var(--color-oro);
 }

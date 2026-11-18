@@ -1,10 +1,14 @@
-//! Paquetes (`docs/arquitectura.md`): el `.wowprofile` según `docs/formato-wowprofile.md` (formato 1.0). Esta entrega
-//! lo escribe (spec 023); leerlo con las comprobaciones del formato llega con importar. Solo escribe el `.wowprofile`.
+//! Paquetes (`docs/arquitectura.md`): el `.wowprofile` según `docs/formato-wowprofile.md` (formato 1.0). Lo escribe
+//! (spec 023) y lo lee con las comprobaciones del formato (`lectura`, spec 024). Solo escribe el `.wowprofile`.
+
+mod lectura;
+
+pub use lectura::{EntradaLeida, ManifiestoLeido, PaqueteLeido, leer_fichero};
 
 use crate::error::ErrorNucleo;
 use crate::escritura::escribir_atomico;
 use crate::operaciones::sha256;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::io::{Cursor, Write};
 use std::path::Path;
 use zip::write::SimpleFileOptions;
@@ -22,7 +26,7 @@ const MAX_BYTES_TOTAL: usize = 128 * 1024 * 1024;
 const MAX_CLAVES_QUITADAS: usize = 256;
 
 /// Lo que ve el usuario al elegir qué importa. Solo las de esta entrega; el formato tiene más.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Categoria {
     Macros,
@@ -35,7 +39,7 @@ pub enum Categoria {
     AddonsActivos,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Tipo {
     Fichero,
@@ -43,7 +47,7 @@ pub enum Tipo {
 }
 
 /// Dónde estaba la pieza en el origen.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Ambito {
     Personaje,
