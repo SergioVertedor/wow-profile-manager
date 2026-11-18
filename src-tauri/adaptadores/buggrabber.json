@@ -1,0 +1,7 @@
+{
+  "id": "buggrabber",
+  "version": 1,
+  "addon": "!BugGrabber",
+  "medido": "Registro de errores de Lua capturados: estado.",
+  "noExportar": true
+}

@@ -1,0 +1,16 @@
+{
+  "id": "talents-forever-book",
+  "version": 1,
+  "addon": "TalentsForeverBook",
+  "medido": "Cuenta: TalentsForeverBookDB con settings y builds (configuración) y prices, chars, sent, diag, version y addon (estado). chars usa la clave 'Nombre-Reino interno' sin apellido: no distingue personajes con el mismo nombre, así que los planes por personaje no viajan.",
+  "reglas": [
+    {
+      "ambito": "cuenta",
+      "variable": "TalentsForeverBookDB",
+      "incluir": [
+        "settings",
+        "builds"
+      ]
+    }
+  ]
+}

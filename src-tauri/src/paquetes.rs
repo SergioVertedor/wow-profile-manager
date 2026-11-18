@@ -21,12 +21,14 @@ const MANIFIESTO: &str = "manifest.json";
 const CARPETA_DATOS: &str = "datos/";
 /// Límites del formato 1.0: piezas, bytes por pieza y bytes de todas juntas.
 const MAX_PIEZAS: usize = 256;
-const MAX_BYTES_PIEZA: usize = 32 * 1024 * 1024;
+pub const MAX_BYTES_PIEZA: usize = 32 * 1024 * 1024;
+/// Texto que el formato reserva para sus marcadores: lo que ya lo trae no viaja.
+pub const MARCADOR: &[u8] = b"@@WOWPROFILE:";
 const MAX_BYTES_TOTAL: usize = 128 * 1024 * 1024;
 /// El schema no admite más nombres en `claves_quitadas`.
 const MAX_CLAVES_QUITADAS: usize = 256;
 
-/// Lo que ve el usuario al elegir qué importa. Solo las de esta entrega; el formato tiene más.
+/// Lo que ve el usuario al elegir qué importa. Las que exporta la app; el formato tiene más (`modo-edicion`, #71).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Categoria {
@@ -38,6 +40,7 @@ pub enum Categoria {
     Ventanas,
     MarcosBanda,
     AddonsActivos,
+    ConfigAddon,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -45,6 +48,8 @@ pub enum Categoria {
 pub enum Tipo {
     Fichero,
     FicheroFiltrado,
+    PerfilAcedb,
+    Adaptador,
 }
 
 /// Dónde estaba la pieza en el origen.
@@ -58,15 +63,40 @@ pub enum Ambito {
 /// Una pieza con su contenido, tal como sale de Exportación.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Pieza {
-    pub id: &'static str,
+    pub id: String,
     pub categoria: Categoria,
     pub tipo: Tipo,
     pub ambito: Ambito,
-    /// Ruta lógica (`personaje/<fichero>` o `cuenta/<fichero>`), nunca una ruta de disco.
-    pub destino: &'static str,
+    /// Ruta lógica (`personaje/<fichero>` o `cuenta/[SavedVariables/]<fichero>`), nunca una ruta de disco.
+    pub destino: String,
     pub contenido: Vec<u8>,
-    /// Solo en `fichero-filtrado`: lo que se quitó (claves de opciones o carpetas de addons), por motivo.
+    /// Solo en `fichero-filtrado`: lo que se quitó (claves, carpetas de addons o variables), por motivo.
     pub quitadas: Vec<Quitadas>,
+    /// Solo en `config-addon`: de qué addon, variable, perfil y adaptador es.
+    pub addon: Option<DeAddon>,
+}
+
+/// Lo que una pieza `config-addon` dice de su addon en el manifiesto.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DeAddon {
+    pub addon: String,
+    pub variable: Option<String>,
+    pub perfil: Option<String>,
+    pub adaptador: Option<RefAdaptador>,
+    pub marcadores: Vec<Marcador>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct RefAdaptador {
+    pub id: String,
+    pub version: u32,
+}
+
+/// Dónde lleva la pieza un marcador del formato.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum Marcador {
+    Personaje,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -149,7 +179,7 @@ impl AddonPaquete {
 }
 
 /// `$defs.idAddon` del schema: `^[A-Za-z0-9_!.\-]{1,64}$` y no solo puntos.
-fn id_de_addon_valido(id: &str) -> bool {
+pub fn id_de_addon_valido(id: &str) -> bool {
     let caracteres = id
         .chars()
         .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '!' | '.' | '-'));
@@ -158,15 +188,25 @@ fn id_de_addon_valido(id: &str) -> bool {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Entrada {
-    pub id: &'static str,
+    pub id: String,
     pub categoria: Categoria,
     pub tipo: Tipo,
     pub ambito: Ambito,
-    pub destino: &'static str,
+    pub destino: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub addon: Option<String>,
     pub sha256: String,
     pub bytes: u64,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub marcadores: Vec<Marcador>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub claves_quitadas: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub variable: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub perfil: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub adaptador: Option<RefAdaptador>,
 }
 
 /// `manifest.json`. Los tipos no tienen campos de cuenta, reino, personaje ni rutas: no se pueden colar.
@@ -247,15 +287,21 @@ fn entrada_de(pieza: Pieza) -> (Entrada, Vec<u8>) {
         claves.truncate(MAX_CLAVES_QUITADAS);
         claves
     });
+    let de_addon = pieza.addon.unwrap_or_default();
     let entrada = Entrada {
         id: pieza.id,
         categoria: pieza.categoria,
         tipo: pieza.tipo,
         ambito: pieza.ambito,
         destino: pieza.destino,
+        addon: (!de_addon.addon.is_empty()).then_some(de_addon.addon),
         sha256: sha256(&pieza.contenido),
         bytes: pieza.contenido.len() as u64,
+        marcadores: de_addon.marcadores,
         claves_quitadas,
+        variable: de_addon.variable,
+        perfil: de_addon.perfil,
+        adaptador: de_addon.adaptador,
     };
     (entrada, pieza.contenido)
 }
@@ -267,13 +313,14 @@ pub(crate) mod tests {
 
     pub fn pieza(id: &'static str, contenido: &[u8]) -> Pieza {
         Pieza {
-            id,
+            id: id.to_owned(),
             categoria: Categoria::Macros,
             tipo: Tipo::Fichero,
             ambito: Ambito::Personaje,
-            destino: "personaje/macros-cache.txt",
+            destino: "personaje/macros-cache.txt".to_owned(),
             contenido: contenido.to_vec(),
             quitadas: Vec::new(),
+            addon: None,
         }
     }
 
@@ -403,5 +450,80 @@ pub(crate) mod tests {
             Paquete::nuevo(perfil(), origen(), Vec::new(), vec![pieza("macros", b"x")]).unwrap();
         paquete.guardar(&ruta).unwrap();
         assert_eq!(entradas_zip(&std::fs::read(&ruta).unwrap()).len(), 2);
+    }
+}
+
+#[cfg(test)]
+mod config_addon {
+    use super::tests::pieza;
+    use super::*;
+
+    #[test]
+    fn las_piezas_de_addon_se_vuelven_a_leer_con_sus_campos() {
+        let perfil_acedb = Pieza {
+            id: "addon-dominos-perfil-dominosdb".into(),
+            categoria: Categoria::ConfigAddon,
+            tipo: Tipo::PerfilAcedb,
+            ambito: Ambito::Cuenta,
+            destino: "cuenta/SavedVariables/Dominos.lua".into(),
+            contenido: b"{\n[\"profile\"] = {\n},\n}\n".to_vec(),
+            quitadas: Vec::new(),
+            addon: Some(DeAddon {
+                addon: "Dominos".into(),
+                variable: Some("DominosDB".into()),
+                perfil: Some("@@WOWPROFILE:PERSONAJE@@".into()),
+                adaptador: None,
+                marcadores: vec![Marcador::Personaje],
+            }),
+        };
+        let adaptador = Pieza {
+            id: "addon-wim-wim3-data".into(),
+            tipo: Tipo::Adaptador,
+            destino: "cuenta/SavedVariables/WIM.lua".into(),
+            contenido: b"WIM3_Data = {\n}\n".to_vec(),
+            addon: Some(DeAddon {
+                addon: "WIM".into(),
+                variable: Some("WIM3_Data".into()),
+                adaptador: Some(RefAdaptador {
+                    id: "wim".into(),
+                    version: 2,
+                }),
+                ..DeAddon::default()
+            }),
+            ..perfil_acedb.clone()
+        };
+        let perfil = Perfil {
+            nombre: "Druida".into(),
+            descripcion: None,
+            creado: "2026-11-18T10:00:00Z".into(),
+        };
+        let origen = Origen {
+            producto: "wowf",
+            build: "1.60.1.70938".into(),
+            interfaz: 16001,
+        };
+        let piezas = vec![pieza("macros", b"VER 3\r\n"), perfil_acedb, adaptador];
+        let tmp = tempfile::tempdir().unwrap();
+        let ruta = tmp.path().join("p.wowprofile");
+        Paquete::nuevo(perfil, origen, Vec::new(), piezas)
+            .unwrap()
+            .guardar(&ruta)
+            .unwrap();
+
+        let leido = leer_fichero(&ruta).unwrap();
+
+        let entradas = &leido.manifiesto.entradas;
+        assert_eq!(entradas[1].categoria, "config-addon");
+        assert_eq!(entradas[1].tipo, "perfil-acedb");
+        assert_eq!(entradas[1].addon.as_deref(), Some("Dominos"));
+        assert_eq!(entradas[1].variable.as_deref(), Some("DominosDB"));
+        assert_eq!(
+            entradas[1].perfil.as_deref(),
+            Some("@@WOWPROFILE:PERSONAJE@@")
+        );
+        assert_eq!(entradas[1].marcadores, Some(vec!["PERSONAJE".to_owned()]));
+        assert_eq!(entradas[2].tipo, "adaptador");
+        assert!(entradas[2].adaptador.is_some());
+        assert_eq!(entradas[2].perfil, None);
     }
 }

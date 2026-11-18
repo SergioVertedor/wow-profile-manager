@@ -1,11 +1,12 @@
-// «Exportar» del personaje elegido (spec 023). Pide al núcleo qué se puede llevar, lo enseña en un diálogo con todo
-// marcado, y con el nombre del perfil le pide que arme el `.wowprofile`. El diálogo de guardar lo abre el núcleo: la
+// «Exportar» del personaje elegido (specs 023 y 027). Pide al núcleo qué se puede llevar, lo enseña en un diálogo con lo
+// que el núcleo marca por defecto, y con el nombre del perfil le pide que arme el `.wowprofile`. El diálogo de guardar lo abre el núcleo: la
 // interfaz solo pasa la identidad del personaje y lo marcado, nunca una ruta. Exportar no escribe en el WTF.
 import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PackageOpen, TriangleAlert } from "lucide-react";
 import Desplegable from "../comun/Desplegable";
 import ListaQuitadas from "../comun/ListaQuitadas";
+import ConfigAddons from "./ConfigAddons";
 import {
   exportarPersonaje,
   pedirPropuestaExportacion,
@@ -55,7 +56,7 @@ export default function ExportarPersonaje({ pedido, nombre, donde }: Props) {
     setPaso({ tipo: "cargando" });
     pedirPropuestaExportacion(pedido)
       .then((propuesta) => {
-        setMarcadas(new Set(propuesta.piezas.map((p) => p.id)));
+        setMarcadas(new Set(propuesta.piezas.filter((p) => p.marcada).map((p) => p.id)));
         setPerfil("");
         setDescripcion("");
         setPaso({ tipo: "eligiendo", propuesta, error: null });
@@ -85,6 +86,7 @@ export default function ExportarPersonaje({ pedido, nombre, donde }: Props) {
       }
       return nuevas;
     });
+  const marcar = (ids: readonly string[]) => setMarcadas((antes) => new Set([...antes, ...ids]));
   const cerrar = () => dialogo.current?.close();
 
   return (
@@ -115,6 +117,7 @@ export default function ExportarPersonaje({ pedido, nombre, donde }: Props) {
             propuesta={propuesta}
             marcadas={marcadas}
             alternar={alternar}
+            marcar={marcar}
             perfil={perfil}
             setPerfil={setPerfil}
             descripcion={descripcion}
@@ -162,6 +165,7 @@ type PropsFormulario = Readonly<{
   propuesta: PropuestaExportacion;
   marcadas: ReadonlySet<string>;
   alternar: (id: string) => void;
+  marcar: (ids: readonly string[]) => void;
   perfil: string;
   setPerfil: (valor: string) => void;
   descripcion: string;
@@ -173,6 +177,7 @@ function Formulario({
   propuesta,
   marcadas,
   alternar,
+  marcar,
   perfil,
   setPerfil,
   descripcion,
@@ -181,6 +186,8 @@ function Formulario({
 }: PropsFormulario) {
   const { t, i18n } = useTranslation();
   const idPiezas = useId();
+  const ficheros = propuesta.piezas.filter((p) => p.categoria !== "config-addon");
+  const deAddons = propuesta.piezas.filter((p) => p.categoria === "config-addon");
   return (
     <>
       {propuesta.juegoAbierto && (
@@ -190,11 +197,20 @@ function Formulario({
         </p>
       )}
       {propuesta.piezas.length === 0 ? (
-        <p className={css.nada}>{t("exportar.nada")}</p>
+        <>
+          <p className={css.nada}>{t("exportar.nada")}</p>
+          <ConfigAddons
+            piezas={[]}
+            noExportables={propuesta.noExportables}
+            marcadas={marcadas}
+            alternar={alternar}
+            marcar={marcar}
+          />
+        </>
       ) : (
         <fieldset className={css.piezas} aria-describedby={idPiezas} disabled={bloqueado}>
           <legend>{t("exportar.piezas")}</legend>
-          {propuesta.piezas.map((pieza) => (
+          {ficheros.map((pieza) => (
             <div key={pieza.id}>
               <label className={css.pieza}>
                 <input type="checkbox" checked={marcadas.has(pieza.id)} onChange={() => alternar(pieza.id)} />
@@ -214,6 +230,13 @@ function Formulario({
               )}
             </div>
           ))}
+          <ConfigAddons
+            piezas={deAddons}
+            noExportables={propuesta.noExportables}
+            marcadas={marcadas}
+            alternar={alternar}
+            marcar={marcar}
+          />
         </fieldset>
       )}
       <p id={idPiezas} className={css.nota}>

@@ -1,0 +1,13 @@
+{
+  "id": "spy",
+  "version": 1,
+  "addon": "Spy",
+  "medido": "Cuenta: SpyDB es AceDB. Por personaje: SpyPerCharDB con KOSData, PlayerData, IgnoreData y Encounters, todo datos de otros jugadores.",
+  "reglas": [
+    {
+      "ambito": "cuenta",
+      "variable": "SpyDB",
+      "perfilAcedb": true
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "pawn",
+  "version": 2,
+  "addon": "Pawn",
+  "medido": "Pawn 2.14.3. Cuenta: PawnCommon tiene 21 claves; 19 son opciones (Scales incluida) y LastVersion y ShownGettingStarted son estado. Dentro de cada escala, PerCharacterOptions indexado por \"Nombre Apellido\". Por personaje: PawnOptions con AutoSelectScales (preferencia) y LastVersion, LastPlayerFullName, ItemLevels y LastKeybindingsSet (estado).",
+  "reglas": [
+    {
+      "ambito": "cuenta",
+      "variable": "PawnCommon",
+      "incluir": [
+        "AlignNumbersRight",
+        "ButtonPosition",
+        "ColorTooltipBorder",
+        "Debug",
+        "Digits",
+        "IgnoreGemsWhileLeveling",
+        "Scales",
+        "ShowBagUpgradeAdvisor",
+        "ShowEnchanted",
+        "ShowItemID",
+        "ShowItemLevelUpgrades",
+        "ShowLootUpgradeAdvisor",
+        "ShowQuestUpgradeAdvisor",
+        "ShowRelicUpgrades",
+        "ShowSocketingAdvisor",
+        "ShowSpecIcons",
+        "ShowTooltipIcons",
+        "ShowUpgradesOnTooltips",
+        "ShowValuesForUpgradesOnly"
+      ],
+      "soloPersonaje": [
+        "Scales/*/PerCharacterOptions/$PJ"
+      ]
+    },
+    {
+      "ambito": "personaje",
+      "variable": "PawnOptions",
+      "incluir": [
+        "AutoSelectScales"
+      ]
+    }
+  ]
+}

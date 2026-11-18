@@ -11,7 +11,7 @@ use std::collections::HashSet;
 use std::path::Path;
 
 /// Carpeta de cada cuenta y de cada personaje que guarda `SavedVariables` y no es un reino.
-const CARPETA_SAVED_VARIABLES: &str = "SavedVariables";
+pub const CARPETA_SAVED_VARIABLES: &str = "SavedVariables";
 
 /// Las cuentas de `WTF/Account` de una versión.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -104,6 +104,24 @@ fn leer_cuenta(carpeta: String, ruta: &Path, producto: Producto) -> Result<Cuent
         personajes,
         reinos_ignorados,
     })
+}
+
+/// Cómo se llamaría en los datos cada personaje de la cuenta `ruta_cuenta`, según su carpeta (spec 027: saber si un
+/// fichero de la cuenta menciona a sus personajes).
+pub fn nombres_de_carpetas(
+    ruta_cuenta: &Path,
+    producto: Producto,
+) -> Result<Vec<String>, ErrorNucleo> {
+    let mut nombres = Vec::new();
+    for reino in subcarpetas(ruta_cuenta)? {
+        if reino.nombre == CARPETA_SAVED_VARIABLES || !es_reino_de(&reino.nombre, producto) {
+            continue;
+        }
+        for personaje in subcarpetas(&reino.ruta)? {
+            nombres.extend(candidato(&reino.nombre, &personaje.nombre, producto));
+        }
+    }
+    Ok(nombres)
 }
 
 /// Orden de `docs/modelo-de-datos.md`: el candidato de la carpeta, confirmado si es una clave de los datos.

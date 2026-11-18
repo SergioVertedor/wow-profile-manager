@@ -175,9 +175,10 @@ fn clasificar(entrada: &EntradaLeida) -> Result<Importable<'_>, MotivoIncompatib
         entrada.tipo_conocido(),
         Some(Tipo::Fichero | Tipo::FicheroFiltrado)
     );
+    // La configuración de addons aún no se importa (#72).
     let categoria = entrada
         .categoria_conocida()
-        .filter(|_| tipo_admitido)
+        .filter(|c| tipo_admitido && *c != Categoria::ConfigAddon)
         .ok_or(MotivoIncompatible::NoSeImporta)?;
     let fuente =
         fuente_de_destino(categoria, &entrada.destino).ok_or(MotivoIncompatible::DestinoAjeno)?;

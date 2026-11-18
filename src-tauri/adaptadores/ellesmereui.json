@@ -1,0 +1,40 @@
+{
+  "id": "ellesmereui",
+  "version": 3,
+  "addon": "EllesmereUI",
+  "medido": "EllesmereUI 9.8.8. Cuenta: EllesmereUIDB, 58 claves. Tiene perfiles propios (profiles, activeProfile, profileOrder, specProfiles) que no son AceDB. 27 claves son configuración. Estado (31): chars (oro, clase, raza y nivel de cada personaje), goldLedger, _migrations, lastLoginVersion, patchDotPending, dismissedConflicts, _tbbLinkOwner y las marcas de 'ya visto' (_capturedOnce_*, *Seeded, *Seen, firstInstallPopupShown, kickTrackerIntroShown, charSheetCardStyleAdopted). 2026-11-18: restoreOnUninstall es una copia de toda la base (con chars y GUID de personajes) para restaurarla al desinstalar: estado, no viaja.",
+  "reglas": [
+    {
+      "ambito": "cuenta",
+      "variable": "EllesmereUIDB",
+      "incluir": [
+        "activeProfile",
+        "autoLogging",
+        "bagsUserChosen",
+        "clickCast",
+        "customColors",
+        "fonts",
+        "lastNonSpecProfile",
+        "panelScale",
+        "ppUIScale",
+        "ppUIScaleAuto",
+        "profileKeybinds",
+        "profileOrder",
+        "profiles",
+        "reskinBagBar",
+        "reskinFlagCarriers",
+        "reskinMicroMenu",
+        "specProfiles",
+        "spellAssignments",
+        "threatMeter",
+        "unlockAnchors",
+        "unlockGridMode",
+        "unlockHeightMatch",
+        "unlockSnapEnabled",
+        "unlockWidthMatch",
+        "windowLookPerProfile",
+        "windowSkinStyleSlots"
+      ]
+    }
+  ]
+}

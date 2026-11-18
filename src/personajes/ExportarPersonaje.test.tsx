@@ -2,7 +2,7 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { I18nextProvider } from "react-i18next";
-import type { PersonajePedido, PropuestaExportacion } from "../nucleo";
+import type { PersonajePedido, PiezaPropuesta, PropuestaExportacion } from "../nucleo";
 import { crearTextos } from "../textos";
 import ExportarPersonaje from "./ExportarPersonaje";
 
@@ -30,14 +30,57 @@ const PEDIDO: PersonajePedido = {
   personaje: "Goldberg-Joestar",
 };
 
+/** Una pieza de la entrega 1: marcada y sin datos de addon. */
+function pieza(campos: Pick<PiezaPropuesta, "id" | "categoria"> & Partial<PiezaPropuesta>): PiezaPropuesta {
+  return {
+    tipo: "fichero",
+    ambito: "personaje",
+    bytes: 100,
+    quitadas: [],
+    marcada: true,
+    addon: null,
+    variable: null,
+    perfil: null,
+    regla: null,
+    versionNoMedida: false,
+    pistas: [],
+    ...campos,
+  };
+}
+
+/** Una pieza de configuración de addon. */
+function deAddon(campos: Pick<PiezaPropuesta, "id" | "addon" | "regla"> & Partial<PiezaPropuesta>): PiezaPropuesta {
+  return pieza({ categoria: "config-addon", marcada: false, ambito: "cuenta", ...campos });
+}
+
 const PROPUESTA: PropuestaExportacion = {
   piezas: [
-    { id: "macros", categoria: "macros", ambito: "personaje", bytes: 2_000, quitadas: [] },
-    { id: "teclas", categoria: "teclas", ambito: "cuenta", bytes: 1_600, quitadas: [] },
-    { id: "addons-activos", categoria: "addons-activos", ambito: "personaje", bytes: 400, quitadas: [{ motivo: "addonNoInstalado", claves: Array.from({ length: 12 }, (_, i) => `Addon${i}`) }] },
+    pieza({ id: "macros", categoria: "macros", bytes: 2_000 }),
+    pieza({ id: "teclas", categoria: "teclas", ambito: "cuenta", bytes: 1_600 }),
+    pieza({
+      id: "addons-activos",
+      categoria: "addons-activos",
+      tipo: "fichero-filtrado",
+      bytes: 400,
+      quitadas: [{ motivo: "addonNoInstalado", claves: Array.from({ length: 12 }, (_, i) => `Addon${i}`) }],
+    }),
   ],
   apartadas: [],
+  noExportables: [],
   juegoAbierto: false,
+};
+
+const CON_ADDONS: PropuestaExportacion = {
+  ...PROPUESTA,
+  piezas: [
+    pieza({ id: "macros", categoria: "macros" }),
+    deAddon({ id: "dominos-perfil", addon: "Dominos", regla: "perfilAcedb", perfil: "Default - Druid", marcada: true }),
+    deAddon({ id: "dominos-cuenta", addon: "Dominos", regla: "genericoCuenta" }),
+    deAddon({ id: "wim-data", addon: "WIM", regla: "adaptador", variable: "WIM3_Data", versionNoMedida: true }),
+    deAddon({ id: "prat-pj", addon: "Prat-3.0", regla: "genericoPersonaje", ambito: "personaje", pistas: ["guid"] }),
+    deAddon({ id: "nodes-pj", addon: "NodeSight", regla: "genericoPersonaje", ambito: "personaje" }),
+  ],
+  noExportables: [{ addon: "Spy", ambito: "cuenta", variable: "SpyDB", motivo: "sinPerfil" }],
 };
 
 function pintar(respuestas: Record<string, () => unknown>) {
@@ -81,7 +124,7 @@ describe("ExportarPersonaje", () => {
     pintar({
       propuesta_exportacion: () => ({
         ...PROPUESTA,
-        piezas: [{ id: "opciones", categoria: "opciones", ambito: "personaje", bytes: 900, quitadas }],
+        piezas: [pieza({ id: "opciones", categoria: "opciones", tipo: "fichero-filtrado", bytes: 900, quitadas })],
       }),
     });
 
@@ -145,6 +188,62 @@ describe("ExportarPersonaje", () => {
 
     expect(within(dialogo).getByText(/WoW está abierto/)).toBeTruthy();
     expect(within(dialogo).getByText(/«@@WOWPROFILE:»: macros\./)).toBeTruthy();
+  });
+
+  it("la configuración de addons sale por addon, marcada solo si se reconoce, y con sus avisos", async () => {
+    pintar({ propuesta_exportacion: () => CON_ADDONS });
+
+    const dialogo = await abrir();
+
+    const marcada = (nombre: RegExp) => (within(dialogo).getByRole("checkbox", { name: nombre }) as HTMLInputElement).checked;
+    expect(marcada(/Perfil «Default - Druid»/)).toBe(true);
+    expect(marcada(/Fichero de la cuenta/)).toBe(false);
+    expect(marcada(/Ajustes: WIM3_Data/)).toBe(false);
+    const dominos = within(dialogo).getByRole("group", { name: "Dominos" });
+    expect(within(dominos).getAllByRole("checkbox")).toHaveLength(2);
+    expect(within(dominos).getByText(/Fichero entero: puede llevar progreso/)).toBeTruthy();
+    const prat = within(dialogo).getByRole("group", { name: "Prat-3.0" });
+    expect(within(prat).getByText(/identificadores de jugador/)).toBeTruthy();
+    // El aviso va ligado a su casilla, para quien usa lector de pantalla.
+    const casilla = within(prat).getByRole("checkbox");
+    expect(document.getElementById(casilla.getAttribute("aria-describedby") ?? "")?.textContent).toMatch(/jugador/);
+    expect(within(dialogo).getByText(/no se ha comprobado/)).toBeTruthy();
+  });
+
+  it("«marcar» marca las genéricas de su regla salvo las que tienen pistas, y se mandan en orden", async () => {
+    const llamadas = pintar({
+      propuesta_exportacion: () => CON_ADDONS,
+      exportar_personaje: () => ({ resultado: "exportada", fichero: "Druida.wowprofile" }),
+    });
+    const dialogo = await abrir();
+
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Marcar los ficheros del personaje" }));
+    fireEvent.change(within(dialogo).getByRole("textbox", { name: "Nombre del perfil" }), {
+      target: { value: "Druida" },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Guardar…" }));
+
+    await within(dialogo).findByText("Guardado como Druida.wowprofile.");
+    expect(llamadas[llamadas.length - 1].argumentos).toMatchObject({
+      seleccion: ["macros", "dominos-perfil", "nodes-pj"],
+    });
+  });
+
+  it("dice qué no se puede exportar de cada addon y por qué", async () => {
+    pintar({ propuesta_exportacion: () => CON_ADDONS });
+    const dialogo = await abrir();
+
+    fireEvent.click(within(dialogo).getByText("1 cosa no se puede exportar"));
+
+    expect(within(dialogo).getByText(/Spy · SpyDB \(de la cuenta\): Este personaje no tiene perfil asignado/)).toBeTruthy();
+  });
+
+  it("sin piezas también dice qué no se puede exportar", async () => {
+    pintar({ propuesta_exportacion: () => ({ ...CON_ADDONS, piezas: [] }) });
+    const dialogo = await abrir();
+
+    expect(within(dialogo).getByText(/no tiene nada que exportar/)).toBeTruthy();
+    expect(within(dialogo).getByText("1 cosa no se puede exportar")).toBeTruthy();
   });
 
   it("si no se puede pedir qué exportar, lo dice junto al botón", async () => {

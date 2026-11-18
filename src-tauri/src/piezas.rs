@@ -155,6 +155,8 @@ pub enum Motivo {
     Estado,
     /// Un addon que no está instalado.
     AddonNoInstalado,
+    /// Una variable AceDB: viaja aparte, como su perfil (spec 027).
+    ViajaComoPerfil,
 }
 
 /// Las claves que se quitan por un mismo motivo, en el orden del fichero.

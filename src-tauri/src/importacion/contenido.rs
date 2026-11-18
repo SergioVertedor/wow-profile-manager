@@ -35,7 +35,10 @@ pub fn contenido(categoria: Categoria, pieza: &[u8]) -> Option<Contenido> {
         Categoria::Teclas => teclas(pieza),
         Categoria::Chat => ventanas_de_chat(pieza),
         Categoria::AddonsActivos => return addons(pieza),
-        Categoria::TeclasClic | Categoria::Ventanas | Categoria::MarcosBanda => return None,
+        Categoria::TeclasClic
+        | Categoria::Ventanas
+        | Categoria::MarcosBanda
+        | Categoria::ConfigAddon => return None,
     };
     (!elementos.is_empty()).then_some(Contenido::Lista { elementos })
 }

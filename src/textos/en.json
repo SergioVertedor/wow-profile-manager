@@ -233,7 +233,8 @@
       "chat": "Chat",
       "ventanas": "Windows",
       "marcos-banda": "Raid frames",
-      "addons-activos": "Enabled add-ons"
+      "addons-activos": "Enabled add-ons",
+      "config-addon": "Addon settings"
     },
     "nada": "This character has nothing to export yet.",
     "barras": "What is on the action bar buttons does not travel: the server keeps it. Key bindings, macros and the list of enabled add-ons do.",
@@ -245,7 +246,46 @@
     "confirmar": "Save…",
     "exportando": "Saving…",
     "cerrar": "Close",
-    "hecho": "Saved as {{fichero}}."
+    "hecho": "Saved as {{fichero}}.",
+    "addons": {
+      "titulo": "Addon settings",
+      "explicacion": "What is recognised as settings is ticked. Whole files are not: they may carry progress, state or other players' data.",
+      "pieza": {
+        "perfilAcedb": "Profile “{{perfil}}”",
+        "adaptador": "Settings: {{variable}}",
+        "genericoCuenta": "Account file",
+        "genericoPersonaje": "Character file",
+        "genericoCuentaConPersonajes": "Account file"
+      },
+      "avisos": {
+        "generico": "Whole file: it may carry progress, state or other players' data.",
+        "conPersonajes": "It mentions characters of this account.",
+        "versionNoMedida": "This addon version has not been checked: it could carry more than its settings.",
+        "guid": "It seems to contain other players: player identifiers.",
+        "nombreReino": "It seems to contain other players: names with realm."
+      },
+      "marcarTodos": {
+        "genericoCuenta": "Tick the account files",
+        "genericoPersonaje": "Tick the character files",
+        "genericoCuentaConPersonajes": "Tick the ones that mention characters"
+      },
+      "marcarTodosNota": "Ones that seem to contain other players are left out: tick those one by one.",
+      "noExportables_one": "{{count}} item can't be exported",
+      "noExportables_other": "{{count}} items can't be exported",
+      "noExportable": {
+        "noSeLee": "It can't be read.",
+        "sinNombre": "The character's name in the data is unknown.",
+        "sinPerfil": "This character has no profile assigned in this addon.",
+        "demasiadoGrande": "It is larger than the format allows.",
+        "traeMarcador": "It already contains the reserved text “@@WOWPROFILE:”.",
+        "perfilNoValido": "The profile name can't be carried (odd text or too long).",
+        "carpetaNoAdmitida": "The format doesn't allow the addon folder's name."
+      },
+      "ambito": {
+        "cuenta": "account",
+        "personaje": "character"
+      }
+    }
   },
   "motivosPaquete": {
     "noEsZip": "it can't be opened as a .wowprofile.",
@@ -372,6 +412,7 @@
   "motivos": {
     "seguridad": "For safety: it would remove the game's warning before running scripts for whoever imports it.",
     "estado": "Game state, not settings: what you track, what you have already seen or what you have collapsed.",
-    "addonNoInstalado": "Addons that are not installed on this computer."
+    "addonNoInstalado": "Addons that are not installed on this computer.",
+    "viajaComoPerfil": "They travel separately, as their profile: that way only this character's one goes."
   }
 }
