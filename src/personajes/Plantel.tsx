@@ -1,8 +1,8 @@
 // La lista de personajes de una cuenta (spec 017): cambio de cuenta si hay más de una, buscador si la lista es larga
-// y reinos fuera de Forever. Se reutilizará para elegir el destino al importar.
-import { useState } from "react";
+// y reinos fuera de Forever, que se pliegan y despliegan (spec 019). Se reutilizará para elegir el destino al importar.
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import NombreEditable from "../instalaciones/NombreEditable";
 import type { Cuenta, Personaje } from "../nucleo";
 import css from "./Plantel.module.css";
@@ -33,7 +33,18 @@ export default function Plantel(props: Props) {
   const { t } = useTranslation();
   const { cuenta, producto, personaje, elegirPersonaje } = props;
   const [consulta, setConsulta] = useState("");
+  // Solo en memoria: al cambiar de cuenta el componente se remonta (`key` en Personajes) y todo vuelve a desplegarse.
+  const [plegados, setPlegados] = useState<ReadonlySet<string>>(new Set());
   const visibles = filtrar(cuenta.personajes, consulta);
+  const buscando = consulta.trim() !== "";
+  const alternar = (reino: string) =>
+    setPlegados((antes) => {
+      const despues = new Set(antes);
+      if (!despues.delete(reino)) {
+        despues.add(reino);
+      }
+      return despues;
+    });
   const elegida = personaje === null ? null : claveDePersonaje(personaje);
   return (
     <section className={css.plantel} aria-label={t("plantel.etiqueta")}>
@@ -67,17 +78,54 @@ export default function Plantel(props: Props) {
         )}
         {muestraReinos(producto) ? (
           agruparPorReino(visibles).map((grupo) => (
-            <section key={grupo.reino} aria-label={grupo.reino}>
-              <h3 className={css.reino}>
-                {grupo.reino}
-                <span>{grupo.personajes.length}</span>
-              </h3>
-              <Filas personajes={grupo.personajes} elegida={elegida} elegir={elegirPersonaje} />
-            </section>
+            <GrupoReino
+              key={grupo.reino}
+              reino={grupo.reino}
+              personajes={grupo.personajes}
+              // Mientras se busca, lo plegado no cuenta: si no, una búsqueda podría no enseñar nada sin decir por qué.
+              desplegado={buscando || !plegados.has(grupo.reino)}
+              alternar={() => alternar(grupo.reino)}
+              elegida={elegida}
+              elegir={elegirPersonaje}
+            />
           ))
         ) : (
           <Filas personajes={visibles} elegida={elegida} elegir={elegirPersonaje} />
         )}
+      </div>
+    </section>
+  );
+}
+
+/** Un reino: la cabecera fija es el botón que pliega y despliega sus personajes; el recuento se ve siempre. */
+function GrupoReino({
+  reino,
+  personajes,
+  desplegado,
+  alternar,
+  elegida,
+  elegir,
+}: Readonly<{
+  reino: string;
+  personajes: Personaje[];
+  desplegado: boolean;
+  alternar: () => void;
+  elegida: string | null;
+  elegir: (clave: string) => void;
+}>) {
+  const idFilas = useId();
+  const Chevron = desplegado ? ChevronDown : ChevronRight;
+  return (
+    <section aria-label={reino}>
+      <h3 className={css.reino}>
+        <button type="button" aria-expanded={desplegado} aria-controls={idFilas} onClick={alternar}>
+          <Chevron aria-hidden size={14} strokeWidth={2.25} />
+          {reino}
+          <span>{personajes.length}</span>
+        </button>
+      </h3>
+      <div id={idFilas} hidden={!desplegado}>
+        <Filas personajes={personajes} elegida={elegida} elegir={elegir} />
       </div>
     </section>
   );
