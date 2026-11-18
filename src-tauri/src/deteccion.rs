@@ -6,7 +6,7 @@ use crate::addons::{Addons, descubrir_addons};
 use crate::agente_battlenet;
 use crate::bpsv;
 use crate::descubrimiento::{Cuentas, descubrir};
-use crate::disco::{clave_de_ruta, leer_texto, subcarpetas};
+use crate::disco::{clave_de_ruta, es_enlace, leer_texto, subcarpetas};
 use crate::error::ErrorNucleo;
 use crate::preferencias::Preferencias;
 use serde::{Deserialize, Serialize};
@@ -409,6 +409,20 @@ impl PersonajeUbicado {
             .join(CARPETA_WTF)
             .join(CARPETA_ACCOUNT)
             .join(&self.cuenta)
+    }
+
+    /// Su carpeta, la de su reino y la de su cuenta no son enlaces ni uniones de Windows: con uno en el camino no se
+    /// sigue, porque podría salir del `WTF`.
+    pub fn comprobar_sin_enlaces(&self) -> Result<(), ErrorNucleo> {
+        let carpeta = self.carpeta();
+        let reino = self.carpeta_cuenta().join(&self.reino);
+        let tramos = [carpeta, reino, self.carpeta_cuenta()];
+        match tramos.iter().find(|t| es_enlace(t)) {
+            Some(enlace) => Err(ErrorNucleo::EnlaceNoAdmitido {
+                ruta: enlace.display().to_string(),
+            }),
+            None => Ok(()),
+        }
     }
 }
 
@@ -843,5 +857,49 @@ mod tests {
         sin_flavor.version = "Data".into();
         no_encontrado(&sin_flavor);
         assert!(ubicar(&pedido(tmp.path(), "93", "Goldberg"), &conocidas).is_ok());
+    }
+
+    fn ubicado(raiz: &Path) -> PersonajeUbicado {
+        PersonajeUbicado {
+            raiz_version: raiz.join("_forever_"),
+            producto: Producto::Forever,
+            cuenta: "1#1".into(),
+            reino: "93".into(),
+            personaje: "Goldberg".into(),
+            nombre_en_datos: None,
+        }
+    }
+
+    #[test]
+    fn sin_enlaces_en_el_camino_se_puede_seguir() {
+        let tmp = tempfile::tempdir().unwrap();
+        let pj = ubicado(tmp.path());
+        create_dir_all(pj.carpeta()).unwrap();
+        assert_eq!(pj.comprobar_sin_enlaces(), Ok(()));
+    }
+
+    /// Una unión de Windows (`mklink /J`, sin permisos de administrador) en el reino, entre la cuenta y el personaje.
+    #[cfg(windows)]
+    #[test]
+    fn una_union_en_el_reino_no_se_sigue() {
+        let tmp = tempfile::tempdir().unwrap();
+        let fuera = tmp.path().join("fuera");
+        create_dir_all(fuera.join("Goldberg")).unwrap();
+        let pj = ubicado(tmp.path());
+        create_dir_all(pj.carpeta_cuenta()).unwrap();
+        let reino = pj.carpeta_cuenta().join(&pj.reino);
+        let creada = std::process::Command::new("cmd")
+            .args(["/C", "mklink", "/J"])
+            .arg(&reino)
+            .arg(&fuera)
+            .output()
+            .unwrap();
+        assert!(creada.status.success(), "{creada:?}");
+        assert_eq!(
+            pj.comprobar_sin_enlaces(),
+            Err(ErrorNucleo::EnlaceNoAdmitido {
+                ruta: reino.display().to_string()
+            })
+        );
     }
 }

@@ -249,6 +249,11 @@ export interface ManifiestoPaquete {
 /** Por qué una entrada no se importa: aún no se sabe, o su destino no es el fichero de su categoría. */
 export type MotivoIncompatible = "noSeImporta" | "destinoAjeno";
 
+/** Qué trae una entrada (`Contenido` en `src-tauri/src/importacion/contenido.rs`). */
+export type Contenido =
+  | { tipo: "lista"; elementos: string[] }
+  | { tipo: "addons"; activados: string[]; desactivados: string[] };
+
 /** Una entrada del paquete abierto (`EntradaResumen` en `src-tauri/src/importacion.rs`). */
 export interface EntradaPaquete {
   id: string;
@@ -259,6 +264,8 @@ export interface EntradaPaquete {
   deCuenta: boolean;
   bytes: number;
   incompatible?: MotivoIncompatible;
+  /** Solo en las que se importan y cuya categoría tiene lista. */
+  contenido?: Contenido;
 }
 
 export interface ResumenPaquete {
@@ -482,6 +489,11 @@ export function borrarOperacion(id: string, restauradaAMano: boolean): Promise<v
 
 export function abrirCarpetaOperacion(id: string): Promise<void> {
   return invoke("abrir_carpeta_operacion", { id });
+}
+
+/** Abre en el explorador la carpeta del personaje. Solo lee; con un enlace en el camino no abre nada. */
+export function abrirCarpetaPersonaje(personaje: PersonajePedido): Promise<void> {
+  return invoke("abrir_carpeta_personaje", { personaje });
 }
 
 /** Enlaces que sabe abrir el núcleo (`src-tauri/src/enlaces.rs`). La interfaz nunca le pasa una URL. */

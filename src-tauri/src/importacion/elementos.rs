@@ -50,7 +50,7 @@ impl Elemento {
 }
 
 /// Las líneas de un fichero de texto, sin el salto de línea.
-fn lineas(bytes: &[u8]) -> Vec<String> {
+pub(super) fn lineas(bytes: &[u8]) -> Vec<String> {
     String::from_utf8_lossy(bytes)
         .lines()
         .map(str::to_owned)
@@ -113,6 +113,11 @@ fn cerrar_macro(id: String, nombre: String, bloque: &[String]) -> Macro {
     }
 }
 
+/// Lo que se enseña de cada macro, en el orden del fichero: su nombre, o su primera línea si está en blanco.
+pub(super) fn etiquetas_macros(bytes: &[u8]) -> Vec<String> {
+    macros(bytes).into_iter().map(|m| m.etiqueta).collect()
+}
+
 /// Macros añadidas, cambiadas y quitadas al pasar de `antes` a `despues`, por id.
 pub fn diferencias_macros(antes: &[u8], despues: &[u8]) -> Vec<Elemento> {
     let viejas: HashMap<String, Macro> = macros(antes)
@@ -147,17 +152,18 @@ pub fn diferencias_macros(antes: &[u8], despues: &[u8]) -> Vec<Elemento> {
     cambios
 }
 
-/// `bind <tecla> <acción>` [V]: la tecla y la acción. Una línea que no es `bind` se compara entera.
+/// `bind <tecla> <acción>` [V]: la tecla y la acción, o nada si la línea no es `bind`.
+pub(super) fn bind(linea: &str) -> Option<(String, String)> {
+    let (tecla, accion) = linea.strip_prefix(BIND)?.split_once(' ')?;
+    Some((tecla.to_owned(), accion.trim().to_owned()))
+}
+
+/// Las teclas de un fichero. Una línea que no es `bind` se compara entera.
 fn teclas(bytes: &[u8]) -> Vec<(String, String)> {
     lineas(bytes)
         .into_iter()
         .filter(|l| !l.trim().is_empty())
-        .map(
-            |linea| match linea.strip_prefix(BIND).and_then(|r| r.split_once(' ')) {
-                Some((tecla, accion)) => (tecla.to_owned(), accion.trim().to_owned()),
-                None => (linea.clone(), linea),
-            },
-        )
+        .map(|linea| bind(&linea).unwrap_or_else(|| (linea.clone(), linea)))
         .collect()
 }
 

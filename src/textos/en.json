@@ -48,7 +48,8 @@
     "nombreCuenta": "Account name"
   },
   "ficha": {
-    "etiqueta": "Selected character"
+    "etiqueta": "Selected character",
+    "abrirCarpeta": "Open folder"
   },
   "acercaDe": {
     "titulo": "About",
@@ -73,7 +74,7 @@
     "personajeNoEncontrado": "That character is no longer on disk. Reload the list.",
     "operacionFallida": "It could not finish, nor put everything back. The copies are still in operation {{id}}, in the app's data folder: {{detalle}}",
     "operacionFallidaRestaurada": "It could not finish and everything was put back as it was (operation {{id}}): {{detalle}}",
-    "enlaceNoAdmitido": "There is a link or folder junction at {{ruta}}. It is not followed: it could delete files outside WTF. Remove it by hand if you want to delete the folder.",
+    "enlaceNoAdmitido": "There is a link or folder junction at {{ruta}}. It is not followed, because it could lead outside WTF. Remove it by hand to continue.",
     "operacionNoEncontrada": "That operation is no longer in the history. Reload it.",
     "noDeshacible": "This operation can no longer be undone: only a finished deletion or import that has not been undone can be.",
     "operacionPosterior": "Undo operation {{id}} first: it is more recent and touched the same files.",
@@ -287,7 +288,7 @@
       "noSeImporta": "this version doesn't import it yet",
       "destinoAjeno": "not imported: it points to a file that isn't its own"
     },
-    "teclasSinComprobar": "Key bindings are imported as character bindings. It hasn't been checked in game yet that a character that used the account's bindings switches to these.",
+    "teclasSinComprobar": "Key bindings are saved as this character's own bindings. If it used the account-wide ones before, log into the game and check it has the new ones. If not, you can undo the import from History.",
     "decisionesEtiqueta": "What affects the whole account",
     "decisionesExplicacion": "This changes the settings of every character on the account. Decide for each one whether to apply it.",
     "enCuenta": "{{categoria}} on account {{cuenta}} ({{personajes}})",
@@ -306,8 +307,7 @@
     "nadaQueImportar": "Nothing to import on this character.",
     "afectaCuenta": "Affects every character on the account.",
     "escritaEn": "Applied once for the account, with {{personaje}}.",
-    "opcionesApartadas": "Not imported, for safety or because they are state: {{lista}}.",
-    "addonsQueFaltan": "Enabled, but not installed on this computer: {{lista}}.",
+    "addonsQueFaltan": "Enabled, but not installed on this computer.",
     "cambio": {
       "anadido": "New",
       "cambiado": "Changes",
@@ -342,7 +342,22 @@
       "deshecha": "Undone."
     },
     "siguientePaso": "Log into the game with each character and check that everything is fine. You place the abilities on the buttons yourself: the profile brings the layout and the key bindings, not what is on each button.",
-    "verHistorial": "View history"
+    "verHistorial": "View history",
+    "queTrae": {
+      "boton": "What it includes",
+      "macros": "Macros: their name, icon and text.",
+      "teclas": "Which key does each action.",
+      "teclas-clic": "Actions assigned to mouse clicks (click casting).",
+      "opciones": "Game options: interface, camera, combat and more.",
+      "chat": "Chat tabs, which messages each one shows and their channels. It does not include messages.",
+      "ventanas": "Where you placed the interface windows that can be moved.",
+      "marcos-banda": "Raid frame profiles: size, colors and what they show.",
+      "addons-activos": "Which addons are left enabled and which disabled.",
+      "activados_one": "{{count}} enabled",
+      "activados_other": "{{count}} enabled",
+      "desactivados_one": "{{count}} disabled",
+      "desactivados_other": "{{count}} disabled"
+    }
   },
   "restaurar": {
     "titulo": "Restore what changed in {{nombre}}?",
@@ -352,5 +367,10 @@
     "restaurando": "Restoring…",
     "cerrar": "Close",
     "hecho": "Done: everything is as it was before the operation."
+  },
+  "motivos": {
+    "seguridad": "For safety: it would remove the game's warning before running scripts for whoever imports it.",
+    "estado": "Game state, not settings: what you track, what you have already seen or what you have collapsed.",
+    "addonNoInstalado": "Addons that are not installed on this computer."
   }
 }

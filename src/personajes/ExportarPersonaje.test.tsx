@@ -73,6 +73,29 @@ describe("ExportarPersonaje", () => {
     expect(within(dialogo).queryByText(/WoW está abierto/)).toBeNull();
   });
 
+  it("lo que no viaja se despliega agrupado por motivo, con su frase y sus claves", async () => {
+    const quitadas = [
+      { motivo: "seguridad" as const, claves: ["AllowDangerousScripts"] },
+      { motivo: "estado" as const, claves: ["trackedQuests", "EJLootClass"] },
+    ];
+    pintar({
+      propuesta_exportacion: () => ({
+        ...PROPUESTA,
+        piezas: [{ id: "opciones", categoria: "opciones", ambito: "personaje", bytes: 900, quitadas }],
+      }),
+    });
+
+    const dialogo = await abrir();
+
+    fireEvent.click(within(dialogo).getByText("sin 3 líneas que no viajan"));
+    expect(within(dialogo).getByText(/^Por seguridad:/)).toBeTruthy();
+    expect(within(dialogo).getByText(/^Son estado de la partida/)).toBeTruthy();
+    expect(within(dialogo).getByText("AllowDangerousScripts")).toBeTruthy();
+    expect(within(dialogo).getByText("EJLootClass")).toBeTruthy();
+    // El desplegable no está dentro de la casilla: abrirlo no la desmarca.
+    expect((within(dialogo).getByRole("checkbox") as HTMLInputElement).checked).toBe(true);
+  });
+
   it("sin nombre no se puede guardar; con él manda lo marcado en el orden de la propuesta", async () => {
     const llamadas = pintar({
       propuesta_exportacion: () => PROPUESTA,

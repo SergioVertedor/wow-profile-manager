@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { ResumenPaquete } from "../nucleo";
 import { tamanoLegible } from "../textos/formato";
 import { etiquetaDeCategoria } from "./etiquetas";
+import QueTrae from "./QueTrae";
 import { claveDeDecision, decisionesPendientes, type Destino } from "./importacion";
 import css from "./Importar.module.css";
 
@@ -32,19 +33,22 @@ export default function PasoSeleccion(props: Props) {
       <fieldset className={css.entradas}>
         <legend>{t("importar.queSeImporta")}</legend>
         {resumen.entradas.map((entrada) => (
-          <label key={entrada.id} className={css.entrada} data-incompatible={entrada.incompatible !== undefined}>
-            <input
-              type="checkbox"
-              checked={entrada.incompatible === undefined && seleccion.has(entrada.id)}
-              disabled={entrada.incompatible !== undefined}
-              onChange={() => alternar(entrada.id)}
-            />
-            <span className={css.categoria}>{etiquetaDeCategoria(t, entrada.categoria, entrada.deCuenta)}</span>
-            {entrada.incompatible !== undefined && (
-              <span className={css.secundarioTexto}>{t(`importar.incompatible.${entrada.incompatible}`)}</span>
-            )}
-            <span className={css.tamano}>{tamanoLegible(entrada.bytes, i18n.language)}</span>
-          </label>
+          <div key={entrada.id}>
+            <label className={css.entrada} data-incompatible={entrada.incompatible !== undefined}>
+              <input
+                type="checkbox"
+                checked={entrada.incompatible === undefined && seleccion.has(entrada.id)}
+                disabled={entrada.incompatible !== undefined}
+                onChange={() => alternar(entrada.id)}
+              />
+              <span className={css.categoria}>{etiquetaDeCategoria(t, entrada.categoria, entrada.deCuenta)}</span>
+              {entrada.incompatible !== undefined && (
+                <span className={css.secundarioTexto}>{t(`importar.incompatible.${entrada.incompatible}`)}</span>
+              )}
+              <span className={css.tamano}>{tamanoLegible(entrada.bytes, i18n.language)}</span>
+            </label>
+            <QueTrae entrada={entrada} />
+          </div>
         ))}
       </fieldset>
       <DecisionesDeCuenta {...props} />
@@ -67,7 +71,8 @@ function DecisionesDeCuenta({ resumen, destinos, seleccion, decisiones, cambiarD
       <p className={css.nota}>{t("importar.decisionesExplicacion")}</p>
       {pendientes.map(({ cuenta, entrada }) => {
         const clave = claveDeDecision(cuenta, entrada);
-        const categoria = resumen.entradas.find((e) => e.id === entrada)?.categoria ?? entrada;
+        const datos = resumen.entradas.find((e) => e.id === entrada);
+        const categoria = datos?.categoria ?? entrada;
         const personajes = destinos.filter((d) => d.pedido.cuenta === cuenta).map((d) => d.nombre);
         const decidida = decisiones.get(clave);
         return (
@@ -87,6 +92,7 @@ function DecisionesDeCuenta({ resumen, destinos, seleccion, decisiones, cambiarD
               <input type="radio" name={clave} checked={decidida === false} onChange={() => decidir(clave, false)} />
               {t("importar.noAplicar")}
             </label>
+            {datos !== undefined && <QueTrae entrada={datos} />}
           </fieldset>
         );
       })}
