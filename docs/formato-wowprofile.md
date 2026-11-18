@@ -111,6 +111,9 @@ Reglas de las categorías de fichero:
 - **Addons activos** (`AddOns.txt`). Se quitan las líneas de addons que no están instalados en el origen. Las de
   `Blizzard_*` siempre viajan: son módulos del cliente, no están en `Interface/AddOns` y se pueden desactivar.
 - **Chat** viaja entero: solo lleva ventanas, colores, tipos de mensaje y canales [V].
+- **Al importar**, las opciones y los addons activos se fusionan línea a línea con lo que ya tiene el destino, y la lista
+  de claves de opciones que no viajan se vuelve a aplicar: un paquete hecho a mano podría traerlas. El resto de
+  categorías de fichero sustituyen el fichero entero ([`flujos.md`](flujos.md#cómo-se-escribe-cada-categoría)).
 
 No viajan en la `1.0`: `flagged-cache-*` (tutoriales vistos), `character-list-order.txt` (orden de la pantalla de
 selección), `tts-cache-*` y `cooldownmanager.txt` (sin medir), `cache.md5` y las copias `.old` y `.bak` del juego.
@@ -163,6 +166,11 @@ Requisitos de la implementación, en este orden, **antes** de escribir nada:
 5. Comprobar `bytes` y `sha256` de cada pieza. Si alguna falla, se rechaza el paquete entero.
 6. Traducir cada `destino` a una ruta real **dentro** de la carpeta del personaje o de la cuenta elegidos, y
    comprobar que la ruta resultante sigue dentro de esa carpeta.
+   - Una entrada de categoría de fichero solo puede ir al `destino` de su categoría en la tabla de
+     [Categorías](#categorías) (por ejemplo, `macros` solo a `personaje/macros-cache.txt` o `cuenta/macros-cache.txt`).
+     Si no, no se importa, aunque cumpla el patrón del schema: un paquete no puede mandar un fichero a un sitio que su
+     categoría no explica.
+   - La ruta real sale de esa tabla, no del texto del `destino`.
 
 Después vienen la vista previa, el backup y la escritura, con WoW cerrado.
 

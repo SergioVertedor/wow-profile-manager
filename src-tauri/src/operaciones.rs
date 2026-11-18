@@ -405,7 +405,7 @@ fn ficheros_a_quitar(personaje: &PersonajeUbicado) -> Result<Vec<PathBuf>, Error
 }
 
 /// Un enlace simbólico o una unión de Windows (las dos son «sustitutos de nombre» para `is_symlink`).
-fn es_enlace(ruta: &Path) -> bool {
+pub(crate) fn es_enlace(ruta: &Path) -> bool {
     std::fs::symlink_metadata(ruta).is_ok_and(|m| m.file_type().is_symlink())
 }
 

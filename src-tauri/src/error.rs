@@ -54,6 +54,43 @@ pub enum ErrorNucleo {
     PaqueteDemasiadoGrande {},
     /// Un nombre propio demasiado largo o con caracteres de control.
     NombreNoValido { maximo: usize },
+    /// El `.wowprofile` no cumple el formato. `detalle` dice dónde (para diagnóstico, no para el usuario).
+    PaqueteInvalido {
+        motivo: MotivoPaquete,
+        detalle: String,
+    },
+    /// El paquete es de una versión mayor del formato que esta app no entiende: hay que actualizar la app.
+    VersionPaquete { version: String },
+    /// El paquete pedido no es el que está abierto (o no hay ninguno): hay que volver a abrirlo.
+    PaqueteNoAbierto {},
+    /// Los personajes destino están vacíos, repetidos, son de varias instalaciones o de otra versión del juego.
+    DestinosNoValidos {},
+}
+
+/// Qué paso de «Leer un paquete de forma segura» (`docs/formato-wowprofile.md`) falló.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum MotivoPaquete {
+    /// No es un ZIP que se pueda abrir.
+    NoEsZip,
+    /// El fichero pasa del tamaño máximo de un paquete.
+    DemasiadoGrande,
+    /// Más de 257 entradas en el ZIP.
+    DemasiadasEntradas,
+    /// `manifest.json` falta, pasa de 1 MiB o no es JSON.
+    ManifiestoIlegible,
+    /// `manifest.json` no cumple el schema.
+    ManifiestoNoValido,
+    /// El ZIP no tiene exactamente `manifest.json` y un `datos/<id>` por entrada.
+    EntradasDelZip,
+    /// Una pieza no se puede descomprimir.
+    PiezaIlegible,
+    /// Una pieza descomprime más de lo que dice el manifiesto (ZIP bomba).
+    PiezaDemasiadoGrande,
+    /// Las piezas pasan de 128 MiB en total.
+    TotalDemasiadoGrande,
+    /// El tamaño o el hash de una pieza no cuadran.
+    PiezaDanada,
 }
 
 impl ErrorNucleo {

@@ -13,13 +13,16 @@ mod error;
 mod escritura;
 mod exportacion;
 mod idioma;
+mod importacion;
 mod info;
 mod operaciones;
 mod paquetes;
+mod piezas;
 mod preferencias;
 mod sistema;
 mod toc;
 
+pub use importacion::PaquetesAbiertos;
 pub use info::NOMBRE_APP;
 pub use operaciones::Operaciones;
 pub use preferencias::Almacen;
@@ -246,17 +249,10 @@ async fn exportar_personaje<R: tauri::Runtime>(
         descripcion,
     };
     let paquete = exportacion::paquete(&ubicar(&personaje, &almacen)?, &pedido)?;
-    let mut selector = app
-        .dialog()
-        .file()
+    let Some(ruta) = selector_de_paquetes(&app)
         .set_file_name(exportacion::nombre_de_fichero(
             &paquete.manifiesto.perfil.nombre,
         ))
-        .add_filter("WoW Profile", &[exportacion::EXTENSION]);
-    if let Some(ventana) = app.get_webview_window(VENTANA_PRINCIPAL) {
-        selector = selector.set_parent(&ventana);
-    }
-    let Some(ruta) = selector
         .blocking_save_file()
         .and_then(|c| c.into_path().ok())
     else {
@@ -270,6 +266,71 @@ async fn exportar_personaje<R: tauri::Runtime>(
         .to_string_lossy()
         .into_owned();
     Ok(Exportacion::Exportada { fichero })
+}
+
+/// El diálogo de Windows para elegir un `.wowprofile`, como hijo de la ventana. Lo usan exportar (guardar) e importar
+/// (abrir).
+fn selector_de_paquetes<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+) -> tauri_plugin_dialog::FileDialogBuilder<R> {
+    let selector = app
+        .dialog()
+        .file()
+        .add_filter("WoW Profile", &[exportacion::EXTENSION]);
+    match app.get_webview_window(VENTANA_PRINCIPAL) {
+        Some(ventana) => selector.set_parent(&ventana),
+        None => selector,
+    }
+}
+
+/// Qué pasó al abrir un paquete.
+#[derive(serde::Serialize)]
+#[serde(tag = "resultado", rename_all = "camelCase")]
+enum Apertura {
+    /// El usuario cerró el diálogo sin elegir.
+    Cancelada,
+    /// En una caja: el resumen lleva el manifiesto entero y la otra variante no lleva nada.
+    Abierta { resumen: Box<importacion::Resumen> },
+}
+
+/// Abre el diálogo de Windows para elegir un `.wowprofile` y lo lee con todas las comprobaciones del formato (spec 024).
+/// El diálogo se abre desde aquí: la interfaz no elige rutas. No escribe nada.
+#[tauri::command]
+async fn abrir_paquete<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    paquetes: State<'_, PaquetesAbiertos>,
+) -> Result<Apertura, error::ErrorNucleo> {
+    let Some(ruta) = selector_de_paquetes(&app)
+        .blocking_pick_file()
+        .and_then(|c| c.into_path().ok())
+    else {
+        return Ok(Apertura::Cancelada);
+    };
+    let resumen = Box::new(paquetes.abrir(&ruta)?);
+    Ok(Apertura::Abierta { resumen })
+}
+
+/// Olvida el paquete abierto.
+#[tauri::command]
+async fn cerrar_paquete(paquetes: State<'_, PaquetesAbiertos>) -> Result<(), error::ErrorNucleo> {
+    paquetes.cerrar();
+    Ok(())
+}
+
+/// El plan de importar el paquete abierto (`sha256`) en esos personajes, para la vista previa. Solo lee.
+#[tauri::command]
+async fn plan_importacion(
+    sha256: String,
+    personajes: Vec<deteccion::PersonajePedido>,
+    pedido: importacion::Pedido,
+    almacen: State<'_, Almacen>,
+    paquetes: State<'_, PaquetesAbiertos>,
+) -> Result<importacion::VistaPrevia, error::ErrorNucleo> {
+    let ubicados = personajes
+        .iter()
+        .map(|p| ubicar(p, &almacen))
+        .collect::<Result<Vec<_>, _>>()?;
+    paquetes.vista_previa(&sha256, ubicados, &pedido, sistema::juego_en_marcha())
 }
 
 /// Abre en el navegador uno de los enlaces conocidos. La interfaz no puede pasar una URL: solo el nombre del enlace.
@@ -301,6 +362,9 @@ pub fn con_comandos<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Bui
         abrir_carpeta_operacion,
         propuesta_exportacion,
         exportar_personaje,
+        abrir_paquete,
+        cerrar_paquete,
+        plan_importacion,
         abrir_enlace
     ])
 }
@@ -314,6 +378,7 @@ pub fn run() {
             let datos = app.path().app_data_dir()?;
             app.manage(Operaciones::en(datos.join(CARPETA_OPERACIONES)));
             app.manage(Almacen::en(datos));
+            app.manage(PaquetesAbiertos::default());
             Ok(())
         })
         .run(tauri::generate_context!());

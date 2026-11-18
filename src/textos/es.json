@@ -7,7 +7,8 @@
     "personajes": "Personajes",
     "acercaDe": "Acerca de",
     "instalaciones": "Instalaciones",
-    "historial": "Historial"
+    "historial": "Historial",
+    "importar": "Importar"
   },
   "personajes": {
     "titulo": "Personajes",
@@ -84,7 +85,11 @@
     "exportacionSinVersion": "No se sabe la versión del juego o su número de interfaz (.build.info o WTF/Config.wtf): entra una vez en el juego y vuelve a intentarlo.",
     "perfilNoValido": "El nombre es obligatorio y puede tener hasta 80 caracteres; la descripción, hasta 500.",
     "seleccionVacia": "Marca al menos una cosa que exportar.",
-    "paqueteDemasiadoGrande": "Es demasiado grande para un .wowprofile (como mucho 256 piezas, 32 MiB cada una y 128 MiB en total)."
+    "paqueteDemasiadoGrande": "Es demasiado grande para un .wowprofile (como mucho 256 piezas, 32 MiB cada una y 128 MiB en total).",
+    "paqueteInvalido": "El fichero no es un perfil válido: {{motivo}}",
+    "versionPaquete": "Este perfil es de una versión más nueva del formato ({{version}}). Actualiza la app para importarlo.",
+    "paqueteNoAbierto": "El perfil ya no está abierto. Vuelve a abrirlo.",
+    "destinosNoValidos": "Los personajes elegidos tienen que ser de una misma instalación y de la versión del juego del perfil."
   },
   "versionApp": "Versión {{version}}",
   "instalaciones": {
@@ -227,5 +232,77 @@
     "exportando": "Guardando…",
     "cerrar": "Cerrar",
     "hecho": "Guardado como {{fichero}}."
+  },
+  "motivosPaquete": {
+    "noEsZip": "no se puede abrir como .wowprofile.",
+    "demasiadoGrande": "es demasiado grande.",
+    "demasiadasEntradas": "trae demasiados ficheros dentro.",
+    "manifiestoIlegible": "falta su descripción o no se puede leer.",
+    "manifiestoNoValido": "su descripción no cumple el formato.",
+    "entradasDelZip": "trae ficheros de más o le faltan.",
+    "piezaIlegible": "uno de sus ficheros no se puede leer.",
+    "piezaDemasiadoGrande": "uno de sus ficheros ocupa más de lo que dice.",
+    "totalDemasiadoGrande": "sus ficheros ocupan demasiado en total.",
+    "piezaDanada": "uno de sus ficheros está dañado o se ha modificado."
+  },
+  "importar": {
+    "titulo": "Importar",
+    "abrir": "Abrir perfil…",
+    "abrirOtro": "Abrir otro…",
+    "explicacion": "Abre un fichero .wowprofile para elegir en qué personajes aplicarlo y ver qué cambiaría. Mirar no modifica nada.",
+    "paquete": "Perfil abierto",
+    "entradas_one": "{{count}} elemento",
+    "entradas_other": "{{count}} elementos",
+    "pasosEtiqueta": "Pasos",
+    "pasos": {
+      "destino": "Destino",
+      "seleccion": "Qué se importa",
+      "vistaPrevia": "Vista previa"
+    },
+    "atras": "Atrás",
+    "siguiente": "Siguiente",
+    "sinInstalacion": "Este perfil es de {{version}} y en este equipo no hay ninguna instalación de esa versión.",
+    "instalacion": "Instalación",
+    "interfazDistinta": "El perfil se hizo con la interfaz {{paquete}} y esta instalación tiene la {{destino}}: puede que algo no encaje.",
+    "elegirDestinos": "Marca uno o varios personajes. Pueden ser de cuentas distintas de esta instalación.",
+    "marcados_one": "{{count}} personaje marcado",
+    "marcados_other": "{{count}} personajes marcados",
+    "queSeImporta": "Qué se importa",
+    "deLaCuenta": "{{categoria}} de la cuenta",
+    "incompatible": {
+      "noSeImporta": "esta versión aún no lo importa",
+      "destinoAjeno": "no se importa: apunta a un fichero que no es el suyo"
+    },
+    "teclasSinComprobar": "Las teclas se importan como teclas del personaje. Aún no está comprobado en el juego que un personaje que usaba las de la cuenta pase a usar estas.",
+    "decisionesEtiqueta": "Lo que afecta a toda la cuenta",
+    "decisionesExplicacion": "Esto cambia la configuración de todos los personajes de la cuenta. Decide en cada una si se aplica.",
+    "enCuenta": "{{categoria}} en la cuenta {{cuenta}} ({{personajes}})",
+    "aplicar": "Aplicar",
+    "noAplicar": "No aplicar",
+    "calculando": "Calculando qué cambiaría…",
+    "juegoAbierto": "WoW está abierto. Puedes mirar la vista previa, pero para aplicar habrá que cerrarlo.",
+    "grupos": {
+      "nuevo": "Nuevos",
+      "modificado": "Modificados",
+      "sinCambios": "Sin cambios",
+      "conflictos": "Sin decidir",
+      "incompatibles": "No se importan"
+    },
+    "sinDecidir": "{{entrada}}: decide si se aplica en esta cuenta.",
+    "nadaQueImportar": "Nada que importar en este personaje.",
+    "afectaCuenta": "Afecta a todos los personajes de la cuenta.",
+    "escritaEn": "Se aplica una sola vez para la cuenta, con {{personaje}}.",
+    "opcionesApartadas": "No se importan por seguridad o porque son estado: {{lista}}.",
+    "addonsQueFaltan": "Se activan, pero no están instalados en este equipo: {{lista}}.",
+    "cambio": {
+      "anadido": "Nuevo",
+      "cambiado": "Cambia",
+      "quitado": "Se quita"
+    },
+    "soloVistaPrevia": "Esta versión solo enseña la vista previa: todavía no aplica la importación.",
+    "otrasCategorias": {
+      "config-addon": "Configuración de addons",
+      "modo-edicion": "Modo Edición"
+    }
   }
 }

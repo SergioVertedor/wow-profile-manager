@@ -2,172 +2,24 @@
 //! #56: los ficheros que se copian sin leer Lua). Solo lee; el paquete lo escribe Paquetes.
 
 use crate::addons::Addon;
-use crate::deteccion::{self, CARPETA_ACCOUNT, CARPETA_WTF, PersonajeUbicado};
+use crate::deteccion::{self, PersonajeUbicado};
 use crate::error::ErrorNucleo;
 use crate::operaciones::{ahora_rfc3339, segmento_literal};
 use crate::paquetes::{AddonPaquete, Ambito, Categoria, Origen, Paquete, Perfil, Pieza, Tipo};
+use crate::piezas::{
+    ACTIVADO, FUENTES, Filtro, Fuente, filtrar_addons, filtrar_opciones, lineas_addons,
+};
 use serde::Serialize;
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// Texto que el formato reserva para sus marcadores: una pieza que ya lo trae no viaja.
 const MARCADOR: &[u8] = b"@@WOWPROFILE:";
-/// Los addons del propio cliente no están en `Interface/AddOns`, pero sí se pueden desactivar: siempre viajan.
-const PREFIJO_BLIZZARD: &str = "blizzard_";
-const ACTIVADO: &str = "enabled";
-const BOM: char = '\u{feff}';
 const MAX_NOMBRE: usize = 80;
 const MAX_DESCRIPCION: usize = 500;
 pub const EXTENSION: &str = "wowprofile";
 /// Caracteres que Windows no admite en un nombre de fichero.
 const NO_ADMITIDOS_EN_FICHERO: &[char] = &['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
-
-/// Cómo se recorta una pieza antes de viajar.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Filtro {
-    Ninguno,
-    /// `config-cache.wtf`: sin las claves de estado ni las de seguridad.
-    Opciones,
-    /// `AddOns.txt`: solo lo instalado y lo del cliente.
-    Addons,
-}
-
-/// De dónde sale cada pieza. `origenes` en orden: vale el primero que exista.
-struct Fuente {
-    id: &'static str,
-    categoria: Categoria,
-    origenes: &'static [Ambito],
-    fichero: &'static str,
-    destino: &'static str,
-    filtro: Filtro,
-}
-
-const PERSONAJE: &[Ambito] = &[Ambito::Personaje];
-const CUENTA: &[Ambito] = &[Ambito::Cuenta];
-
-/// Las piezas de la entrega 1. Qué no viaja y por qué está en `docs/formato-wowprofile.md`.
-const FUENTES: [Fuente; 10] = [
-    fuente(
-        "macros",
-        Categoria::Macros,
-        PERSONAJE,
-        "macros-cache.txt",
-        "personaje/macros-cache.txt",
-    ),
-    fuente(
-        "macros-cuenta",
-        Categoria::Macros,
-        CUENTA,
-        "macros-cache.txt",
-        "cuenta/macros-cache.txt",
-    ),
-    // Un personaje sin teclas propias usa las de la cuenta [H]: viajan como teclas del personaje destino.
-    fuente(
-        "teclas",
-        Categoria::Teclas,
-        &[Ambito::Personaje, Ambito::Cuenta],
-        "bindings-cache.wtf",
-        "personaje/bindings-cache.wtf",
-    ),
-    fuente(
-        "teclas-clic",
-        Categoria::TeclasClic,
-        PERSONAJE,
-        "click-bindings-cache.txt",
-        "personaje/click-bindings-cache.txt",
-    ),
-    filtrada(fuente(
-        "opciones",
-        Categoria::Opciones,
-        PERSONAJE,
-        "config-cache.wtf",
-        "personaje/config-cache.wtf",
-    )),
-    filtrada(fuente(
-        "opciones-cuenta",
-        Categoria::Opciones,
-        CUENTA,
-        "config-cache.wtf",
-        "cuenta/config-cache.wtf",
-    )),
-    fuente(
-        "chat",
-        Categoria::Chat,
-        PERSONAJE,
-        "chat-cache.txt",
-        "personaje/chat-cache.txt",
-    ),
-    fuente(
-        "ventanas",
-        Categoria::Ventanas,
-        PERSONAJE,
-        "layout-local.txt",
-        "personaje/layout-local.txt",
-    ),
-    fuente(
-        "marcos-banda",
-        Categoria::MarcosBanda,
-        PERSONAJE,
-        "CUFProfiles.txt",
-        "personaje/CUFProfiles.txt",
-    ),
-    Fuente {
-        filtro: Filtro::Addons,
-        ..fuente(
-            "addons-activos",
-            Categoria::AddonsActivos,
-            PERSONAJE,
-            "AddOns.txt",
-            "personaje/AddOns.txt",
-        )
-    },
-];
-
-const fn fuente(
-    id: &'static str,
-    categoria: Categoria,
-    origenes: &'static [Ambito],
-    fichero: &'static str,
-    destino: &'static str,
-) -> Fuente {
-    Fuente {
-        id,
-        categoria,
-        origenes,
-        fichero,
-        destino,
-        filtro: Filtro::Ninguno,
-    }
-}
-
-const fn filtrada(fuente: Fuente) -> Fuente {
-    Fuente {
-        filtro: Filtro::Opciones,
-        ..fuente
-    }
-}
-
-/// Claves de `config-cache.wtf` que no viajan (medidas el 2026-11-18). Los CVar no distinguen mayúsculas.
-/// `AllowDangerousScripts` quitaría al que importa el aviso al ejecutar scripts; el resto es estado.
-const CLAVES_EXACTAS: [&str; 8] = [
-    "allowdangerousscripts",
-    "lastselectedclubid",
-    "ejlootclass",
-    "flaggedtutorials",
-    "closedinfoframes",
-    "closedinfoframesaccountwide",
-    "numreputationheaders",
-    "numcurrencycategories",
-];
-const CLAVES_PREFIJO: [&str; 5] = [
-    "tracked",
-    "hardtracked",
-    "camerasaved",
-    "perksactivities",
-    "petjournal",
-];
-const CLAVE_CONTIENE: &str = "collapsed";
-
 /// Lo que ve el diálogo de exportar: sin el contenido.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -387,83 +239,8 @@ fn con_tipo((contenido, quitadas): (Vec<u8>, Vec<String>)) -> (Vec<u8>, Vec<Stri
 fn carpeta_de(personaje: &PersonajeUbicado, ambito: Ambito) -> PathBuf {
     match ambito {
         Ambito::Personaje => personaje.carpeta(),
-        Ambito::Cuenta => cuenta_de(&personaje.raiz_version, &personaje.cuenta),
+        Ambito::Cuenta => personaje.carpeta_cuenta(),
     }
-}
-
-fn cuenta_de(raiz_version: &Path, cuenta: &str) -> PathBuf {
-    raiz_version
-        .join(CARPETA_WTF)
-        .join(CARPETA_ACCOUNT)
-        .join(cuenta)
-}
-
-/// Quita las líneas enteras cuya clave decide `quitar`. Las que quedan conservan sus bytes, salto de línea incluido.
-fn filtrar_lineas(
-    bytes: &[u8],
-    clave_de: impl Fn(&str) -> Option<String>,
-    quitar: impl Fn(&str) -> bool,
-) -> (Vec<u8>, Vec<String>) {
-    let mut contenido = Vec::with_capacity(bytes.len());
-    let mut quitadas = Vec::new();
-    for linea in bytes.split_inclusive(|b| *b == b'\n') {
-        match clave_de(&String::from_utf8_lossy(linea)) {
-            Some(clave) if quitar(&clave) => quitadas.push(clave),
-            _ => contenido.extend_from_slice(linea),
-        }
-    }
-    (contenido, quitadas)
-}
-
-/// `SET <clave> "<valor>"`: la clave. Las demás líneas no se tocan.
-fn clave_de_opcion(linea: &str) -> Option<String> {
-    let mut partes = sin_bom(linea).split_whitespace();
-    let set = partes.next()?;
-    set.eq_ignore_ascii_case("SET")
-        .then(|| partes.next())
-        .flatten()
-        .map(str::to_owned)
-}
-
-fn opcion_que_no_viaja(clave: &str) -> bool {
-    let clave = clave.to_lowercase();
-    CLAVES_EXACTAS.contains(&clave.as_str())
-        || CLAVES_PREFIJO.iter().any(|p| clave.starts_with(p))
-        || clave.contains(CLAVE_CONTIENE)
-}
-
-fn filtrar_opciones(bytes: &[u8]) -> (Vec<u8>, Vec<String>) {
-    filtrar_lineas(bytes, clave_de_opcion, opcion_que_no_viaja)
-}
-
-fn filtrar_addons(bytes: &[u8], instalados: &HashSet<String>) -> (Vec<u8>, Vec<String>) {
-    filtrar_lineas(
-        bytes,
-        |linea| addon_de_linea(linea).map(|(carpeta, _)| carpeta.to_owned()),
-        |carpeta| {
-            let carpeta = carpeta.to_lowercase();
-            !carpeta.starts_with(PREFIJO_BLIZZARD) && !instalados.contains(&carpeta)
-        },
-    )
-}
-
-/// `<carpeta>: enabled|disabled` [V].
-fn addon_de_linea(linea: &str) -> Option<(&str, &str)> {
-    let (carpeta, valor) = sin_bom(linea).split_once(':')?;
-    let carpeta = carpeta.trim();
-    (!carpeta.is_empty()).then(|| (carpeta, valor.trim()))
-}
-
-fn lineas_addons(bytes: &[u8]) -> impl Iterator<Item = (String, String)> + '_ {
-    bytes.split(|b| *b == b'\n').filter_map(|linea| {
-        let texto = String::from_utf8_lossy(linea);
-        addon_de_linea(&texto).map(|(c, v)| (c.to_owned(), v.to_owned()))
-    })
-}
-
-/// Los ficheros medidos no traen BOM [V], pero si alguno lo trajera, la primera clave se tiene que reconocer igual.
-fn sin_bom(linea: &str) -> &str {
-    linea.trim_start_matches(BOM)
 }
 
 fn contiene(bytes: &[u8], buscado: &[u8]) -> bool {
@@ -476,6 +253,7 @@ mod tests {
     use crate::deteccion::Producto;
     use crate::toc::Toc;
     use std::fs::{create_dir_all, write};
+    use std::path::Path;
 
     const CUENTA_PRUEBA: &str = "123#1";
 
@@ -509,62 +287,10 @@ mod tests {
     }
 
     #[test]
-    fn opciones_sin_estado_ni_seguridad_y_con_los_bytes_del_resto() {
-        let texto = b"SET nameplateMaxScale \"1\"\r\nSET hardTrackedQuests \"1 2\"\r\nSET AllowDangerousScripts \"1\"\r\n\
-SET reputationsCollapsed \"x\"\r\nSET TrackedAchievements \"5\"\r\nSET cameraSavedPitch \"3\"\r\nSET showTimestamps \"%H\"";
-        let (contenido, quitadas) = filtrar_opciones(texto);
-        assert_eq!(
-            contenido,
-            b"SET nameplateMaxScale \"1\"\r\nSET showTimestamps \"%H\""
-        );
-        assert_eq!(
-            quitadas,
-            [
-                "hardTrackedQuests",
-                "AllowDangerousScripts",
-                "reputationsCollapsed",
-                "TrackedAchievements",
-                "cameraSavedPitch"
-            ]
-        );
-    }
-
-    #[test]
-    fn un_bom_al_principio_no_esconde_la_primera_clave() {
-        let opciones = "\u{feff}SET AllowDangerousScripts \"1\"\r\nSET a \"1\"\r\n";
-        let (contenido, quitadas) = filtrar_opciones(opciones.as_bytes());
-        assert_eq!(quitadas, ["AllowDangerousScripts"]);
-        assert_eq!(contenido, b"SET a \"1\"\r\n");
-        let addons = "\u{feff}Dominos: enabled\r\n";
-        let instalados = HashSet::from(["dominos".to_owned()]);
-        let (contenido, quitadas) = filtrar_addons(addons.as_bytes(), &instalados);
-        assert!(quitadas.is_empty());
-        assert_eq!(contenido, addons.as_bytes());
-    }
-
-    #[test]
-    fn opciones_sin_nada_que_quitar_quedan_igual() {
-        let texto = b"SET a \"1\"\nSET b \"2\"\n";
-        assert_eq!(filtrar_opciones(texto), (texto.to_vec(), Vec::new()));
-    }
-
-    #[test]
-    fn addons_solo_instalados_y_los_del_cliente() {
-        let instalados = HashSet::from(["details".to_owned(), "dominos".to_owned()]);
-        let texto = b"Dominos: enabled\r\nCarbonite: enabled\r\nBlizzard_CombatText: disabled\r\nDETAILS: disabled\r\nAtlasLoot: disabled\r\n";
-        let (contenido, quitadas) = filtrar_addons(texto, &instalados);
-        assert_eq!(
-            contenido,
-            b"Dominos: enabled\r\nBlizzard_CombatText: disabled\r\nDETAILS: disabled\r\n"
-        );
-        assert_eq!(quitadas, ["Carbonite", "AtlasLoot"]);
-    }
-
-    #[test]
     fn exporta_lo_que_hay_del_personaje_y_de_la_cuenta() {
         let tmp = tempfile::tempdir().unwrap();
         let pj = personaje(tmp.path());
-        let cuenta = cuenta_de(&pj.raiz_version, CUENTA_PRUEBA);
+        let cuenta = pj.carpeta_cuenta();
         write(pj.carpeta().join("macros-cache.txt"), "VER 3\r\n").unwrap();
         write(
             pj.carpeta().join("config-cache.wtf"),
@@ -609,11 +335,7 @@ SET reputationsCollapsed \"x\"\r\nSET TrackedAchievements \"5\"\r\nSET cameraSav
         let tmp = tempfile::tempdir().unwrap();
         let pj = personaje(tmp.path());
         write(pj.carpeta().join("bindings-cache.wtf"), "propias").unwrap();
-        write(
-            cuenta_de(&pj.raiz_version, CUENTA_PRUEBA).join("bindings-cache.wtf"),
-            "cuenta",
-        )
-        .unwrap();
+        write(pj.carpeta_cuenta().join("bindings-cache.wtf"), "cuenta").unwrap();
         let (piezas, _) = piezas(&pj, &[]).unwrap();
         assert_eq!(
             (piezas[0].ambito, piezas[0].contenido.as_slice()),

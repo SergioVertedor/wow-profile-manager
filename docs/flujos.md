@@ -79,8 +79,13 @@ categorías y addons trae.
 
 ### 2. Elegir el destino
 
-Cuenta → personaje, **solo de la versión del juego del paquete** (`origen.producto`). Retail y Forever no se
-mezclan: un paquete de Forever solo ofrece personajes de Forever, y uno de Retail, de Retail.
+Uno o varios personajes, **solo de la versión del juego del paquete** (`origen.producto`) y **de una misma
+instalación**, aunque sean de cuentas distintas (spec 024). Retail y Forever no se mezclan: un paquete de Forever solo
+ofrece personajes de Forever, y uno de Retail, de Retail.
+
+Con varios personajes, al aplicar hay **una operación por personaje**, una detrás de otra: cada uno sale en su línea del
+historial y se deshace por separado. Si uno falla, ese se restaura, los siguientes no se aplican y los anteriores quedan
+aplicados; el resultado lo dice personaje a personaje.
 
 - Si en este equipo no hay ninguna instalación de ese producto, la app dice de qué versión es el paquete y no
   ofrece destinos. No es un error del paquete.
@@ -105,7 +110,7 @@ Las entradas del paquete, por categoría y, en `config-addon`, por addon. Para c
 | adaptador desconocido o de una versión anterior | desmarcada, con aviso |
 | addon del destino fuera del rango `versionesAddon` del adaptador (se compara con la versión instalada en el destino) | desmarcada, con aviso |
 | addon no instalado en el destino | como si estuviera instalado (marcada, o desmarcada si es de tipo `fichero`), con el aviso «falta el addon» y su enlace si viene en el paquete [V: el cliente conserva el `SavedVariables` de un addon desinstalado; [H] lo carga al instalarlo] |
-| entrada que afecta a toda la cuenta del destino: genéricos de cuenta y reglas de adaptador de `ambito: cuenta` que no se limitan a `soloPersonaje` | **sin decidir**: el jugador tiene que aceptarla o quitarla antes de aplicar |
+| entrada que afecta a toda la cuenta del destino: las que van a `cuenta/` (macros generales, opciones de la cuenta), genéricos de cuenta y reglas de adaptador de `ambito: cuenta` que no se limitan a `soloPersonaje` | **sin decidir**, una vez por cada cuenta de los destinos: el jugador la acepta o la quita en esa cuenta antes de aplicar. Con varios personajes de una misma cuenta, se escribe en la operación del primero y en los demás sale «sin cambios» |
 | perfil AceDB con un nombre que ya existe en el destino | **sin decidir**: renombrar (propone `<nombre> (2)`) o sobrescribir |
 
 Sobrescribir un perfil AceDB que ya existe cambia la configuración de **todos** los personajes del destino que lo
@@ -125,8 +130,28 @@ Es el plan de importación. Cinco grupos, los del encargo:
 | **Conflictos** | lo que sigue sin decidir | no se puede aplicar hasta resolverlos |
 | **Incompatibles** | entradas que no se pueden aplicar, con el motivo | no se escriben |
 
+Con varios destinos, los grupos van por personaje. Las macros se comparan **por id** (`VER 3 <id>`), no por nombre: el
+nombre puede estar en blanco y repetido [V: las 14 macros de un personaje medido se llaman `" "`]; sin nombre, se
+enseña la primera línea del cuerpo. Las teclas, tecla a tecla.
+
 Debajo, los avisos y los bloqueos (WoW abierto, destino inexistente). «Aplicar» solo está activo sin bloqueos y
 sin conflictos. Volver a la selección recalcula el plan.
+
+El plan guarda, de cada fichero, su huella (SHA-256 tal como estaba, o «no existía») y los bytes exactos que se
+escribirán: aplicar escribe esos bytes y no otros, y no escribe nada si el disco ya no es el del plan.
+
+### Cómo se escribe cada categoría
+
+Decisión de Sergio (2026-11-18, #63), para las categorías de fichero:
+
+| categoría | cómo |
+|---|---|
+| `opciones` | **fusión** por clave `SET`, sin distinguir mayúsculas: cambian las claves del paquete y el resto del destino se conserva byte a byte. Las claves de la lista que no viaja ([formato](formato-wowprofile.md#categorías)) se descartan también al importar y se dicen |
+| `addons-activos` | **fusión** por carpeta: cambia el valor de las que trae el paquete, conservando cómo escribe el destino la carpeta, y se añaden al final las que el destino no tiene. Las activadas que no están instaladas se escriben igual, con el aviso «falta el addon» |
+| `macros` | **sobrescribe** el fichero, con el detalle macro a macro |
+| `teclas`, `teclas-clic`, `chat`, `ventanas`, `marcos-banda` | **sobrescribe** el fichero |
+
+En todas, `cache.md5` no se toca: con WoW cerrado, el cliente adopta el fichero local al entrar [V: Fase 1].
 
 ### 5. Aplicar
 
