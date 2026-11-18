@@ -32,8 +32,9 @@ type Props = Readonly<{
 export default function VistaPrevia({ resumen, destinos, pedido, alAplicar }: Props) {
   const { t } = useTranslation();
   const [estado, setEstado] = useState<Estado>({ tipo: "cargando" });
-  // Sube tras un fallo al aplicar: el plan se vuelve a pedir, porque el disco pudo cambiar.
+  // Sube tras un fallo al aplicar: el plan se vuelve a pedir, porque el disco pudo cambiar. El fallo se sigue enseñando.
   const [vuelta, setVuelta] = useState(0);
+  const [falloAlAplicar, setFalloAlAplicar] = useState<unknown>(null);
   // El plan depende de lo elegido en los pasos anteriores: se compara por valor, no por identidad.
   const peticion = JSON.stringify({ personajes: destinos.map((d) => d.pedido), pedido });
 
@@ -62,6 +63,12 @@ export default function VistaPrevia({ resumen, destinos, pedido, alAplicar }: Pr
     );
   }
   const { vista } = estado;
+  const alerta =
+    falloAlAplicar === null ? null : (
+      <p role="alert" className={css.alerta}>
+        {mensajeDeError(t, falloAlAplicar)}
+      </p>
+    );
   const { interfaz } = resumen.manifiesto.origen;
   const nombreDe = (p: PlanPersonaje) =>
     destinos.find((d) => d.pedido.cuenta === p.cuenta && d.pedido.personaje === p.personaje)?.nombre ?? p.personaje;
@@ -71,6 +78,7 @@ export default function VistaPrevia({ resumen, destinos, pedido, alAplicar }: Pr
   };
   return (
     <div className={css.columna}>
+      {alerta}
       {vista.juegoAbierto && <Aviso texto={t("importar.juegoAbierto")} />}
       {vista.interfazDestino !== undefined && vista.interfazDestino !== interfaz && (
         <Aviso texto={t("importar.interfazDistinta", { paquete: interfaz, destino: vista.interfazDestino })} />
@@ -104,7 +112,8 @@ export default function VistaPrevia({ resumen, destinos, pedido, alAplicar }: Pr
         pedido={pedido}
         nombreDe={nombreDe}
         alAplicar={alAplicar}
-        alFallar={() => {
+        alFallar={(error) => {
+          setFalloAlAplicar(error);
           setEstado({ tipo: "cargando" });
           setVuelta((v) => v + 1);
         }}

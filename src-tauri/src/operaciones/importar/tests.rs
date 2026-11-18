@@ -300,6 +300,33 @@ fn restaurar_a_peticion_la_deja_como_antes() {
 }
 
 #[test]
+fn restaurar_a_peticion_no_sigue_una_union_puesta_despues() {
+    let e = escenario();
+    let id = a_medias(&e);
+    let fuera = e._tmp.path().join("fuera");
+    create_dir_all(&fuera).unwrap();
+    let carpeta = e.personaje.carpeta();
+    let movida = e._tmp.path().join("movida");
+    std::fs::rename(&carpeta, &movida).unwrap();
+    let creada = std::process::Command::new("cmd")
+        .args(["/C", "mklink", "/J"])
+        .arg(&carpeta)
+        .arg(&fuera)
+        .output()
+        .unwrap();
+    assert!(creada.status.success(), "{creada:?}");
+
+    let resultado = e.operaciones.restaurar_operacion(&id, || false);
+
+    assert!(
+        matches!(resultado, Err(ErrorNucleo::EnlaceNoAdmitido { .. })),
+        "{resultado:?}"
+    );
+    assert_eq!(diario_de(&e.datos, &id).estado, Estado::Escribiendo);
+    std::fs::remove_dir(&carpeta).unwrap();
+}
+
+#[test]
 fn solo_se_restaura_a_peticion_una_importacion_a_medias() {
     let e = escenario();
     let completa = importar(&e);

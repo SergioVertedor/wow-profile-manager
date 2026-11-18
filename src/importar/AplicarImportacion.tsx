@@ -23,8 +23,8 @@ type Props = Readonly<{
   pedido: PedidoImportacion;
   nombreDe: (p: PlanPersonaje) => string;
   alAplicar: (resultados: ResultadoImportacion[]) => void;
-  /** Tras un fallo: el plan que se ve puede no ser ya el del disco. */
-  alFallar: () => void;
+  /** Tras un fallo (al cerrar el diálogo): el plan que se ve puede no ser ya el del disco. */
+  alFallar: (error: unknown) => void;
 }>;
 
 type Paso = { tipo: "preguntando" } | { tipo: "aplicando" } | { tipo: "error"; error: unknown };
@@ -71,7 +71,7 @@ export default function AplicarImportacion({ resumen, vista, destinos, pedido, n
   const cerrar = () => dialogo.current?.close();
   const alCerrar = () => {
     if (paso.tipo === "error") {
-      alFallar();
+      alFallar(paso.error);
     }
   };
 

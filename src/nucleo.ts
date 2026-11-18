@@ -454,12 +454,12 @@ export function deshacerOperacion(id: string, huella: string): Promise<string> {
   return invoke<string>("deshacer_operacion", { id, huella });
 }
 
-/** `restauradaAMano`: el usuario confirma que ya devolvió a mano lo que faltaba (solo cuenta en una sin restaurar). */
 /** Restaura una importación que se cortó a mitad. Escribe en el WTF. */
 export function restaurarOperacion(id: string): Promise<void> {
   return invoke("restaurar_operacion", { id });
 }
 
+/** `restauradaAMano`: el usuario confirma que ya devolvió a mano lo que faltaba (solo cuenta en una sin restaurar). */
 export function borrarOperacion(id: string, restauradaAMano: boolean): Promise<void> {
   return invoke("borrar_operacion", { id, restauradaAMano });
 }

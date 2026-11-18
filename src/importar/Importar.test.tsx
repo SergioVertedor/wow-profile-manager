@@ -249,6 +249,7 @@ describe("Importar", () => {
     expect((await within(dialogo).findByRole("alert")).textContent).toMatch(/Algún fichero ha cambiado/);
     fireEvent.click(within(dialogo).getByRole("button", { name: "Cancelar" }));
     await waitFor(() => expect(llamadas.filter((l) => l.comando === "plan_importacion")).toHaveLength(2));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/Algún fichero ha cambiado/);
   });
 
   it("dice por qué un paquete no vale y no deja nada abierto", async () => {

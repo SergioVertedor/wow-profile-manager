@@ -35,7 +35,11 @@ export default function Resultado({ resultados, producto, nombreDe, irAHistorial
                   tipo="importacion"
                   nombre={nombre}
                   donde={[nombreDeProducto(t, producto), r.cuenta]}
-                  alTerminar={(hecho) => hecho && setDeshechas((antes) => new Set(antes).add(r.operacion))}
+                  alTerminar={(hecho) => {
+                    if (hecho) {
+                      setDeshechas((antes) => new Set(antes).add(r.operacion));
+                    }
+                  }}
                 />
               )}
             </li>

@@ -331,8 +331,8 @@ impl Operaciones {
     /// Una importación cortada a mitad bloquea cualquier otra operación: otra escritura podría cambiar sus ficheros y
     /// restaurarla ya no podría devolverlos (spec 025, decisión 13).
     fn sin_importacion_a_medias(&self) -> Result<(), ErrorNucleo> {
-        let a_medias = subcarpetas(&self.dir)
-            .unwrap_or_default()
+        // Si no se puede listar, no se sigue: podría haber una a medias que no se ve.
+        let a_medias = subcarpetas(&self.dir)?
             .into_iter()
             .filter_map(|c| leer(&c.ruta).map(|d| (c.nombre, d)))
             .find(|(_, d)| d.tipo == Tipo::Importacion && d.estado == Estado::Escribiendo);
@@ -343,7 +343,8 @@ impl Operaciones {
     }
 
     /// Restaura una importación cortada a mitad, cuando el usuario lo pide. Solo esas: el resto se restaura solo al
-    /// arrancar. Devuelve el error de `ejecutar` si no quedó todo como antes.
+    /// arrancar. El diario está en disco y pudo tocarse a mano: sus rutas se comprueban otra vez (carpeta y enlaces). Si
+    /// no queda todo como antes, devuelve qué falta.
     pub fn restaurar_operacion(
         &self,
         id: &str,
@@ -358,12 +359,17 @@ impl Operaciones {
         if diario.tipo != Tipo::Importacion || diario.estado != Estado::Escribiendo {
             return Err(ErrorNucleo::NoRestaurable {});
         }
+        comprobar_bases(&diario)?;
         let restaurada = restaurar(&dir, &mut diario, INTERRUMPIDA.into());
         guardar(&dir, &diario)?;
         if restaurada {
             Ok(())
         } else {
-            Err(fallida(&diario, false, &ErrorNucleo::NoRestaurable {}))
+            Err(ErrorNucleo::OperacionFallida {
+                id: diario.id,
+                restaurada: false,
+                detalle: diario.error.unwrap_or_default(),
+            })
         }
     }
 

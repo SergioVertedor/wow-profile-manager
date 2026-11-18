@@ -113,16 +113,25 @@ sequenceDiagram
     D-->>UI: destinos
     J->>UI: elige destino y selección
     UI->>I: planificar
-    I-->>UI: plan (cambios, avisos, bloqueos)
+    I-->>UI: plan (cambios, avisos, bloqueos) y su huella
     Note over UI,I: puro: repetir no cambia nada
     J->>UI: aplicar
-    UI->>O: ejecutar plan
-    O->>S: ¿Wow.exe en marcha?
-    S-->>O: no
-    O->>O: comprobar hashes, copias, diario
-    O->>O: escritura segura de cada fichero
-    O-->>UI: operación completa o fallida-restaurada
+    UI->>I: aplicar con la huella
+    I->>P: volver a leer el paquete (mismo SHA-256)
+    I->>I: rehacer el plan y comparar la huella
+    loop cada personaje
+        I->>O: importar sus ficheros
+        O->>S: ¿Wow.exe en marcha?
+        S-->>O: no
+        O->>O: rutas en su carpeta, hashes, copias, diario
+        O->>O: escritura segura de cada fichero
+        O-->>I: operación completa o fallida-restaurada
+    end
+    I-->>UI: resultado por personaje
 ```
+
+Si la huella no es la misma (el disco o el paquete cambiaron desde la vista previa), no se escribe nada. Si falla un
+personaje, se restaura y los siguientes no se aplican (spec 025).
 
 ## Invariantes
 
