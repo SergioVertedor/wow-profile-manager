@@ -7,7 +7,7 @@ use crate::error::ErrorNucleo;
 use crate::operaciones::{ahora_rfc3339, segmento_literal};
 use crate::paquetes::{AddonPaquete, Ambito, Categoria, Origen, Paquete, Perfil, Pieza, Tipo};
 use crate::piezas::{
-    ACTIVADO, FUENTES, Filtro, Fuente, filtrar_addons, filtrar_opciones, lineas_addons,
+    ACTIVADO, FUENTES, Filtro, Fuente, Quitadas, filtrar_addons, filtrar_opciones, lineas_addons,
 };
 use serde::Serialize;
 use std::collections::HashSet;
@@ -37,8 +37,8 @@ pub struct PiezaPropuesta {
     pub categoria: Categoria,
     pub ambito: Ambito,
     pub bytes: u64,
-    /// Líneas que se quitan al filtrar.
-    pub quitadas: usize,
+    /// Líneas que se quitan al filtrar, por motivo.
+    pub quitadas: Vec<Quitadas>,
 }
 
 /// Lo que el jugador pide exportar.
@@ -140,7 +140,7 @@ fn propuesta(piezas: &[Pieza], apartadas: Vec<String>, juego_abierto: bool) -> P
                 categoria: p.categoria,
                 ambito: p.ambito,
                 bytes: p.contenido.len() as u64,
-                quitadas: p.claves_quitadas.len(),
+                quitadas: p.quitadas.clone(),
             })
             .collect(),
         apartadas,
@@ -214,7 +214,7 @@ fn leer_pieza(
             continue;
         }
         let bytes = std::fs::read(&ruta).map_err(|e| ErrorNucleo::lectura(&ruta, &e))?;
-        let (contenido, claves_quitadas, tipo) = match fuente.filtro {
+        let (contenido, quitadas, tipo) = match fuente.filtro {
             Filtro::Ninguno => (bytes, Vec::new(), Tipo::Fichero),
             Filtro::Opciones => con_tipo(filtrar_opciones(&bytes)),
             Filtro::Addons => con_tipo(filtrar_addons(&bytes, instalados)),
@@ -226,13 +226,13 @@ fn leer_pieza(
             ambito,
             destino: fuente.destino,
             contenido,
-            claves_quitadas,
+            quitadas,
         }));
     }
     Ok(None)
 }
 
-fn con_tipo((contenido, quitadas): (Vec<u8>, Vec<String>)) -> (Vec<u8>, Vec<String>, Tipo) {
+fn con_tipo((contenido, quitadas): (Vec<u8>, Vec<Quitadas>)) -> (Vec<u8>, Vec<Quitadas>, Tipo) {
     (contenido, quitadas, Tipo::FicheroFiltrado)
 }
 
@@ -251,6 +251,7 @@ fn contiene(bytes: &[u8], buscado: &[u8]) -> bool {
 mod tests {
     use super::*;
     use crate::deteccion::Producto;
+    use crate::piezas::Motivo;
     use crate::toc::Toc;
     use std::fs::{create_dir_all, write};
     use std::path::Path;
@@ -326,7 +327,13 @@ mod tests {
         );
         assert_eq!(piezas[3].contenido, b"SET a \"1\"\r\n");
         assert_eq!(piezas[3].tipo, Tipo::FicheroFiltrado);
-        assert_eq!(piezas[4].claves_quitadas, ["Viejo"]);
+        assert_eq!(
+            piezas[4].quitadas,
+            [Quitadas {
+                motivo: Motivo::AddonNoInstalado,
+                claves: vec!["Viejo".to_owned()],
+            }]
+        );
         assert_eq!(piezas[0].tipo, Tipo::Fichero);
     }
 
@@ -411,7 +418,7 @@ mod tests {
             destino: "personaje/AddOns.txt",
             contenido: b"Dominos: enabled\r\nDetails: disabled\r\nBlizzard_CombatText: enabled\r\n"
                 .to_vec(),
-            claves_quitadas: Vec::new(),
+            quitadas: Vec::new(),
         };
         let addons = addons_del_paquete(&[lista], &[addon("Dominos"), addon("Details")]);
         assert_eq!(addons.len(), 1);

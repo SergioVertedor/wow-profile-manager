@@ -48,7 +48,8 @@
     "nombreCuenta": "Nombre de la cuenta"
   },
   "ficha": {
-    "etiqueta": "Personaje elegido"
+    "etiqueta": "Personaje elegido",
+    "abrirCarpeta": "Abrir carpeta"
   },
   "acercaDe": {
     "titulo": "Acerca de",
@@ -73,7 +74,7 @@
     "personajeNoEncontrado": "Ese personaje ya no está en disco. Vuelve a cargar la lista.",
     "operacionFallida": "No se pudo terminar ni dejarlo todo como estaba. Las copias siguen en la operación {{id}}, en la carpeta de datos de la app: {{detalle}}",
     "operacionFallidaRestaurada": "No se pudo terminar y se ha dejado todo como estaba (operación {{id}}): {{detalle}}",
-    "enlaceNoAdmitido": "Hay un enlace o una unión de carpetas en {{ruta}}. No se sigue: podría borrar ficheros fuera de WTF. Quítalo a mano si quieres eliminar la carpeta.",
+    "enlaceNoAdmitido": "Hay un enlace o una unión de carpetas en {{ruta}}. No se sigue, porque podría llevar fuera de WTF. Quítalo a mano para continuar.",
     "operacionNoEncontrada": "Esa operación ya no está en el historial. Vuelve a cargarlo.",
     "noDeshacible": "Esta operación ya no se puede deshacer: solo se deshace una eliminación o una importación terminada que no esté deshecha.",
     "operacionPosterior": "Antes hay que deshacer la operación {{id}}: es más reciente y tocó los mismos ficheros.",
@@ -287,7 +288,7 @@
       "noSeImporta": "esta versión aún no lo importa",
       "destinoAjeno": "no se importa: apunta a un fichero que no es el suyo"
     },
-    "teclasSinComprobar": "Las teclas se importan como teclas del personaje. Aún no está comprobado en el juego que un personaje que usaba las de la cuenta pase a usar estas.",
+    "teclasSinComprobar": "Las teclas se guardan como teclas propias de este personaje. Si antes usaba las comunes de la cuenta, entra al juego y comprueba que tiene las nuevas. Si no, puedes deshacer la importación desde el Historial.",
     "decisionesEtiqueta": "Lo que afecta a toda la cuenta",
     "decisionesExplicacion": "Esto cambia la configuración de todos los personajes de la cuenta. Decide en cada una si se aplica.",
     "enCuenta": "{{categoria}} en la cuenta {{cuenta}} ({{personajes}})",
@@ -306,8 +307,7 @@
     "nadaQueImportar": "Nada que importar en este personaje.",
     "afectaCuenta": "Afecta a todos los personajes de la cuenta.",
     "escritaEn": "Se aplica una sola vez para la cuenta, con {{personaje}}.",
-    "opcionesApartadas": "No se importan por seguridad o porque son estado: {{lista}}.",
-    "addonsQueFaltan": "Se activan, pero no están instalados en este equipo: {{lista}}.",
+    "addonsQueFaltan": "Se activan, pero no están instalados en este equipo.",
     "cambio": {
       "anadido": "Nuevo",
       "cambiado": "Cambia",
@@ -342,7 +342,23 @@
       "deshecha": "Deshecha."
     },
     "siguientePaso": "Entra al juego con cada personaje y comprueba que todo está bien. Las habilidades de los botones las colocas tú: el perfil trae la disposición y las teclas, no lo que hay en cada botón.",
-    "verHistorial": "Ver historial"
+    "verHistorial": "Ver historial",
+    "queTrae": {
+      "boton": "Qué trae",
+      "etiqueta": "Qué trae: {{categoria}}",
+      "macros": "Las macros: su nombre, su icono y su texto.",
+      "teclas": "Qué tecla hace cada acción.",
+      "teclas-clic": "Las acciones asignadas a clics del ratón (lanzamiento con clic).",
+      "opciones": "Opciones del juego: interfaz, cámara, combate y demás.",
+      "chat": "Las pestañas del chat, qué mensajes enseña cada una y sus canales. No trae mensajes.",
+      "ventanas": "Dónde has colocado las ventanas de la interfaz que se pueden mover.",
+      "marcos-banda": "Los perfiles de los marcos de banda: tamaño, colores y qué enseñan.",
+      "addons-activos": "Qué addons quedan activados y cuáles desactivados.",
+      "activados_one": "Se activa {{count}}",
+      "activados_other": "Se activan {{count}}",
+      "desactivados_one": "Se desactiva {{count}}",
+      "desactivados_other": "Se desactivan {{count}}"
+    }
   },
   "restaurar": {
     "titulo": "¿Restaurar lo que cambió en {{nombre}}?",
@@ -352,5 +368,10 @@
     "restaurando": "Restaurando…",
     "cerrar": "Cerrar",
     "hecho": "Hecho: todo está como antes de la operación."
+  },
+  "motivos": {
+    "seguridad": "Por seguridad: quitaría a quien lo importe el aviso del juego antes de ejecutar scripts.",
+    "estado": "Son estado de la partida, no configuración: lo que sigues, lo que ya has visto o lo que tienes plegado.",
+    "addonNoInstalado": "Addons que no están instalados en este equipo."
   }
 }

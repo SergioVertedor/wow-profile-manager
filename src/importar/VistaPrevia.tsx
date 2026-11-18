@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TriangleAlert } from "lucide-react";
+import ListaQuitadas, { type TextoDeMotivo } from "../comun/ListaQuitadas";
 import {
   pedirPlanImportacion,
   type Elemento,
   type FicheroPlan,
+  type Motivo,
   type PedidoImportacion,
   type PlanPersonaje,
   type ResultadoImportacion,
@@ -215,14 +217,17 @@ function Fichero({ fichero, escritaPor }: Readonly<{ fichero: FicheroPlan; escri
         </ul>
       )}
       {fichero.apartadas.length > 0 && (
-        <p className={css.secundarioTexto}>
-          {t(fichero.categoria === "opciones" ? "importar.opcionesApartadas" : "importar.addonsQueFaltan", {
-            lista: fichero.apartadas.join(", "),
-          })}
-        </p>
+        <div className={css.secundarioTexto}>
+          <ListaQuitadas grupos={fichero.apartadas} textoDe={textoDeApartadas} />
+        </div>
       )}
     </li>
   );
+}
+
+/** Al importar, los addons que faltan sí se escriben (spec 024, decisión 9): su frase es propia. */
+function textoDeApartadas(motivo: Motivo): TextoDeMotivo {
+  return motivo === "addonNoInstalado" ? "importar.addonsQueFaltan" : `motivos.${motivo}`;
 }
 
 function ElementoCambiado({ elemento }: Readonly<{ elemento: Elemento }>) {

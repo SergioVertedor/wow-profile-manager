@@ -4,9 +4,12 @@
 import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PackageOpen, TriangleAlert } from "lucide-react";
+import Desplegable from "../comun/Desplegable";
+import ListaQuitadas from "../comun/ListaQuitadas";
 import {
   exportarPersonaje,
   pedirPropuestaExportacion,
+  totalQuitadas,
   type PersonajePedido,
   type PropuestaExportacion,
 } from "../nucleo";
@@ -192,17 +195,24 @@ function Formulario({
         <fieldset className={css.piezas} aria-describedby={idPiezas} disabled={bloqueado}>
           <legend>{t("exportar.piezas")}</legend>
           {propuesta.piezas.map((pieza) => (
-            <label key={pieza.id} className={css.pieza}>
-              <input type="checkbox" checked={marcadas.has(pieza.id)} onChange={() => alternar(pieza.id)} />
-              <span className={css.categoria}>
-                {t(`exportar.categorias.${pieza.categoria}`)}
-                {pieza.ambito === "cuenta" && <span className={css.detalle}> · {t("exportar.deLaCuenta")}</span>}
-                {pieza.quitadas > 0 && (
-                  <span className={css.detalle}> · {t("exportar.quitadas", { count: pieza.quitadas })}</span>
-                )}
-              </span>
-              <span className={css.tamano}>{tamanoLegible(pieza.bytes, i18n.language)}</span>
-            </label>
+            <div key={pieza.id}>
+              <label className={css.pieza}>
+                <input type="checkbox" checked={marcadas.has(pieza.id)} onChange={() => alternar(pieza.id)} />
+                <span className={css.categoria}>
+                  {t(`exportar.categorias.${pieza.categoria}`)}
+                  {pieza.ambito === "cuenta" && <span className={css.detalle}> · {t("exportar.deLaCuenta")}</span>}
+                </span>
+                <span className={css.tamano}>{tamanoLegible(pieza.bytes, i18n.language)}</span>
+              </label>
+              {pieza.quitadas.length > 0 && (
+                <Desplegable
+                  className={css.quitadas}
+                  resumen={t("exportar.quitadas", { count: totalQuitadas(pieza.quitadas) })}
+                >
+                  <ListaQuitadas grupos={pieza.quitadas} />
+                </Desplegable>
+              )}
+            </div>
           ))}
         </fieldset>
       )}

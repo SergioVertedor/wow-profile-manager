@@ -6,7 +6,7 @@ use crate::addons::{Addons, descubrir_addons};
 use crate::agente_battlenet;
 use crate::bpsv;
 use crate::descubrimiento::{Cuentas, descubrir};
-use crate::disco::{clave_de_ruta, leer_texto, subcarpetas};
+use crate::disco::{clave_de_ruta, es_enlace, leer_texto, subcarpetas};
 use crate::error::ErrorNucleo;
 use crate::preferencias::Preferencias;
 use serde::{Deserialize, Serialize};
@@ -409,6 +409,21 @@ impl PersonajeUbicado {
             .join(CARPETA_WTF)
             .join(CARPETA_ACCOUNT)
             .join(&self.cuenta)
+    }
+
+    /// Ningún tramo de su camino desde la raíz de la versión (`WTF`, `Account`, cuenta, reino y personaje) es un enlace
+    /// o una unión de Windows: con uno no se sigue, porque podría salir del `WTF`. Igual que al escribir.
+    pub fn comprobar_sin_enlaces(&self) -> Result<(), ErrorNucleo> {
+        let mut tramo = self.raiz_version.clone();
+        for parte in Path::new(&self.ruta_relativa()).components() {
+            tramo.push(parte);
+            if es_enlace(&tramo) {
+                return Err(ErrorNucleo::EnlaceNoAdmitido {
+                    ruta: tramo.display().to_string(),
+                });
+            }
+        }
+        Ok(())
     }
 }
 
@@ -843,5 +858,55 @@ mod tests {
         sin_flavor.version = "Data".into();
         no_encontrado(&sin_flavor);
         assert!(ubicar(&pedido(tmp.path(), "93", "Goldberg"), &conocidas).is_ok());
+    }
+
+    fn ubicado(raiz: &Path) -> PersonajeUbicado {
+        PersonajeUbicado {
+            raiz_version: raiz.join("_forever_"),
+            producto: Producto::Forever,
+            cuenta: "1#1".into(),
+            reino: "93".into(),
+            personaje: "Goldberg".into(),
+            nombre_en_datos: None,
+        }
+    }
+
+    #[test]
+    fn sin_enlaces_en_el_camino_se_puede_seguir() {
+        let tmp = tempfile::tempdir().unwrap();
+        let pj = ubicado(tmp.path());
+        create_dir_all(pj.carpeta()).unwrap();
+        assert_eq!(pj.comprobar_sin_enlaces(), Ok(()));
+    }
+
+    /// Una unión de Windows (`mklink /J`, sin permisos de administrador) en cada tramo, de `WTF` al personaje.
+    #[cfg(windows)]
+    #[test]
+    fn una_union_en_cualquier_tramo_no_se_sigue() {
+        for tramos_hasta_la_union in 1..=5 {
+            let tmp = tempfile::tempdir().unwrap();
+            let pj = ubicado(tmp.path());
+            let partes: Vec<String> = pj.ruta_relativa().split('/').map(str::to_owned).collect();
+            let union = partes[..tramos_hasta_la_union]
+                .iter()
+                .fold(pj.raiz_version.clone(), |ruta, parte| ruta.join(parte));
+            let fuera = tmp.path().join("fuera");
+            create_dir_all(fuera.join(partes[tramos_hasta_la_union..].join("/"))).unwrap();
+            create_dir_all(union.parent().unwrap()).unwrap();
+            let creada = std::process::Command::new("cmd")
+                .args(["/C", "mklink", "/J"])
+                .arg(&union)
+                .arg(&fuera)
+                .output()
+                .unwrap();
+            assert!(creada.status.success(), "{creada:?}");
+            assert_eq!(
+                pj.comprobar_sin_enlaces(),
+                Err(ErrorNucleo::EnlaceNoAdmitido {
+                    ruta: union.display().to_string()
+                }),
+                "unión tras {tramos_hasta_la_union} tramos"
+            );
+        }
     }
 }

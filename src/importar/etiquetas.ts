@@ -18,7 +18,7 @@ const CATEGORIAS: readonly Categoria[] = [
 const OTRAS: readonly string[] = ["config-addon", "modo-edicion"];
 type Otra = "config-addon" | "modo-edicion";
 
-function esCategoria(texto: string): texto is Categoria {
+export function esCategoria(texto: string): texto is Categoria {
   return (CATEGORIAS as readonly string[]).includes(texto);
 }
 

@@ -32,9 +32,9 @@ const PEDIDO: PersonajePedido = {
 
 const PROPUESTA: PropuestaExportacion = {
   piezas: [
-    { id: "macros", categoria: "macros", ambito: "personaje", bytes: 2_000, quitadas: 0 },
-    { id: "teclas", categoria: "teclas", ambito: "cuenta", bytes: 1_600, quitadas: 0 },
-    { id: "addons-activos", categoria: "addons-activos", ambito: "personaje", bytes: 400, quitadas: 12 },
+    { id: "macros", categoria: "macros", ambito: "personaje", bytes: 2_000, quitadas: [] },
+    { id: "teclas", categoria: "teclas", ambito: "cuenta", bytes: 1_600, quitadas: [] },
+    { id: "addons-activos", categoria: "addons-activos", ambito: "personaje", bytes: 400, quitadas: [{ motivo: "addonNoInstalado", claves: Array.from({ length: 12 }, (_, i) => `Addon${i}`) }] },
   ],
   apartadas: [],
   juegoAbierto: false,
@@ -71,6 +71,29 @@ describe("ExportarPersonaje", () => {
     expect(within(dialogo).getByText(/sin 12 líneas que no viajan/)).toBeTruthy();
     expect(within(dialogo).getByText(/no viaja: lo guarda el servidor/)).toBeTruthy();
     expect(within(dialogo).queryByText(/WoW está abierto/)).toBeNull();
+  });
+
+  it("lo que no viaja se despliega agrupado por motivo, con su frase y sus claves", async () => {
+    const quitadas = [
+      { motivo: "seguridad" as const, claves: ["AllowDangerousScripts"] },
+      { motivo: "estado" as const, claves: ["trackedQuests", "EJLootClass"] },
+    ];
+    pintar({
+      propuesta_exportacion: () => ({
+        ...PROPUESTA,
+        piezas: [{ id: "opciones", categoria: "opciones", ambito: "personaje", bytes: 900, quitadas }],
+      }),
+    });
+
+    const dialogo = await abrir();
+
+    fireEvent.click(within(dialogo).getByText("sin 3 líneas que no viajan"));
+    expect(within(dialogo).getByText(/^Por seguridad:/)).toBeTruthy();
+    expect(within(dialogo).getByText(/^Son estado de la partida/)).toBeTruthy();
+    expect(within(dialogo).getByText("AllowDangerousScripts")).toBeTruthy();
+    expect(within(dialogo).getByText("EJLootClass")).toBeTruthy();
+    // El desplegable no está dentro de la casilla: abrirlo no la desmarca.
+    expect((within(dialogo).getByRole("checkbox") as HTMLInputElement).checked).toBe(true);
   });
 
   it("sin nombre no se puede guardar; con él manda lo marcado en el orden de la propuesta", async () => {

@@ -3,17 +3,19 @@
 //! ficheros actuales va aparte (`leer_destino`) y escribir es de Operaciones (`aplicar.rs`).
 
 mod aplicar;
+mod contenido;
 mod elementos;
 mod fusion;
 
 use crate::deteccion::{self, PersonajeUbicado};
 use crate::error::{ErrorNucleo, MotivoPaquete};
-use crate::operaciones::{Operaciones, PaqueteImportado, es_enlace, sha256};
+use crate::operaciones::{Operaciones, PaqueteImportado, sha256};
 use crate::paquetes::{
     Ambito, Categoria, EntradaLeida, ManifiestoLeido, PaqueteLeido, Tipo, leer_fichero,
 };
-use crate::piezas::{Filtro, Fuente, fuente_de_destino};
+use crate::piezas::{Filtro, Fuente, Quitadas, fuente_de_destino};
 pub use aplicar::ResultadoPersonaje;
+pub use contenido::Contenido;
 pub use elementos::Elemento;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -42,6 +44,9 @@ pub struct EntradaResumen {
     pub bytes: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub incompatible: Option<MotivoIncompatible>,
+    /// Qué trae, para enseñarlo. Solo en las entradas que se importan y cuya categoría tiene lista.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub contenido: Option<Contenido>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -136,8 +141,8 @@ pub struct FicheroPlan {
     pub accion: Accion,
     /// Macros, teclas, opciones y addons: qué cambia dentro. El resto: vacío (se sustituye el fichero).
     pub elementos: Vec<Elemento>,
-    /// Opciones del paquete que no se importan (lista negra) o addons activados que el destino no tiene.
-    pub apartadas: Vec<String>,
+    /// Opciones del paquete que no se importan (lista negra) o addons activados que el destino no tiene, por motivo.
+    pub apartadas: Vec<Quitadas>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bytes_antes: Option<u64>,
     pub bytes_despues: u64,
@@ -192,13 +197,22 @@ pub fn resumen(paquete: &PaqueteLeido) -> Resumen {
         .manifiesto
         .entradas
         .iter()
-        .map(|e| EntradaResumen {
-            id: e.id.clone(),
-            categoria: e.categoria.clone(),
-            ambito: e.ambito,
-            de_cuenta: es_de_cuenta(&e.destino),
-            bytes: e.bytes,
-            incompatible: clasificar(e).err(),
+        .map(|e| {
+            let clasificada = clasificar(e);
+            let que_trae = clasificada.as_ref().ok().and_then(|importable| {
+                paquete
+                    .pieza(&e.id)
+                    .and_then(|pieza| contenido::contenido(importable.categoria, pieza))
+            });
+            EntradaResumen {
+                id: e.id.clone(),
+                categoria: e.categoria.clone(),
+                ambito: e.ambito,
+                de_cuenta: es_de_cuenta(&e.destino),
+                bytes: e.bytes,
+                incompatible: clasificada.err(),
+                contenido: que_trae,
+            }
         })
         .collect();
     Resumen {
@@ -235,17 +249,7 @@ pub fn leer_destino(
     personaje: PersonajeUbicado,
     paquete: &PaqueteLeido,
 ) -> Result<Destino, ErrorNucleo> {
-    let carpeta = personaje.carpeta();
-    let tramos = [
-        carpeta.as_path(),
-        carpeta.parent().unwrap_or(&carpeta),
-        &personaje.carpeta_cuenta(),
-    ];
-    if let Some(enlace) = tramos.iter().find(|t| es_enlace(t)) {
-        return Err(ErrorNucleo::EnlaceNoAdmitido {
-            ruta: enlace.display().to_string(),
-        });
-    }
+    personaje.comprobar_sin_enlaces()?;
     let mut actuales = HashMap::new();
     for importable in paquete
         .manifiesto
@@ -445,7 +449,7 @@ fn planificar_fichero(destino: &Destino, importable: &Importable<'_>, pieza: &[u
     }
 }
 
-fn partes(fusion: fusion::Fusion) -> (Vec<u8>, Vec<Elemento>, Vec<String>) {
+fn partes(fusion: fusion::Fusion) -> (Vec<u8>, Vec<Elemento>, Vec<Quitadas>) {
     (fusion.contenido, fusion.cambios, fusion.apartadas)
 }
 
@@ -714,7 +718,10 @@ mod tests {
             (Grupo::Modificado, Accion::Fusionar)
         );
         assert_eq!(opciones.contenido, b"SET a \"2\"\r\nSET b \"3\"\r\n");
-        assert_eq!(opciones.apartadas, ["AllowDangerousScripts"]);
+        assert_eq!(
+            crate::piezas::todas_las_claves(&opciones.apartadas),
+            ["AllowDangerousScripts"]
+        );
         let incompatibles: Vec<_> = plan
             .incompatibles
             .iter()
@@ -800,6 +807,28 @@ mod tests {
             entradas[6],
             ("colada", false, Some(MotivoIncompatible::DestinoAjeno))
         );
+    }
+
+    #[test]
+    fn el_resumen_trae_el_contenido_solo_de_lo_que_se_importa() {
+        let resumen = resumen(&paquete());
+        let contenido = |id: &str| {
+            resumen
+                .entradas
+                .iter()
+                .find(|e| e.id == id)
+                .and_then(|e| e.contenido.clone())
+        };
+        assert_eq!(
+            contenido("opciones"),
+            Some(Contenido::Lista {
+                elementos: vec!["a".into()]
+            })
+        );
+        assert_eq!(contenido("ventanas"), None);
+        assert_eq!(contenido("chat"), None);
+        assert_eq!(contenido("dominos"), None);
+        assert_eq!(contenido("colada"), None);
     }
 
     #[test]

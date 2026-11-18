@@ -3,10 +3,10 @@
 
 use super::deshacer::se_puede_deshacer;
 use super::{
-    Destino, Diario, Estado, Operaciones, PaqueteImportado, Tipo, en_disco, es_enlace,
-    hash_en_disco, leer, por_resolver,
+    Destino, Diario, Estado, Operaciones, PaqueteImportado, Tipo, en_disco, hash_en_disco, leer,
+    por_resolver,
 };
-use crate::disco::subcarpetas;
+use crate::disco::{es_enlace, subcarpetas};
 use crate::error::ErrorNucleo;
 use serde::Serialize;
 use std::collections::HashSet;

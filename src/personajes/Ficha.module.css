@@ -89,31 +89,17 @@
   width: 100%;
   max-width: var(--ancho-texto);
   margin-top: var(--espacio-6);
-  text-align: left;
 }
 
 .addons summary {
-  width: max-content;
   margin: 0 auto;
-  padding: var(--espacio-1) var(--espacio-3);
-  border-radius: var(--radio-pildora);
-  color: var(--color-oro);
-  font-size: var(--texto-control);
-  cursor: pointer;
-}
-
-.addons summary:hover {
-  background: var(--oro-velo);
 }
 
 .addons ul {
   columns: 2;
   column-gap: var(--espacio-8);
-  margin: var(--espacio-3) 0 0;
-  padding: var(--espacio-3) var(--espacio-4);
-  border-top: 1px solid var(--color-linea);
-  color: var(--color-texto-2);
-  font-size: var(--texto-pequeno);
+  margin: 0;
+  padding: 0;
   list-style: none;
 }
 

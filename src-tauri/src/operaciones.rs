@@ -15,7 +15,7 @@ pub use historial::Historial;
 pub use importar::{AccionImportar, Escritura, PaqueteImportado};
 
 use crate::deteccion::{CARPETA_ACCOUNT, CARPETA_WTF, PersonajeUbicado};
-use crate::disco::subcarpetas;
+use crate::disco::{es_enlace, subcarpetas};
 use crate::error::ErrorNucleo;
 use crate::escritura::escribir_atomico;
 use serde::{Deserialize, Serialize};
@@ -534,11 +534,6 @@ fn comprobar_bases(diario: &Diario) -> Result<(), ErrorNucleo> {
         }
     }
     Ok(())
-}
-
-/// Un enlace simbólico o una unión de Windows (las dos son «sustitutos de nombre» para `is_symlink`).
-pub(crate) fn es_enlace(ruta: &Path) -> bool {
-    std::fs::symlink_metadata(ruta).is_ok_and(|m| m.file_type().is_symlink())
 }
 
 fn enlace(ruta: &Path) -> ErrorNucleo {

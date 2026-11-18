@@ -222,6 +222,17 @@ async fn abrir_carpeta_operacion(
     sistema::abrir_carpeta(&operaciones.carpeta_de(&id)?)
 }
 
+/// Abre en el explorador la carpeta de un personaje (spec 026). Con un enlace en el camino no se abre nada.
+#[tauri::command]
+async fn abrir_carpeta_personaje(
+    personaje: deteccion::PersonajePedido,
+    almacen: State<'_, Almacen>,
+) -> Result<(), error::ErrorNucleo> {
+    let ubicado = ubicar(&personaje, &almacen)?;
+    ubicado.comprobar_sin_enlaces()?;
+    sistema::abrir_carpeta(&ubicado.carpeta())
+}
+
 /// Qué se puede exportar de un personaje ahora mismo (spec 023). Solo lee.
 #[tauri::command]
 async fn propuesta_exportacion(
@@ -396,6 +407,7 @@ pub fn con_comandos<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Bui
         restaurar_operacion,
         borrar_operacion,
         abrir_carpeta_operacion,
+        abrir_carpeta_personaje,
         propuesta_exportacion,
         exportar_personaje,
         abrir_paquete,

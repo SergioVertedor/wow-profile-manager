@@ -188,6 +188,20 @@ export type Categoria =
   | "marcos-banda"
   | "addons-activos";
 
+/** Por qué no viaja una línea (`Motivo` en `src-tauri/src/piezas.rs`). */
+export type Motivo = "seguridad" | "estado" | "addonNoInstalado";
+
+/** Las claves que se quitan por un mismo motivo (`Quitadas` en `src-tauri/src/piezas.rs`). */
+export interface Quitadas {
+  motivo: Motivo;
+  claves: string[];
+}
+
+/** Cuántas líneas hay en todos los grupos. */
+export function totalQuitadas(grupos: Quitadas[]): number {
+  return grupos.reduce((total, grupo) => total + grupo.claves.length, 0);
+}
+
 /** Una pieza que se puede exportar (`PiezaPropuesta` en `src-tauri/src/exportacion.rs`). */
 export interface PiezaPropuesta {
   id: string;
@@ -195,8 +209,8 @@ export interface PiezaPropuesta {
   /** Dónde estaba en el origen. */
   ambito: "personaje" | "cuenta";
   bytes: number;
-  /** Líneas que se quitan al filtrar (estado, addons no instalados). */
-  quitadas: number;
+  /** Líneas que se quitan al filtrar, por motivo. */
+  quitadas: Quitadas[];
 }
 
 /** Lo que se puede exportar del personaje ahora mismo. */
@@ -235,6 +249,11 @@ export interface ManifiestoPaquete {
 /** Por qué una entrada no se importa: aún no se sabe, o su destino no es el fichero de su categoría. */
 export type MotivoIncompatible = "noSeImporta" | "destinoAjeno";
 
+/** Qué trae una entrada (`Contenido` en `src-tauri/src/importacion/contenido.rs`). */
+export type Contenido =
+  | { tipo: "lista"; elementos: string[] }
+  | { tipo: "addons"; activados: string[]; desactivados: string[] };
+
 /** Una entrada del paquete abierto (`EntradaResumen` en `src-tauri/src/importacion.rs`). */
 export interface EntradaPaquete {
   id: string;
@@ -245,6 +264,8 @@ export interface EntradaPaquete {
   deCuenta: boolean;
   bytes: number;
   incompatible?: MotivoIncompatible;
+  /** Solo en las que se importan y cuya categoría tiene lista. */
+  contenido?: Contenido;
 }
 
 export interface ResumenPaquete {
@@ -298,8 +319,8 @@ export interface FicheroPlan {
   grupo: Grupo;
   accion: "crear" | "sobrescribir" | "fusionar";
   elementos: Elemento[];
-  /** Opciones que no se importan, o addons activados que no están instalados en el destino. */
-  apartadas: string[];
+  /** Opciones que no se importan, o addons activados que no están instalados en el destino, por motivo. */
+  apartadas: Quitadas[];
   bytesAntes?: number;
   bytesDespues: number;
   /** Lo de cuenta que ya escribe otro personaje de la misma cuenta (su carpeta). */
@@ -468,6 +489,11 @@ export function borrarOperacion(id: string, restauradaAMano: boolean): Promise<v
 
 export function abrirCarpetaOperacion(id: string): Promise<void> {
   return invoke("abrir_carpeta_operacion", { id });
+}
+
+/** Abre en el explorador la carpeta del personaje. Solo lee; con un enlace en el camino no abre nada. */
+export function abrirCarpetaPersonaje(personaje: PersonajePedido): Promise<void> {
+  return invoke("abrir_carpeta_personaje", { personaje });
 }
 
 /** Enlaces que sabe abrir el núcleo (`src-tauri/src/enlaces.rs`). La interfaz nunca le pasa una URL. */

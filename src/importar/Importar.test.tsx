@@ -194,6 +194,90 @@ describe("Importar", () => {
     });
   });
 
+  it("cada entrada que se importa dice qué trae, también en las decisiones de cuenta", async () => {
+    const resumen: ResumenPaquete = {
+      ...RESUMEN,
+      entradas: [
+        { ...RESUMEN.entradas[0], contenido: { tipo: "lista", elementos: ["Foco", "#showtooltip"] } },
+        { ...RESUMEN.entradas[1], contenido: { tipo: "lista", elementos: ["Monta"] } },
+        {
+          id: "addons-activos",
+          categoria: "addons-activos",
+          ambito: "personaje",
+          deCuenta: false,
+          bytes: 90,
+          contenido: { tipo: "addons", activados: ["Dominos", "Details"], desactivados: ["WeakAuras"] },
+        },
+        { id: "ventanas", categoria: "ventanas", ambito: "personaje", deCuenta: false, bytes: 30 },
+        RESUMEN.entradas[2],
+      ],
+    };
+    pintar({ abrir_paquete: () => ({ resultado: "abierta", resumen }) });
+    fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Goldberg Joestar/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+
+    // Macros, macros de la cuenta, addons y ventanas; la configuración de addons no se importa y no dice nada.
+    const queTrae = screen.getAllByText("Qué trae");
+    expect(queTrae).toHaveLength(5);
+    expect(screen.getAllByText("Foco")).toHaveLength(1);
+    expect(screen.getByText("Se activan 2")).toBeTruthy();
+    expect(screen.getByText("Se desactiva 1")).toBeTruthy();
+    expect(screen.getByText("WeakAuras")).toBeTruthy();
+    expect(screen.getByText(/^Dónde has colocado las ventanas/)).toBeTruthy();
+    const decision = screen.getByRole("group", { name: /Macros de la cuenta en la cuenta 1#1/ });
+    // El lector de pantalla oye de qué entrada es cada «Qué trae».
+    expect(within(decision).getByLabelText("Qué trae: Macros de la cuenta")).toBeTruthy();
+    expect(screen.getByLabelText("Qué trae: Addons activos")).toBeTruthy();
+    expect(within(decision).getByText("Monta")).toBeTruthy();
+  });
+
+  it("la vista previa agrupa lo apartado por motivo; los addons que faltan llevan su propia frase", async () => {
+    const fichero = VISTA.plan.personajes[0].ficheros[0];
+    const conApartadas: VistaPrevia = {
+      ...VISTA,
+      plan: {
+        ...VISTA.plan,
+        personajes: [
+          {
+            ...VISTA.plan.personajes[0],
+            ficheros: [
+              {
+                ...fichero,
+                entrada: "opciones",
+                categoria: "opciones",
+                apartadas: [
+                  { motivo: "seguridad", claves: ["AllowDangerousScripts"] },
+                  { motivo: "estado", claves: ["trackedQuests"] },
+                ],
+              },
+              {
+                ...fichero,
+                entrada: "addons-activos",
+                categoria: "addons-activos",
+                apartadas: [{ motivo: "addonNoInstalado", claves: ["Dominos"] }],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    pintar({
+      abrir_paquete: () => ({ resultado: "abierta", resumen: RESUMEN }),
+      plan_importacion: () => conApartadas,
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Goldberg Joestar/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+
+    expect(await screen.findByText(/^Por seguridad:/)).toBeTruthy();
+    expect(screen.getByText(/^Son estado de la partida/)).toBeTruthy();
+    expect(screen.getByText("trackedQuests")).toBeTruthy();
+    expect(screen.getByText("Se activan, pero no están instalados en este equipo.")).toBeTruthy();
+    expect(screen.getByText("Dominos")).toBeTruthy();
+  });
+
   it("aplica con la huella de la vista previa y enseña el resultado con «Deshacer»", async () => {
     const lista: VistaPrevia = {
       ...VISTA,

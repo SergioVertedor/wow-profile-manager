@@ -55,6 +55,11 @@
   font-size: var(--texto-pequeno);
 }
 
+/* Las líneas que no viajan, bajo su pieza: sangradas hasta el texto, después de la casilla. */
+.quitadas {
+  margin: 0 0 var(--espacio-2) var(--espacio-6);
+}
+
 .tamano {
   flex: none;
   font-variant-numeric: tabular-nums;

@@ -3,7 +3,9 @@
 // una app de repositorio público.
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+import Desplegable from "../comun/Desplegable";
 import type { Addon, Personaje, VersionJuego } from "../nucleo";
+import AbrirCarpeta from "./AbrirCarpeta";
 import EliminarPersonaje from "./EliminarPersonaje";
 import ExportarPersonaje from "./ExportarPersonaje";
 import css from "./Ficha.module.css";
@@ -14,7 +16,7 @@ type Props = Readonly<{
   version: VersionJuego;
   cuenta: string;
   instalacion: string;
-  /** Dónde está en disco, para pedirle al núcleo que lo exporte o lo elimine. */
+  /** Dónde está en disco, para pedirle al núcleo que lo exporte, abra su carpeta o la elimine. */
   raiz: string;
   carpetaCuenta: string;
   /** Tras eliminar su carpeta: vuelve a leer los personajes. */
@@ -65,16 +67,16 @@ export default function Ficha({ personaje, version, cuenta, instalacion, raiz, c
         )}
       </dl>
       {addons.length > 0 && (
-        <details className={css.addons}>
-          <summary>{t("personajes.verAddons", { count: addons.length })}</summary>
+        <Desplegable className={css.addons} resumen={t("personajes.verAddons", { count: addons.length })}>
           <ul>
             {addons.map((addon) => (
               <li key={addon.carpeta}>{nombreDeAddon(t, addon)}</li>
             ))}
           </ul>
-        </details>
+        </Desplegable>
       )}
       <ExportarPersonaje key={`exportar-${clave}`} pedido={pedido} nombre={nombre} donde={donde} />
+      <AbrirCarpeta key={`abrir-${clave}`} pedido={pedido} />
       <EliminarPersonaje
         key={`eliminar-${clave}`}
         pedido={pedido}
