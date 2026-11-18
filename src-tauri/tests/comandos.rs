@@ -228,7 +228,8 @@ fn recuperar_operaciones_sin_operaciones_no_hace_nada() {
     assert_eq!(
         respuesta,
         serde_json::json!({
-            "canceladas": 0, "restauradas": 0, "sinRestaurar": 0, "pendientes": 0, "ilegibles": 0
+            "canceladas": 0, "restauradas": 0, "sinRestaurar": 0, "pendientes": 0, "aMedias": 0,
+            "ilegibles": 0
         })
     );
 }
@@ -301,6 +302,7 @@ fn un_id_de_operacion_desconocido_se_rechaza() {
             "abrir_carpeta_operacion",
             serde_json::json!({ "id": "C:/Windows" }),
         ),
+        ("restaurar_operacion", serde_json::json!({ "id": ".." })),
     ] {
         let error = invocar_en(tmp.path(), comando, argumentos).unwrap_err();
         // Deshacer mira antes si el juego está abierto: si quien corre los tests está jugando, esa es la respuesta.
@@ -455,6 +457,75 @@ fn plan_importacion_rechaza_otro_paquete_y_destinos_no_validos() {
             invocar_con_paquetes(&datos, paquetes, "plan_importacion", argumentos).unwrap_err();
         assert_eq!(error["codigo"], codigo);
     }
+}
+
+/// Aplicar con la huella de la vista previa escribe, sale en el historial con su perfil y se deshace desde allí. Mira los
+/// procesos reales: con el juego abierto, el resultado del personaje lo dice y no se escribe nada.
+#[test]
+fn aplicar_importacion_escribe_y_se_deshace_desde_el_historial() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (raiz, datos) = (tmp.path().join("wow"), tmp.path().join("datos"));
+    std::fs::create_dir_all(&raiz).unwrap();
+    let (paquetes, mut argumentos) = importacion_preparada(&raiz, &datos);
+    let addons_txt = raiz.join("_forever_/WTF/Account/1#1/93/Goldberg-Soulreaper/AddOns.txt");
+    let vista =
+        invocar_con_paquetes(&datos, paquetes, "plan_importacion", argumentos.clone()).unwrap();
+    // El runtime simulado no guarda estado entre llamadas: el mismo fichero, abierto otra vez.
+    let abiertos = PaquetesAbiertos::default();
+    abiertos.abrir(&raiz.join("perfil.wowprofile")).unwrap();
+    argumentos["huella"] = vista["huella"].clone();
+
+    let resultados =
+        invocar_con_paquetes(&datos, abiertos, "aplicar_importacion", argumentos).unwrap();
+
+    let resultado = &resultados[0];
+    assert_eq!(resultado["personaje"], "Goldberg-Soulreaper");
+    if resultado["resultado"] == "fallida" {
+        assert_eq!(resultado["error"]["codigo"], "juegoAbierto", "{resultado}");
+        assert_eq!(
+            std::fs::read(&addons_txt).unwrap(),
+            b"Prat-3.0: enabled\r\n"
+        );
+        return;
+    }
+    assert_eq!(resultado["resultado"], "completa", "{resultado}");
+    assert_eq!(resultado["ficheros"], 1);
+    assert_eq!(
+        std::fs::read(&addons_txt).unwrap(),
+        b"Prat-3.0: disabled\r\n"
+    );
+    let id = resultado["operacion"].clone();
+    let historial = invocar_en(&datos, "listar_operaciones", serde_json::json!({})).unwrap();
+    let operacion = &historial["operaciones"][0];
+    assert_eq!(operacion["tipo"], "importacion");
+    assert_eq!(operacion["paquete"]["nombre"], "Druida");
+    assert_eq!(operacion["deshacible"], true);
+
+    let plan = invocar_en(&datos, "plan_deshacer", serde_json::json!({ "id": id })).unwrap();
+    assert_eq!(plan["vuelven"], 1);
+    let argumentos = serde_json::json!({ "id": id, "huella": plan["huella"] });
+    match invocar_en(&datos, "deshacer_operacion", argumentos) {
+        Ok(_) => assert_eq!(
+            std::fs::read(&addons_txt).unwrap(),
+            b"Prat-3.0: enabled\r\n"
+        ),
+        Err(error) => assert_eq!(error["codigo"], "juegoAbierto"),
+    }
+}
+
+#[test]
+fn aplicar_importacion_con_otra_huella_no_escribe() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (raiz, datos) = (tmp.path().join("wow"), tmp.path().join("datos"));
+    std::fs::create_dir_all(&raiz).unwrap();
+    let (paquetes, mut argumentos) = importacion_preparada(&raiz, &datos);
+    argumentos["huella"] = serde_json::json!("0".repeat(64));
+
+    let error =
+        invocar_con_paquetes(&datos, paquetes, "aplicar_importacion", argumentos).unwrap_err();
+
+    assert_eq!(error["codigo"], "planCaducado");
+    assert!(!datos.join(CARPETA_OPERACIONES).exists());
 }
 
 #[test]

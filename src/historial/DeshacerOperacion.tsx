@@ -1,22 +1,25 @@
-// «Deshacer» una eliminación del historial (spec 022). Pide al núcleo el plan (qué vuelve y qué cambia si el juego ya
-// recreó la carpeta), lo enseña en un diálogo y, si se confirma, deshace con la huella del plan: si el disco cambió
-// entre medias, el núcleo no escribe nada. La interfaz solo manda el id de la operación.
+// «Deshacer» una eliminación (spec 022) o una importación (spec 025). Pide al núcleo el plan (qué vuelve, qué se quita y
+// qué se pisa), lo enseña en un diálogo y, si se confirma, deshace con la huella del plan: si el disco cambió entre
+// medias, el núcleo no escribe nada. La interfaz solo manda el id de la operación. Lo usan el Historial y el resultado de
+// importar.
 import { useId, useRef, useState } from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { Undo2, TriangleAlert } from "lucide-react";
-import { deshacerOperacion, pedirPlanDeshacer, type PlanDeshacer } from "../nucleo";
+import { deshacerOperacion, pedirPlanDeshacer, type PlanDeshacer, type TipoOperacion } from "../nucleo";
 import estiloDialogo from "../estilo/Dialogo.module.css";
 import { mensajeDeError } from "../textos/errores";
 import css from "./Historial.module.css";
 
 type Props = Readonly<{
   id: string;
+  /** Solo se deshacen eliminaciones e importaciones. */
+  tipo: Exclude<TipoOperacion, "deshacer">;
   nombre: string;
   /** Producto y cuenta, ya con sus etiquetas. */
   donde: string[];
-  /** Se llama al cerrar tras intentarlo: la lista y los personajes pueden haber cambiado. */
-  alTerminar: () => void;
+  /** Se llama al cerrar tras intentarlo (`hecho`: se deshizo): la lista y los personajes pueden haber cambiado. */
+  alTerminar: (hecho: boolean) => void;
 }>;
 
 type Paso =
@@ -28,7 +31,7 @@ type Paso =
   /** `enDialogo`: falló al deshacer; si no, falló al pedir el plan. */
   | { tipo: "error"; error: unknown; enDialogo: boolean };
 
-export default function DeshacerOperacion({ id, nombre, donde, alTerminar }: Props) {
+export default function DeshacerOperacion({ id, tipo, nombre, donde, alTerminar }: Props) {
   const { t } = useTranslation();
   const dialogo = useRef<HTMLDialogElement>(null);
   const [paso, setPaso] = useState<Paso>({ tipo: "inicio" });
@@ -56,7 +59,7 @@ export default function DeshacerOperacion({ id, nombre, donde, alTerminar }: Pro
   const alCerrar = () => {
     setPaso({ tipo: "inicio" });
     if (terminado) {
-      alTerminar();
+      alTerminar(paso.tipo === "hecho");
     }
   };
 
@@ -79,7 +82,7 @@ export default function DeshacerOperacion({ id, nombre, donde, alTerminar }: Pro
         onCancel={(evento) => deshaciendo && evento.preventDefault()}
       >
         <h2 id={idTitulo} className={estiloDialogo.titulo}>
-          {t("deshacer.titulo", { nombre })}
+          {t(`deshacer.titulo.${tipo}`, { nombre })}
         </h2>
         <p className={estiloDialogo.donde}>{donde.join(" · ")}</p>
         <Contenido paso={paso} />
@@ -122,6 +125,22 @@ function resumenDelPlan(t: TFunction, plan: PlanDeshacer): string {
   return partes.join(" ");
 }
 
+function ListaDeAviso({ texto, rutas }: Readonly<{ texto: string; rutas: string[] }>) {
+  return (
+    <div className={estiloDialogo.aviso}>
+      <TriangleAlert aria-hidden size={16} strokeWidth={1.75} />
+      <div>
+        <p>{texto}</p>
+        <ul className={estiloDialogo.ficheros}>
+          {rutas.map((ruta) => (
+            <li key={ruta}>{ruta}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 function Contenido({ paso }: Readonly<{ paso: Paso }>) {
   const { t } = useTranslation();
   switch (paso.tipo) {
@@ -132,18 +151,9 @@ function Contenido({ paso }: Readonly<{ paso: Paso }>) {
         <>
           <p className={estiloDialogo.ruta}>{resumenDelPlan(t, paso.plan)}</p>
           {paso.plan.cambian.length > 0 && (
-            <div className={estiloDialogo.aviso}>
-              <TriangleAlert aria-hidden size={16} strokeWidth={1.75} />
-              <div>
-                <p>{t("deshacer.aviso")}</p>
-                <ul className={estiloDialogo.ficheros}>
-                  {paso.plan.cambian.map((ruta) => (
-                    <li key={ruta}>{ruta}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+            <ListaDeAviso texto={t("deshacer.aviso")} rutas={paso.plan.cambian} />
           )}
+          {paso.plan.deCuenta.length > 0 && <ListaDeAviso texto={t("deshacer.deCuenta")} rutas={paso.plan.deCuenta} />}
           {escribe && <p>{t("deshacer.copia")}</p>}
         </>
       );

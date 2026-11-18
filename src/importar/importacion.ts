@@ -7,6 +7,7 @@ import type {
   PedidoImportacion,
   Personaje,
   PersonajePedido,
+  PlanPersonaje,
   ResumenPaquete,
 } from "../nucleo";
 import { claveDePersonaje, nombreVisible } from "../personajes/lista";
@@ -96,6 +97,11 @@ export function pedidoDe(
 }
 
 export const GRUPOS: readonly Grupo[] = ["nuevo", "modificado", "sinCambios"];
+
+/** Lo que de verdad se escribe en un personaje al aplicar: lo que no sale «sin cambios». */
+export function aEscribir(plan: PlanPersonaje): FicheroPlan[] {
+  return plan.ficheros.filter((f) => f.grupo !== "sinCambios");
+}
 
 export function delGrupo(ficheros: readonly FicheroPlan[], grupo: Grupo): FicheroPlan[] {
   return ficheros.filter((f) => f.grupo === grupo);

@@ -1,7 +1,11 @@
 //! Historial (spec 022, `docs/flujos.md`): listar las operaciones, saber dónde está la carpeta de una y borrarla. Lee
 //! el `WTF` para decir qué quedó sin devolver, pero nunca lo escribe.
 
-use super::{Destino, Diario, Estado, Operaciones, Tipo, en_disco, es_enlace, hash_en_disco, leer};
+use super::deshacer::se_puede_deshacer;
+use super::{
+    Destino, Diario, Estado, Operaciones, PaqueteImportado, Tipo, en_disco, es_enlace,
+    hash_en_disco, leer, por_resolver,
+};
 use crate::disco::subcarpetas;
 use crate::error::ErrorNucleo;
 use serde::Serialize;
@@ -39,6 +43,8 @@ struct Resumen {
     estado: Estado,
     error: Option<String>,
     destino: Destino,
+    /// En una importación, el perfil importado.
+    paquete: Option<PaqueteImportado>,
     deshace: Option<String>,
     deshecha_por: Option<String>,
     /// Un `deshacer` cuya original ya se borró del historial.
@@ -47,9 +53,15 @@ struct Resumen {
     ficheros: usize,
     /// Lo que ocupa su carpeta.
     bytes: u64,
-    /// Si se le puede ofrecer «Deshacer»: una eliminación `completa`.
+    /// Si se le puede ofrecer «Deshacer»: una eliminación o una importación `completa`.
     deshacible: bool,
-    /// En una `fallida-sin-restaurar`, los ficheros que hoy no están como antes y dónde está su copia.
+    /// Una importación cortada a mitad (spec 025).
+    a_medias: bool,
+    /// Sin resolver (una importación a medias o una que no se pudo restaurar del todo): se le ofrece «Restaurar» y
+    /// bloquea las demás operaciones.
+    por_resolver: bool,
+    /// En una `fallida-sin-restaurar` o una importación a medias, los ficheros que hoy no están como antes y dónde está
+    /// su copia.
     sin_devolver: Vec<SinDevolver>,
 }
 
@@ -124,7 +136,8 @@ fn es_final(estado: Estado) -> bool {
 }
 
 fn resumir(dir: &Path, id: String, diario: Diario, bytes: u64, ids: &HashSet<&str>) -> Resumen {
-    let sin_devolver = if diario.estado == Estado::FallidaSinRestaurar {
+    let a_medias = diario.tipo == Tipo::Importacion && diario.estado == Estado::Escribiendo;
+    let sin_devolver = if a_medias || diario.estado == Estado::FallidaSinRestaurar {
         sin_devolver(dir, &diario)
     } else {
         Vec::new()
@@ -135,7 +148,9 @@ fn resumir(dir: &Path, id: String, diario: Diario, bytes: u64, ids: &HashSet<&st
         .is_some_and(|original| !ids.contains(original));
     Resumen {
         id,
-        deshacible: diario.tipo == Tipo::Eliminacion && diario.estado == Estado::Completa,
+        deshacible: se_puede_deshacer(&diario),
+        a_medias,
+        por_resolver: por_resolver(&diario),
         ficheros: diario.cambios.len(),
         bytes,
         sin_devolver,
@@ -146,6 +161,7 @@ fn resumir(dir: &Path, id: String, diario: Diario, bytes: u64, ids: &HashSet<&st
         estado: diario.estado,
         error: diario.error,
         destino: diario.destino,
+        paquete: diario.paquete,
         deshace: diario.deshace,
         deshecha_por: diario.deshecha_por,
     }

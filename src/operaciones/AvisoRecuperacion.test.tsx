@@ -11,7 +11,7 @@ afterEach(() => {
   clearMocks();
 });
 
-const NADA: Recuperacion = { canceladas: 0, restauradas: 0, sinRestaurar: 0, pendientes: 0, ilegibles: 0 };
+const NADA: Recuperacion = { canceladas: 0, restauradas: 0, sinRestaurar: 0, pendientes: 0, aMedias: 0, ilegibles: 0 };
 
 function pintar(recuperacion: Recuperacion) {
   const pedida = vi.fn();
@@ -47,6 +47,14 @@ describe("AvisoRecuperacion", () => {
       "Una operación se cortó a mitad y se ha dejado todo como estaba.",
     );
     expect(alRestaurar).toHaveBeenCalledTimes(1);
+  });
+
+  it("una importación a medias se dice primero y no relee: no se ha tocado", async () => {
+    const { alRestaurar } = pintar({ ...NADA, aMedias: 1, canceladas: 1 });
+    expect((await screen.findAllByRole("alert"))[0].textContent).toMatch(
+      /^Una importación se cortó a mitad y no se ha tocado. Restáurala desde el Historial/,
+    );
+    expect(alRestaurar).not.toHaveBeenCalled();
   });
 
   it("lo que pide algo al usuario va como alerta y primero", async () => {

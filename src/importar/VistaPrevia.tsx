@@ -1,5 +1,5 @@
 // Paso «Vista previa» (spec 024): el plan del núcleo tal cual, por personaje y en los grupos de `docs/flujos.md`. Pedirlo
-// no escribe nada. Aplicar llega en la entrega 2 de #63.
+// no escribe nada. Al pie, «Aplicar» (spec 025).
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TriangleAlert } from "lucide-react";
@@ -9,9 +9,11 @@ import {
   type FicheroPlan,
   type PedidoImportacion,
   type PlanPersonaje,
+  type ResultadoImportacion,
   type ResumenPaquete,
   type VistaPrevia as Plan,
 } from "../nucleo";
+import AplicarImportacion from "./AplicarImportacion";
 import { mensajeDeError } from "../textos/errores";
 import { tamanoLegible } from "../textos/formato";
 import { etiquetaDeCategoria } from "./etiquetas";
@@ -20,11 +22,19 @@ import css from "./Importar.module.css";
 
 type Estado = { tipo: "cargando" } | { tipo: "listo"; vista: Plan } | { tipo: "error"; error: unknown };
 
-type Props = Readonly<{ resumen: ResumenPaquete; destinos: readonly Destino[]; pedido: PedidoImportacion }>;
+type Props = Readonly<{
+  resumen: ResumenPaquete;
+  destinos: readonly Destino[];
+  pedido: PedidoImportacion;
+  alAplicar: (resultados: ResultadoImportacion[]) => void;
+}>;
 
-export default function VistaPrevia({ resumen, destinos, pedido }: Props) {
+export default function VistaPrevia({ resumen, destinos, pedido, alAplicar }: Props) {
   const { t } = useTranslation();
   const [estado, setEstado] = useState<Estado>({ tipo: "cargando" });
+  // Sube tras un fallo al aplicar: el plan se vuelve a pedir, porque el disco pudo cambiar. El fallo se sigue enseñando.
+  const [vuelta, setVuelta] = useState(0);
+  const [falloAlAplicar, setFalloAlAplicar] = useState<unknown>(null);
   // El plan depende de lo elegido en los pasos anteriores: se compara por valor, no por identidad.
   const peticion = JSON.stringify({ personajes: destinos.map((d) => d.pedido), pedido });
 
@@ -40,7 +50,7 @@ export default function VistaPrevia({ resumen, destinos, pedido }: Props) {
     return () => {
       vigente = false;
     };
-  }, [resumen.sha256, peticion]);
+  }, [resumen.sha256, peticion, vuelta]);
 
   if (estado.tipo === "cargando") {
     return <p className={css.nota}>{t("importar.calculando")}</p>;
@@ -53,6 +63,12 @@ export default function VistaPrevia({ resumen, destinos, pedido }: Props) {
     );
   }
   const { vista } = estado;
+  const alerta =
+    falloAlAplicar === null ? null : (
+      <p role="alert" className={css.alerta}>
+        {mensajeDeError(t, falloAlAplicar)}
+      </p>
+    );
   const { interfaz } = resumen.manifiesto.origen;
   const nombreDe = (p: PlanPersonaje) =>
     destinos.find((d) => d.pedido.cuenta === p.cuenta && d.pedido.personaje === p.personaje)?.nombre ?? p.personaje;
@@ -62,6 +78,7 @@ export default function VistaPrevia({ resumen, destinos, pedido }: Props) {
   };
   return (
     <div className={css.columna}>
+      {alerta}
       {vista.juegoAbierto && <Aviso texto={t("importar.juegoAbierto")} />}
       {vista.interfazDestino !== undefined && vista.interfazDestino !== interfaz && (
         <Aviso texto={t("importar.interfazDistinta", { paquete: interfaz, destino: vista.interfazDestino })} />
@@ -88,7 +105,19 @@ export default function VistaPrevia({ resumen, destinos, pedido }: Props) {
           vista={vista}
         />
       ))}
-      <p className={css.nota}>{t("importar.soloVistaPrevia")}</p>
+      <AplicarImportacion
+        resumen={resumen}
+        vista={vista}
+        destinos={destinos}
+        pedido={pedido}
+        nombreDe={nombreDe}
+        alAplicar={alAplicar}
+        alFallar={(error) => {
+          setFalloAlAplicar(error);
+          setEstado({ tipo: "cargando" });
+          setVuelta((v) => v + 1);
+        }}
+      />
     </div>
   );
 }

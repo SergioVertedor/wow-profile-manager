@@ -1,17 +1,19 @@
-//! Importación (`docs/arquitectura.md`, spec 024, entrega 1 de #63): del paquete leído y los personajes destino al plan
-//! que enseña la vista previa. Planificar es puro: no escribe en ningún sitio. Leer los ficheros actuales va aparte
-//! (`leer_destino`). Aplicar el plan es la entrega 2.
+//! Importación (`docs/arquitectura.md`, specs 024 y 025): del paquete leído y los personajes destino al plan que enseña
+//! la vista previa, y de ahí a las operaciones que lo escriben. Planificar es puro: no escribe en ningún sitio. Leer los
+//! ficheros actuales va aparte (`leer_destino`) y escribir es de Operaciones (`aplicar.rs`).
 
+mod aplicar;
 mod elementos;
 mod fusion;
 
 use crate::deteccion::{self, PersonajeUbicado};
 use crate::error::{ErrorNucleo, MotivoPaquete};
-use crate::operaciones::{es_enlace, sha256};
+use crate::operaciones::{Operaciones, PaqueteImportado, es_enlace, sha256};
 use crate::paquetes::{
     Ambito, Categoria, EntradaLeida, ManifiestoLeido, PaqueteLeido, Tipo, leer_fichero,
 };
 use crate::piezas::{Filtro, Fuente, fuente_de_destino};
+pub use aplicar::ResultadoPersonaje;
 pub use elementos::Elemento;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -144,6 +146,9 @@ pub struct FicheroPlan {
     pub escrita_en: Option<String>,
     #[serde(skip)]
     pub ruta: PathBuf,
+    /// El fichero, relativo a la carpeta del personaje o de su cuenta (de la tabla de piezas).
+    #[serde(skip)]
+    pub fichero: &'static str,
     #[serde(skip)]
     pub contenido: Vec<u8>,
     /// Huella: SHA-256 del fichero tal como estaba al planificar, o `None` si no existía.
@@ -434,6 +439,7 @@ fn planificar_fichero(destino: &Destino, importable: &Importable<'_>, pieza: &[u
         bytes_despues: contenido.len() as u64,
         escrita_en: None,
         ruta: ruta_de(&destino.personaje, fuente),
+        fichero: fuente.fichero,
         antes_sha256: antes.as_deref().map(sha256),
         contenido,
     }
@@ -453,12 +459,14 @@ pub struct VistaPrevia {
     /// Número de interfaz de la instalación destino, si se sabe: si no es el del paquete, se avisa.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub interfaz_destino: Option<u32>,
+    /// Lo que hay que devolver al aplicar: si el plan ya no es este, no se escribe nada.
+    pub huella: String,
 }
 
 /// El paquete abierto en la vista «Importar» (spec 024, decisión 10): la interfaz lo nombra por su SHA-256, nunca por
-/// su ruta. Solo hay uno; abrir otro o cerrar la vista lo olvida.
+/// su ruta. Solo hay uno; abrir otro o cerrar la vista lo olvida. La ruta se guarda para volver a leerlo al aplicar.
 #[derive(Debug, Default)]
-pub struct PaquetesAbiertos(Mutex<Option<Arc<PaqueteLeido>>>);
+pub struct PaquetesAbiertos(Mutex<Option<(PathBuf, Arc<PaqueteLeido>)>>);
 
 impl PaquetesAbiertos {
     /// Lee y comprueba el fichero entero y, si es válido, lo deja abierto. Si no, el anterior se olvida igual.
@@ -468,7 +476,7 @@ impl PaquetesAbiertos {
         *abierto = None;
         let paquete = leido?;
         let resumen = resumen(&paquete);
-        *abierto = Some(Arc::new(paquete));
+        *abierto = Some((ruta.to_path_buf(), Arc::new(paquete)));
         Ok(resumen)
     }
 
@@ -494,23 +502,61 @@ impl PaquetesAbiertos {
             .into_iter()
             .map(|p| leer_destino(p, &paquete))
             .collect::<Result<Vec<_>, _>>()?;
+        let plan = planificar(&paquete, &destinos, pedido)?;
         Ok(VistaPrevia {
-            plan: planificar(&paquete, &destinos, pedido)?,
+            huella: aplicar::huella(&plan),
+            plan,
             juego_abierto,
             interfaz_destino,
         })
     }
 
+    /// Aplica el paquete abierto en esos personajes (spec 025): lo vuelve a leer del disco (tiene que seguir siendo el
+    /// mismo), rehace el plan y solo escribe si sale la huella que se enseñó. Una operación por personaje.
+    pub fn aplicar(
+        &self,
+        sha256: &str,
+        huella_vista: &str,
+        personajes: Vec<PersonajeUbicado>,
+        pedido: &Pedido,
+        operaciones: &Operaciones,
+        juego_en_marcha: impl Fn() -> bool + Copy,
+    ) -> Result<Vec<ResultadoPersonaje>, ErrorNucleo> {
+        let (ruta, _) = self.abierto_con_ruta(sha256)?;
+        let paquete = leer_fichero(&ruta)
+            .ok()
+            .filter(|p| p.sha256 == sha256)
+            .ok_or(ErrorNucleo::PaqueteCambiado {})?;
+        comprobar_destinos(&personajes, &paquete.manifiesto.origen.producto)?;
+        let destinos = personajes
+            .into_iter()
+            .map(|p| leer_destino(p, &paquete))
+            .collect::<Result<Vec<_>, _>>()?;
+        let plan = planificar(&paquete, &destinos, pedido)?;
+        if aplicar::huella(&plan) != huella_vista {
+            return Err(ErrorNucleo::PlanCaducado {});
+        }
+        let importado = PaqueteImportado {
+            nombre: paquete.manifiesto.perfil.nombre.clone(),
+            sha256: paquete.sha256.clone(),
+        };
+        aplicar::aplicar(&plan, &destinos, &importado, operaciones, juego_en_marcha)
+    }
+
     fn abierto(&self, sha256: &str) -> Result<Arc<PaqueteLeido>, ErrorNucleo> {
+        self.abierto_con_ruta(sha256).map(|(_, paquete)| paquete)
+    }
+
+    fn abierto_con_ruta(&self, sha256: &str) -> Result<(PathBuf, Arc<PaqueteLeido>), ErrorNucleo> {
         self.cerrojo()
             .as_ref()
-            .filter(|p| p.sha256 == sha256)
+            .filter(|(_, p)| p.sha256 == sha256)
             .cloned()
             .ok_or(ErrorNucleo::PaqueteNoAbierto {})
     }
 
     /// Un hilo que falló con el cerrojo cogido no deja nada a medias: solo se cambia el `Option` entero.
-    fn cerrojo(&self) -> MutexGuard<'_, Option<Arc<PaqueteLeido>>> {
+    fn cerrojo(&self) -> MutexGuard<'_, Option<(PathBuf, Arc<PaqueteLeido>)>> {
         self.0.lock().unwrap_or_else(PoisonError::into_inner)
     }
 }

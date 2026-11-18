@@ -8,8 +8,13 @@ import { mensajeDeError } from "../textos/errores";
 import css from "./AvisoRecuperacion.module.css";
 
 /** En este orden: primero lo que pide algo al usuario o le dice que algo quedó mal. */
-const CASOS = ["sinRestaurar", "pendientes", "ilegibles", "restauradas", "canceladas"] as const;
-const PIDEN_ATENCION: ReadonlySet<(typeof CASOS)[number]> = new Set(["sinRestaurar", "pendientes", "ilegibles"]);
+const CASOS = ["aMedias", "sinRestaurar", "pendientes", "ilegibles", "restauradas", "canceladas"] as const;
+const PIDEN_ATENCION: ReadonlySet<(typeof CASOS)[number]> = new Set([
+  "aMedias",
+  "sinRestaurar",
+  "pendientes",
+  "ilegibles",
+]);
 
 type Estado = { tipo: "esperando" } | { tipo: "listo"; recuperacion: Recuperacion } | { tipo: "error"; error: unknown };
 

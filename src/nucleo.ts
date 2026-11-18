@@ -322,6 +322,8 @@ export interface VistaPrevia {
   };
   juegoAbierto: boolean;
   interfazDestino?: number;
+  /** Se devuelve tal cual al aplicar: si el plan ya no es este, el núcleo no escribe nada. */
+  huella: string;
 }
 
 /** El plan de importar el paquete abierto en esos personajes. Solo lee. */
@@ -333,12 +335,35 @@ export function pedirPlanImportacion(
   return invoke<VistaPrevia>("plan_importacion", { sha256, personajes, pedido });
 }
 
+/** Qué pasó en un personaje al aplicar (`ResultadoPersonaje` en `src-tauri/src/importacion/aplicar.rs`). */
+export type ResultadoImportacion = { cuenta: string; reino: string; personaje: string } & (
+  | { resultado: "completa"; operacion: string; ficheros: number }
+  | { resultado: "sinCambios" }
+  | { resultado: "fallida"; error: ErrorNucleo }
+  | { resultado: "noAplicada" }
+);
+
+/**
+ * Aplica el paquete abierto en esos personajes, una operación por personaje, si el plan sigue siendo el de `huella`.
+ * Escribe en el WTF.
+ */
+export function aplicarImportacion(
+  sha256: string,
+  huella: string,
+  personajes: PersonajePedido[],
+  pedido: PedidoImportacion,
+): Promise<ResultadoImportacion[]> {
+  return invoke<ResultadoImportacion[]>("aplicar_importacion", { sha256, huella, personajes, pedido });
+}
+
 /** Qué hizo el núcleo al arrancar con las operaciones que se cortaron (`Recuperacion` en `operaciones.rs`). */
 export interface Recuperacion {
   canceladas: number;
   restauradas: number;
   sinRestaurar: number;
   pendientes: number;
+  /** Importaciones cortadas a mitad: no se restauran solas y bloquean las demás operaciones. */
+  aMedias: number;
   ilegibles: number;
 }
 
@@ -377,6 +402,8 @@ export interface Operacion {
   estado: EstadoOperacion;
   error: string | null;
   destino: DestinoOperacion;
+  /** En una importación, el perfil importado. */
+  paquete: { nombre: string; sha256: string } | null;
   deshace: string | null;
   deshechaPor: string | null;
   /** Un `deshacer` cuya original ya se borró. */
@@ -384,7 +411,14 @@ export interface Operacion {
   ficheros: number;
   bytes: number;
   deshacible: boolean;
-  /** En una `fallida-sin-restaurar`: lo que hoy no está como antes y dónde está su copia (`null`: no existía). */
+  /** Una importación cortada a mitad. */
+  aMedias: boolean;
+  /** Sin resolver (importación a medias o no restaurada del todo): se ofrece «Restaurar» y bloquea las demás. */
+  porResolver: boolean;
+  /**
+   * En una `fallida-sin-restaurar` o una importación a medias: lo que hoy no está como antes y dónde está su copia
+   * (`null`: no existía).
+   */
   sinDevolver: { ruta: string; copia: string | null }[];
 }
 
@@ -408,6 +442,8 @@ export interface PlanDeshacer {
   sobran: number;
   /** Ficheros que existen ahora y se pisan o se quitan. */
   cambian: string[];
+  /** Los de la cuenta: cambian para todos sus personajes. */
+  deCuenta: string[];
   huella: string;
 }
 
@@ -418,6 +454,11 @@ export function pedirPlanDeshacer(id: string): Promise<PlanDeshacer> {
 /** Deshace si el disco sigue como en el plan. Devuelve el id de la operación de deshacer. */
 export function deshacerOperacion(id: string, huella: string): Promise<string> {
   return invoke<string>("deshacer_operacion", { id, huella });
+}
+
+/** Restaura una importación que se cortó a mitad. Escribe en el WTF. */
+export function restaurarOperacion(id: string): Promise<void> {
+  return invoke("restaurar_operacion", { id });
 }
 
 /** `restauradaAMano`: el usuario confirma que ya devolvió a mano lo que faltaba (solo cuenta en una sin restaurar). */

@@ -65,7 +65,7 @@ function App() {
       <main className={css.contenido}>
         <AvisoRecuperacion alRestaurar={deteccion.recargar} />
         {vista === "personajes" && <Personajes {...deteccion} />}
-        {vista === "importar" && <Importar {...deteccion} />}
+        {vista === "importar" && <Importar {...deteccion} irAHistorial={() => setVista("historial")} />}
         {vista === "instalaciones" && <Instalaciones {...deteccion} />}
         {vista === "historial" && <Historial alCambiarWtf={deteccion.recargar} />}
         {vista === "acercaDe" && estado.tipo === "listo" && <AcercaDe info={estado.info} />}

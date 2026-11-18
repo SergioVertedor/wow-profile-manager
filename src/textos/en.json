@@ -75,7 +75,7 @@
     "operacionFallidaRestaurada": "It could not finish and everything was put back as it was (operation {{id}}): {{detalle}}",
     "enlaceNoAdmitido": "There is a link or folder junction at {{ruta}}. It is not followed: it could delete files outside WTF. Remove it by hand if you want to delete the folder.",
     "operacionNoEncontrada": "That operation is no longer in the history. Reload it.",
-    "noDeshacible": "This operation can no longer be undone: only a finished deletion that hasn't been undone can be.",
+    "noDeshacible": "This operation can no longer be undone: only a finished deletion or import that has not been undone can be.",
     "operacionPosterior": "Undo operation {{id}} first: it is more recent and touched the same files.",
     "juegoDistinto": "{{raiz}} no longer holds the same game version (it was moved, deleted or reinstalled). Nothing was written and the copy is still in the operation.",
     "planCaducado": "A file changed since you were shown what would happen. Nothing was written: try again to see it anew.",
@@ -89,7 +89,11 @@
     "paqueteInvalido": "The file is not a valid profile: {{motivo}}",
     "versionPaquete": "This profile uses a newer version of the format ({{version}}). Update the app to import it.",
     "paqueteNoAbierto": "The profile is no longer open. Open it again.",
-    "destinosNoValidos": "The chosen characters must belong to one installation and to the profile's game version."
+    "destinosNoValidos": "The chosen characters must belong to one installation and to the profile's game version.",
+    "noRestaurable": "This operation is not restored from here: only one that was cut off halfway or could not be fully undone.",
+    "operacionAMedias": "There is an unresolved operation (operation {{id}}): it was cut off halfway or could not be fully undone. Restore it from History or, if you already put things back by hand, delete it there. Until then no other operation runs.",
+    "paqueteCambiado": "The profile file is no longer where you opened it, or it has changed. Open it again.",
+    "conflictosSinDecidir": "You still need to decide on what affects the whole account."
   },
   "versionApp": "Version {{version}}",
   "instalaciones": {
@@ -142,7 +146,9 @@
     "pendientes_one": "An operation is unfinished, but WoW is running. Close the game and open the app again to finish it.",
     "pendientes_other": "{{count}} operations are unfinished, but WoW is running. Close the game and open the app again to finish them.",
     "ilegibles_one": "An operation has a log that cannot be read. It has not been touched.",
-    "ilegibles_other": "{{count}} operations have a log that cannot be read. They have not been touched."
+    "ilegibles_other": "{{count}} operations have a log that cannot be read. They have not been touched.",
+    "aMedias_one": "An import was cut off halfway and has not been touched. Restore it from History: until then no other operation can run.",
+    "aMedias_other": "{{count}} imports were cut off halfway and have not been touched. Restore them from History: until then no other operation can run."
   },
   "historial": {
     "titulo": "History",
@@ -177,22 +183,29 @@
     "ilegibles_other": "{{count}} operations have logs that can't be read. They are left alone; you can open their folders.",
     "abrir": "Open folder",
     "deshacer": "Undo",
-    "borrar": "Delete"
+    "borrar": "Delete",
+    "perfil": "Profile “{{nombre}}”",
+    "aMedias": "It was cut off while writing. “Restore” puts these files back as they were before the import:",
+    "restaurar": "Restore"
   },
   "deshacer": {
-    "titulo": "Undo the deletion of {{nombre}}?",
-    "contenido_one": "{{count}} file goes back to the character's folder.",
-    "contenido_other": "{{count}} files go back to the character's folder.",
-    "nada": "The folder is already as it was before the deletion: nothing is written, it is only marked as undone.",
-    "aviso": "The game has already recreated the folder. These files are replaced or removed, and whatever the game saved in them since is lost:",
+    "titulo": {
+      "eliminacion": "Undo the deletion of {{nombre}}?",
+      "importacion": "Undo the import into {{nombre}}?"
+    },
+    "contenido_one": "{{count}} file goes back to how it was.",
+    "contenido_other": "{{count}} files go back to how they were.",
+    "nada": "Everything is already as it was: nothing is written, it is only marked as undone.",
+    "aviso": "These files are replaced or removed. Anything the game saved in them since then is lost:",
     "copia": "Before writing, a copy of what is there now is kept as a new operation in the history.",
     "cancelar": "Cancel",
     "confirmar": "Undo",
     "deshaciendo": "Undoing…",
     "cerrar": "Close",
-    "hecho": "Done: the folder is back as it was before the deletion (operation {{id}}).",
+    "hecho": "Done: everything is back as it was (operation {{id}}).",
     "sobran_one": "{{count}} file that wasn't there before is removed.",
-    "sobran_other": "{{count}} files that weren't there before are removed."
+    "sobran_other": "{{count}} files that weren't there before are removed.",
+    "deCuenta": "These belong to the account: they change for all its characters:"
   },
   "borrar": {
     "titulo": "Delete operation {{id}}?",
@@ -257,7 +270,8 @@
     "pasos": {
       "destino": "Destination",
       "seleccion": "What to import",
-      "vistaPrevia": "Preview"
+      "vistaPrevia": "Preview",
+      "resultado": "Result"
     },
     "atras": "Back",
     "siguiente": "Next",
@@ -299,10 +313,44 @@
       "cambiado": "Changes",
       "quitado": "Removed"
     },
-    "soloVistaPrevia": "This version only shows the preview: it doesn't apply the import yet.",
     "otrasCategorias": {
       "config-addon": "Add-on settings",
       "modo-edicion": "Edit Mode"
-    }
+    },
+    "aplicarImportacion": "Apply…",
+    "noSePuedeAplicar": {
+      "juegoAbierto": "Close WoW to be able to apply.",
+      "conflictos": "First decide on what affects the whole account.",
+      "nada": "Nothing to write: everything is already the same."
+    },
+    "confirmar": {
+      "titulo": "Apply “{{perfil}}”?",
+      "personaje_one": "{{nombre}}: {{count}} file",
+      "personaje_other": "{{nombre}}: {{count}} files",
+      "cuenta": "Includes account files: they change for all its characters.",
+      "copia": "Before writing, a copy of every file that changes is saved. Each character gets its own line in History and is undone separately.",
+      "cancelar": "Cancel",
+      "aplicar": "Apply",
+      "aplicando": "Applying…"
+    },
+    "resultado": {
+      "completa_one": "Done: {{count}} file written.",
+      "completa_other": "Done: {{count}} files written.",
+      "sinCambios": "Nothing to write: it was already the same.",
+      "fallida": "Not applied.",
+      "noAplicada": "Not applied: an earlier character failed.",
+      "deshecha": "Undone."
+    },
+    "siguientePaso": "Log into the game with each character and check that everything is fine. You place the abilities on the buttons yourself: the profile brings the layout and the key bindings, not what is on each button.",
+    "verHistorial": "View history"
+  },
+  "restaurar": {
+    "titulo": "Restore what changed in {{nombre}}?",
+    "explicacion": "The files the operation managed to change go back to how they were, from their copies. What it did not touch is not touched. If one is no longer as the operation left it, it is not overwritten and you are told.",
+    "cancelar": "Cancel",
+    "confirmar": "Restore",
+    "restaurando": "Restoring…",
+    "cerrar": "Close",
+    "hecho": "Done: everything is as it was before the operation."
   }
 }

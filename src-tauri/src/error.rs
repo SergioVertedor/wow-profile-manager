@@ -28,8 +28,13 @@ pub enum ErrorNucleo {
     },
     /// No hay una operación con ese id en la carpeta de operaciones (o su diario no se entiende).
     OperacionNoEncontrada {},
-    /// La operación no se puede deshacer: no es una eliminación `completa`.
+    /// La operación no se puede deshacer: no es una eliminación ni una importación `completa`.
     NoDeshacible {},
+    /// La operación no se restaura a petición: solo una importación cortada a mitad o una que no se pudo restaurar.
+    NoRestaurable {},
+    /// Una operación sin resolver (`id`: importación a medias o sin restaurar del todo): hasta restaurarla, o borrarla
+    /// tras devolverla a mano, no se crea ninguna otra.
+    OperacionAMedias { id: String },
     /// Una operación posterior `completa` (`id`) tocó alguno de los mismos ficheros: hay que deshacerla antes.
     OperacionPosterior { id: String },
     /// La raíz de la versión ya no existe o su producto no es el de la operación. No se escribe nada.
@@ -63,6 +68,10 @@ pub enum ErrorNucleo {
     VersionPaquete { version: String },
     /// El paquete pedido no es el que está abierto (o no hay ninguno): hay que volver a abrirlo.
     PaqueteNoAbierto {},
+    /// Se pidió aplicar con entradas de cuenta sin decidir: la interfaz no debería dejar.
+    ConflictosSinDecidir {},
+    /// Al aplicar, el `.wowprofile` ya no está donde se abrió o su contenido cambió: hay que volver a abrirlo.
+    PaqueteCambiado {},
     /// Los personajes destino están vacíos, repetidos, son de varias instalaciones o de otra versión del juego.
     DestinosNoValidos {},
 }

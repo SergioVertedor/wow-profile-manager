@@ -119,9 +119,10 @@
   font-weight: 650;
 }
 
+/* Crece pero nunca se encoge por debajo de su contenido: si no, se desbordaría por debajo de los botones de abajo,
+   que taparían (y se comerían los clics de) lo que queda debajo. La vista entera hace scroll. */
 .paso {
-  flex: 1;
-  min-height: 0;
+  flex: 1 0 auto;
 }
 
 .botones {
@@ -287,4 +288,27 @@
 
 .conflicto {
   color: var(--color-aviso);
+}
+
+/* Pie de la vista previa (spec 025): el motivo si no se puede aplicar y el botón, a la derecha. */
+.aplicar {
+  display: flex;
+  gap: var(--espacio-3);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.resultados {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  padding: 0;
+  list-style: none;
+}
+
+.resultados > li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  align-items: flex-start;
 }

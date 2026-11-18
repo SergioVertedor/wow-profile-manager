@@ -2,14 +2,17 @@
 //! una carpeta en `<datos>/operaciones/<id>/` con su diario (`operacion.json`) y las copias de lo que había. Nada se
 //! quita del `WTF` sin una copia verificada, y nada de esta carpeta se borra solo (D-04).
 //!
-//! Hay dos tipos: `eliminacion` (spec 021), sacar la carpeta de un personaje, y `deshacer` (spec 022), devolverla.
-//! El historial (listar, borrar, abrir) vive en `historial.rs` y deshacer en `deshacer.rs`.
+//! Hay tres tipos: `eliminacion` (spec 021), sacar la carpeta de un personaje; `importacion` (spec 025), escribir los
+//! ficheros de un perfil; y `deshacer` (spec 022), devolver lo que hizo una de las otras dos. El historial (listar,
+//! borrar, abrir) vive en `historial.rs`, deshacer en `deshacer.rs` e importar en `importar.rs`.
 
 mod deshacer;
 mod historial;
+mod importar;
 
 pub use deshacer::PlanDeshacer;
 pub use historial::Historial;
+pub use importar::{AccionImportar, Escritura, PaqueteImportado};
 
 use crate::deteccion::{CARPETA_ACCOUNT, CARPETA_WTF, PersonajeUbicado};
 use crate::disco::subcarpetas;
@@ -33,8 +36,9 @@ const INTERRUMPIDA: &str = "interrumpida";
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 enum Tipo {
-    Eliminacion,
+    Importacion,
     Deshacer,
+    Eliminacion,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -53,6 +57,9 @@ enum Estado {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 enum Accion {
+    Crear,
+    Sobrescribir,
+    Fusionar,
     Restaurar,
     Borrar,
 }
@@ -126,6 +133,9 @@ struct Cambio {
     ruta: String,
     accion: Accion,
     de_cuenta: bool,
+    /// Solo en `importacion`: el id de la entrada del paquete de la que sale.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    entrada: Option<String>,
     antes: Antes,
     despues: Despues,
 }
@@ -141,6 +151,9 @@ struct Diario {
     #[serde(skip_serializing_if = "Option::is_none")]
     terminada: Option<String>,
     estado: Estado,
+    /// Solo en `importacion`: el perfil que se importó.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    paquete: Option<PaqueteImportado>,
     /// Solo en `deshacer`: la operación que deshace.
     #[serde(skip_serializing_if = "Option::is_none")]
     deshace: Option<String>,
@@ -182,6 +195,9 @@ pub struct Recuperacion {
     pub sin_restaurar: u32,
     /// Cortadas a mitad que esperan: hay un `Wow.exe` en marcha.
     pub pendientes: u32,
+    /// Importaciones cortadas a mitad: no se restauran solas (spec 025, decisión 4). Esperan a que el usuario las
+    /// restaure, y mientras no se crea ninguna otra operación.
+    pub a_medias: u32,
     /// Carpetas con un `operacion.json` que no se entiende. No se tocan.
     pub ilegibles: u32,
 }
@@ -234,6 +250,7 @@ impl Operaciones {
         // Una operación que quedó a medias (al arrancar el juego estaba abierto) se termina antes: si no, el siguiente
         // arranque la restauraría encima de esta. Lo que haga se ve en su diario.
         self.recuperar_sin_cerrojo(&juego_en_marcha);
+        self.sin_operacion_por_resolver()?;
         let carpeta = personaje.carpeta();
         let ficheros = ficheros_a_quitar(personaje)?;
         let (id, dir) = self.nueva_carpeta()?;
@@ -255,7 +272,8 @@ impl Operaciones {
     }
 
     /// Al arrancar (`docs/flujos.md`, «Al arrancar»): las cortadas antes de tocar el `WTF` se cancelan; las cortadas a
-    /// mitad se restauran, salvo con el juego abierto. Un diario que no se entiende no se toca.
+    /// mitad se restauran, salvo con el juego abierto o si son importaciones (esas se preguntan). Un diario que no se
+    /// entiende no se toca.
     pub fn recuperar(&self, juego_en_marcha: impl Fn() -> bool) -> Recuperacion {
         let _turno = self.cerrojo.lock().unwrap_or_else(|e| e.into_inner());
         self.recuperar_sin_cerrojo(&juego_en_marcha)
@@ -278,6 +296,10 @@ impl Operaciones {
                 deshechas.push((original.clone(), diario.id.clone()));
             }
             match diario.estado {
+                Estado::Escribiendo if diario.tipo == Tipo::Importacion => {
+                    recuperacion.a_medias += 1;
+                    continue;
+                }
                 Estado::Preparando | Estado::Copiada => {
                     diario.terminar(Estado::Cancelada, Some(INTERRUMPIDA.into()));
                     recuperacion.canceladas += 1;
@@ -304,6 +326,52 @@ impl Operaciones {
             self.marcar_deshecha(&original, &por).ok();
         }
         recuperacion
+    }
+
+    /// Una operación sin resolver bloquea cualquier otra: otra escritura podría cambiar sus ficheros y restaurarla ya no
+    /// podría devolverlos (spec 025, decisiones 13 y 16). Sin resolver: una importación cortada a mitad o cualquier
+    /// operación que no se pudo restaurar del todo. Se resuelve restaurándola o, si ya se devolvió a mano, borrándola.
+    fn sin_operacion_por_resolver(&self) -> Result<(), ErrorNucleo> {
+        // Si no se puede listar, no se sigue: podría haber una a medias que no se ve.
+        let a_medias = subcarpetas(&self.dir)?
+            .into_iter()
+            .filter_map(|c| leer(&c.ruta).map(|d| (c.nombre, d)))
+            .find(|(_, d)| por_resolver(d));
+        match a_medias {
+            Some((id, _)) => Err(ErrorNucleo::OperacionAMedias { id }),
+            None => Ok(()),
+        }
+    }
+
+    /// Restaura una operación sin resolver cuando el usuario lo pide: una importación cortada a mitad (no se restaura sola
+    /// al arrancar) o un reintento de una que no se pudo restaurar del todo. El diario está en disco y pudo tocarse a mano: sus rutas se comprueban otra vez (carpeta y enlaces). Si
+    /// no queda todo como antes, devuelve qué falta.
+    pub fn restaurar_operacion(
+        &self,
+        id: &str,
+        juego_en_marcha: impl Fn() -> bool,
+    ) -> Result<(), ErrorNucleo> {
+        let _turno = self.cerrojo.lock().unwrap_or_else(|e| e.into_inner());
+        if juego_en_marcha() {
+            return Err(ErrorNucleo::JuegoAbierto {});
+        }
+        let dir = self.carpeta_de(id)?;
+        let mut diario = leer(&dir).ok_or(ErrorNucleo::OperacionNoEncontrada {})?;
+        if !por_resolver(&diario) {
+            return Err(ErrorNucleo::NoRestaurable {});
+        }
+        comprobar_bases(&diario)?;
+        let restaurada = restaurar(&dir, &mut diario, INTERRUMPIDA.into());
+        guardar(&dir, &diario)?;
+        if restaurada {
+            Ok(())
+        } else {
+            Err(ErrorNucleo::OperacionFallida {
+                id: diario.id,
+                restaurada: false,
+                detalle: diario.error.unwrap_or_default(),
+            })
+        }
     }
 
     /// La original de un `deshacer` `completa` pasa a `deshecha`, si aún no lo está: la app pudo cortarse entre los dos
@@ -357,14 +425,32 @@ fn ejecutar(
 
     diario.estado = Estado::Escribiendo;
     guardar(dir, &diario)?;
-    if let Err(error) = escribir(&diario) {
-        let restaurada = restaurar(dir, &mut diario, error.detalle());
-        guardar(dir, &diario)?;
-        return Err(fallida(&diario, restaurada, &error));
+    // Escribir y cerrar el diario van juntos: si el diario no dice `completa`, lo escrito no se da por bueno.
+    let cerrada = escribir(&diario).and_then(|()| {
+        let mut completa = diario.clone();
+        completa.terminar(Estado::Completa, None);
+        guardar(dir, &completa).map(|()| completa.id)
+    });
+    cerrada.map_err(|error| devolver(dir, &mut diario, &error))
+}
+
+/// Rollback: deja el `WTF` como antes de la operación y dice si lo consiguió. Si no, el diario dice qué falta y dónde
+/// está su copia (`fallida-sin-restaurar`). Si ni siquiera se puede guardar el diario, en disco sigue `escribiendo`: al
+/// arrancar o al restaurar se vuelve a intentar, y lo que ya está como antes no se toca.
+fn devolver(dir: &Path, diario: &mut Diario, error: &ErrorNucleo) -> ErrorNucleo {
+    let restaurada = restaurar(dir, diario, error.detalle());
+    match guardar(dir, diario) {
+        Ok(()) => fallida(diario, restaurada, error),
+        Err(al_guardar) => ErrorNucleo::OperacionFallida {
+            id: diario.id.clone(),
+            restaurada,
+            detalle: format!(
+                "{}; el diario no se pudo guardar: {}",
+                error.detalle(),
+                al_guardar.detalle()
+            ),
+        },
     }
-    diario.terminar(Estado::Completa, None);
-    guardar(dir, &diario)?;
-    Ok(diario.id)
 }
 
 /// Termina en `cancelada`: el `WTF` no se ha tocado. El juego abierto se devuelve tal cual, para que la interfaz lo
@@ -404,6 +490,52 @@ fn ficheros_a_quitar(personaje: &PersonajeUbicado) -> Result<Vec<PathBuf>, Error
     Ok(ficheros)
 }
 
+/// Una importación cortada a mitad o una operación que no se pudo restaurar del todo: el `WTF` puede estar a medias.
+fn por_resolver(diario: &Diario) -> bool {
+    let importacion_a_medias =
+        diario.tipo == Tipo::Importacion && diario.estado == Estado::Escribiendo;
+    importacion_a_medias || diario.estado == Estado::FallidaSinRestaurar
+}
+
+/// La carpeta del personaje del destino o, si `de_cuenta`, la de su cuenta, relativa a la raíz y con `/`.
+fn base_de(destino: &Destino, de_cuenta: bool) -> String {
+    let cuenta = format!("{CARPETA_WTF}/{CARPETA_ACCOUNT}/{}", destino.cuenta);
+    if de_cuenta {
+        cuenta
+    } else {
+        format!(
+            "{cuenta}/{}/{}",
+            destino.carpeta_reino, destino.carpeta_personaje
+        )
+    }
+}
+
+/// Cada cambio cae dentro de su base (la carpeta del personaje o, con `deCuenta`, la de su cuenta), con nombres que
+/// Windows usa tal cual, y ningún tramo de su camino que exista es un enlace o una unión. El diario puede venir del
+/// disco y haberse tocado a mano; en una importación, la ruta sale de un paquete ajeno.
+fn comprobar_bases(diario: &Diario) -> Result<(), ErrorNucleo> {
+    let raiz = &diario.destino.raiz_version;
+    for cambio in &diario.cambios {
+        let base = base_de(&diario.destino, cambio.de_cuenta);
+        en_disco(diario, cambio)?;
+        let dentro = cambio.ruta.starts_with(&format!("{base}/"));
+        if !dentro || ruta_segura(raiz, &base).is_none() {
+            return Err(ErrorNucleo::escritura(
+                Path::new(&cambio.ruta),
+                &"ruta fuera de su carpeta",
+            ));
+        }
+        let mut tramo = raiz.clone();
+        for parte in Path::new(&cambio.ruta).components() {
+            tramo.push(parte);
+            if es_enlace(&tramo) {
+                return Err(enlace(&tramo));
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Un enlace simbólico o una unión de Windows (las dos son «sustitutos de nombre» para `is_symlink`).
 pub(crate) fn es_enlace(ruta: &Path) -> bool {
     std::fs::symlink_metadata(ruta).is_ok_and(|m| m.file_type().is_symlink())
@@ -430,6 +562,7 @@ fn preparar(
             ruta: format!("{base}/{}", relativa_con_barras(carpeta, fichero)),
             accion: Accion::Borrar,
             de_cuenta: false,
+            entrada: None,
             antes: Antes::guardado(sha256(&bytes), bytes.len() as u64, copia_n(n)),
             despues: Despues::NO_EXISTE,
         });
@@ -441,19 +574,25 @@ fn preparar(
         creada: ahora_rfc3339(),
         terminada: None,
         estado: Estado::Preparando,
+        paquete: None,
         deshace: None,
         deshecha_por: None,
         error: None,
-        destino: Destino {
-            raiz_version: personaje.raiz_version.clone(),
-            producto: personaje.producto.codigo().to_owned(),
-            cuenta: personaje.cuenta.clone(),
-            carpeta_reino: personaje.reino.clone(),
-            carpeta_personaje: personaje.personaje.clone(),
-            nombre_en_datos: personaje.nombre_en_datos.clone(),
-        },
+        destino: destino_de(personaje),
         cambios,
     })
+}
+
+/// El `destino` del diario de una operación sobre `personaje`.
+fn destino_de(personaje: &PersonajeUbicado) -> Destino {
+    Destino {
+        raiz_version: personaje.raiz_version.clone(),
+        producto: personaje.producto.codigo().to_owned(),
+        cuenta: personaje.cuenta.clone(),
+        carpeta_reino: personaje.reino.clone(),
+        carpeta_personaje: personaje.personaje.clone(),
+        nombre_en_datos: personaje.nombre_en_datos.clone(),
+    }
 }
 
 /// Paso 3: copia cada fichero y relee la copia contra el hash de `preparar`. Si no cuadra (la copia salió mal o el
@@ -584,11 +723,19 @@ fn ruta_segura(raiz_version: &Path, relativa: &str) -> Option<PathBuf> {
     (normal && dentro).then(|| raiz_version.join(relativa.components().collect::<PathBuf>()))
 }
 
-/// Un nombre que Windows usa tal cual (`docs/operacion.schema.json`, `segmento`): sin punto ni espacio al final (Win32
+/// Un nombre que Windows usa tal cual (`docs/operacion.schema.json`, `segmento`): sin caracteres prohibidos (`:` abriría
+/// un flujo alternativo de NTFS: `C:` a mitad de una ruta escribe en otro sitio), sin punto ni espacio al final (Win32
 /// los recorta: `.. ` sería `..`) y sin nombre de dispositivo (`CON`, `NUL`, `COM1`…), con o sin extensión.
 pub(crate) fn segmento_literal(nombre: &str) -> bool {
     const DISPOSITIVOS: [&str; 4] = ["CON", "PRN", "AUX", "NUL"];
     const NUMERADOS: [&str; 2] = ["COM", "LPT"];
+    const PROHIBIDOS: [char; 9] = ['\\', '/', ':', '*', '?', '"', '<', '>', '|'];
+    if nombre
+        .chars()
+        .any(|c| PROHIBIDOS.contains(&c) || c.is_control())
+    {
+        return false;
+    }
     let base = nombre
         .split('.')
         .next()
@@ -959,6 +1106,17 @@ pub(super) mod tests {
 
         assert_eq!(e.operaciones.recuperar(|| false).ilegibles, 1);
         assert_eq!(std::fs::read_to_string(dir.join(DIARIO)).unwrap(), "{ roto");
+    }
+
+    #[test]
+    fn un_segmento_con_caracteres_prohibidos_no_es_literal() {
+        for nombre in [
+            "C:", "a:b", "x*", "x?", "a\"b", "<", ">", "a|b", "a\\b", "a\tb",
+        ] {
+            assert!(!segmento_literal(nombre), "{nombre}");
+        }
+        assert!(segmento_literal("Goldberg-Soulreaper"));
+        assert!(segmento_literal("1#1"));
     }
 
     #[test]

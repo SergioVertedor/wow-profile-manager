@@ -155,8 +155,14 @@ En todas, `cache.md5` no se toca: con WoW cerrado, el cliente adopta el fichero 
 
 ### 5. Aplicar
 
-Se crea una operación (ver [Operaciones en disco](#operaciones-en-disco)) y se ejecuta. Mientras dura, la app no
-deja cerrar la ventana sin avisar.
+Se confirma con lo que se va a escribir en cada personaje. Antes de escribir, la app vuelve a leer el `.wowprofile`
+(tiene que tener el mismo SHA-256 que al abrirlo), rehace el plan y lo compara con el que se enseñó (su **huella**: ruta,
+hash de antes y hash de después de cada fichero que se escribe). Si algo cambió, no escribe nada y vuelve a enseñar la
+vista previa.
+
+Después, una operación por personaje (ver [Operaciones en disco](#operaciones-en-disco)), una detrás de otra. En cada
+una solo entran los ficheros «nuevos» o «modificados»; un personaje sin nada que escribir no crea operación. Mientras
+dura, la app no deja cerrar la ventana sin avisar (pendiente: #66).
 
 ### 6. Resultado
 
@@ -217,8 +223,9 @@ Acciones:
 
 `ruta` es relativa a la raíz de la versión y siempre empieza por `WTF/Account/`. El schema solo comprueba la
 forma. La app comprueba además, antes de escribir, que cada ruta cae dentro de la carpeta del personaje destino
-(o de su cuenta si `deCuenta`), y rechaza los nombres que Windows no trata literalmente: los que acaban en punto o
-espacio y los de dispositivo (`CON`, `NUL`…).
+(o de su cuenta si `deCuenta`), sin enlaces ni uniones en el camino, y rechaza los nombres que Windows no trata
+literalmente: los que tienen caracteres prohibidos (`:` abriría un flujo alternativo de NTFS), los que acaban en punto
+o espacio y los de dispositivo (`CON`, `NUL`…).
 
 La raíz y las carpetas de la cuenta **nunca salen del equipo**: `operacion.json` no se comparte ni se exporta.
 
@@ -272,7 +279,7 @@ La app recorre `operaciones/` buscando operaciones que no estén en un estado fi
 | estado encontrado | qué significa | qué hace la app |
 |---|---|---|
 | `preparando`, `copiada` | se cortó antes de tocar el `WTF` | la marca `cancelada` y lo dice |
-| `escribiendo` | se cortó a mitad: el `WTF` puede estar a medias | lo explica y ofrece restaurar. Si se restaura, `fallida-restaurada`. Una `eliminacion` o un `deshacer` se restauran solos (ver abajo) |
+| `escribiendo` | se cortó a mitad: el `WTF` puede estar a medias | una `importacion` no se toca: lo explica y ofrece restaurarla desde el historial (si se restaura, `fallida-restaurada`). Mientras siga así, no se crea ninguna otra operación: otra escritura podría cambiar sus ficheros y restaurarla ya no podría devolverlos. Una `eliminacion` o un `deshacer` se restauran solos (ver abajo) |
 | `operacion.json` ilegible | no se sabe en qué punto se cortó | avisa de que el `WTF` **puede** estar a medias, enseña la carpeta de copias y no borra nada |
 
 Restaurar al arrancar exige lo mismo que aplicar: ningún `Wow.exe` en marcha. Si el juego está abierto, al salir
@@ -333,6 +340,10 @@ escribe nada y se pide volver a mirarlo. Un `deshacer` no cuenta como «operaci�
 devolvió un estado anterior, y lo que se pisaría sale en el plan. Al arrancar, un `deshacer` cortado en `escribiendo` se
 restaura solo, igual que una eliminación: restaurar nunca pisa nada que no escribiera la propia operación. «Rehacer»
 una eliminación (deshacer su `deshacer`) aún no se ofrece: la copia de lo que se pisó queda en el `deshacer`.
+
+**Deshacer una importación** (spec 025) solo toca los ficheros que escribió: los que creó se quitan (si siguen ahí) y
+los demás vuelven desde su copia. Ningún otro fichero del personaje se toca. Como una importación posterior en otro
+personaje de la misma cuenta puede haber escrito el mismo fichero de cuenta, cuenta como operación posterior (paso 1).
 
 El MVP restaura cada fichero entero. Quitar solo el perfil importado de un fichero de cuenta, sin tocar el resto,
 queda para más adelante.

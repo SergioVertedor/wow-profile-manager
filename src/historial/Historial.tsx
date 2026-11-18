@@ -1,6 +1,7 @@
-// Vista «Historial» (spec 022): las operaciones de la app, de la más nueva a la más antigua, con lo que ocupan. Desde
-// aquí se deshace una eliminación, se abre la carpeta de una operación y se borra una para liberar espacio. Nada se
-// borra solo (D-04). Una que no se pudo restaurar se señala mientras exista, con lo que falta y dónde está su copia.
+// Vista «Historial» (specs 022 y 025): las operaciones de la app, de la más nueva a la más antigua, con lo que ocupan.
+// Desde aquí se deshace una eliminación o una importación, se restaura una importación que se cortó a mitad, se abre la
+// carpeta de una operación y se borra una para liberar espacio. Nada se borra solo (D-04). Una que no se pudo restaurar
+// se señala mientras exista, con lo que falta y dónde está su copia.
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FolderOpen, TriangleAlert } from "lucide-react";
@@ -11,6 +12,7 @@ import { fechaLegible, tamanoLegible } from "../textos/formato";
 import BorrarOperacion from "./BorrarOperacion";
 import DeshacerOperacion from "./DeshacerOperacion";
 import css from "./Historial.module.css";
+import RestaurarOperacion from "./RestaurarOperacion";
 
 /** Estados en los que la operación aún no ha terminado: no se borra. */
 const A_MEDIAS: ReadonlySet<Operacion["estado"]> = new Set(["preparando", "copiada", "escribiendo"]);
@@ -147,12 +149,24 @@ function Fila({ operacion, abrir, recargar, trasDeshacer }: PropsFila) {
           tamanoLegible(operacion.bytes, i18n.language),
         ].join(" · ")}
       </p>
+      {operacion.paquete !== null && (
+        <p className={css.detalle}>{t("historial.perfil", { nombre: operacion.paquete.nombre })}</p>
+      )}
       <Relacion operacion={operacion} />
       {fallida && operacion.error !== null && <p className={css.error}>{operacion.error}</p>}
       {operacion.sinDevolver.length > 0 && <SinDevolver operacion={operacion} />}
       <div className={css.acciones}>
-        {operacion.deshacible && (
-          <DeshacerOperacion id={operacion.id} nombre={nombre} donde={donde} alTerminar={trasDeshacer} />
+        {operacion.deshacible && operacion.tipo !== "deshacer" && (
+          <DeshacerOperacion
+            id={operacion.id}
+            tipo={operacion.tipo}
+            nombre={nombre}
+            donde={donde}
+            alTerminar={trasDeshacer}
+          />
+        )}
+        {operacion.porResolver && (
+          <RestaurarOperacion id={operacion.id} nombre={nombre} donde={donde} alTerminar={trasDeshacer} />
         )}
         <BotonAbrir id={operacion.id} abrir={abrir} />
         {!A_MEDIAS.has(operacion.estado) && (
@@ -190,7 +204,7 @@ function SinDevolver({ operacion }: Readonly<{ operacion: Operacion }>) {
     <div role="alert" className={css.aviso}>
       <TriangleAlert aria-hidden size={16} strokeWidth={1.75} />
       <div>
-        <p>{t("historial.sinDevolver")}</p>
+        <p>{t(operacion.aMedias ? "historial.aMedias" : "historial.sinDevolver")}</p>
         <ul className={css.ficheros}>
           {operacion.sinDevolver.map(({ ruta, copia }) => (
             <li key={ruta}>
