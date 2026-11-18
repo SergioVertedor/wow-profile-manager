@@ -5,7 +5,8 @@
   "nav": {
     "etiqueta": "Vistas",
     "personajes": "Personajes",
-    "acercaDe": "Acerca de"
+    "acercaDe": "Acerca de",
+    "instalaciones": "Instalaciones"
   },
   "personajes": {
     "titulo": "Personajes",
@@ -13,7 +14,8 @@
     "ninguna": "No se ha encontrado ninguna instalación de WoW en este equipo.",
     "versiones": "Versión del juego",
     "fuente": {
-      "registro": "Encontrada en el registro de Windows"
+      "registro": "Encontrada en el registro de Windows",
+      "manual": "Añadida a mano"
     },
     "build": "Build",
     "addons": "Addons",
@@ -26,7 +28,8 @@
     "addonsIgnorados_other": "{{count}} carpetas de Interface/AddOns no tienen un .toc que el juego cargue y se han saltado.",
     "verAddons_one": "Ver el addon instalado",
     "verAddons_other": "Ver los {{count}} addons instalados",
-    "addon": "{{titulo}} · {{version}}"
+    "addon": "{{titulo}} · {{version}}",
+    "versionDeInstalacion": "{{instalacion}} · {{version}}"
   },
   "plantel": {
     "etiqueta": "Personajes de la cuenta",
@@ -38,7 +41,8 @@
     "sinResultados": "Ningún personaje coincide con «{{consulta}}».",
     "sinPersonajes": "Esta cuenta aún no tiene personajes: entra al juego con uno.",
     "reinosIgnorados_one": "{{count}} carpeta de reino es de la otra versión del juego y se ha saltado.",
-    "reinosIgnorados_other": "{{count}} carpetas de reino son de la otra versión del juego y se han saltado."
+    "reinosIgnorados_other": "{{count}} carpetas de reino son de la otra versión del juego y se han saltado.",
+    "nombreCuenta": "Nombre de la cuenta"
   },
   "ficha": {
     "etiqueta": "Personaje elegido"
@@ -58,7 +62,36 @@
   "errores": {
     "lecturaFallida": "No se pudo leer {{ruta}}: {{detalle}}",
     "desconocido": "Error inesperado: {{mensaje}}",
-    "enlaceNoAbierto": "No se pudo abrir {{url}}: {{detalle}}"
+    "enlaceNoAbierto": "No se pudo abrir {{url}}: {{detalle}}",
+    "escrituraFallida": "No se pudo guardar {{ruta}}: {{detalle}}",
+    "preferenciasIlegibles": "No se entiende {{ruta}}: se sigue sin nombres ni carpetas a mano, y no se guardarán cambios hasta que lo arregles o lo borres.",
+    "nombreNoValido": "El nombre puede tener hasta {{maximo}} caracteres y una sola línea."
   },
-  "versionApp": "Versión {{version}}"
+  "versionApp": "Versión {{version}}",
+  "instalaciones": {
+    "titulo": "Instalaciones",
+    "explicacion": "Las carpetas de WoW que conoce la app. Si la tuya no aparece (movida, en otra unidad o portable), añádela a mano. Los nombres solo se guardan en este equipo.",
+    "anadir": "Añadir carpeta",
+    "porDefecto": "Instalación {{numero}}",
+    "nombre": "Nombre de la instalación",
+    "fuente": {
+      "registro": "Registro de Windows",
+      "manual": "A mano"
+    },
+    "sinVersiones": "sin versiones del juego",
+    "noEncontrada": "No encontrada: la carpeta ya no está, no se puede leer o le falta el fichero .build.info.",
+    "quitar": "Quitar",
+    "quitarEtiqueta": "Quitar {{nombre}} de la lista",
+    "ninguna": "Aún no hay ninguna instalación. Añade la carpeta de WoW a mano.",
+    "alta": {
+      "anadida": "Carpeta añadida.",
+      "yaEstaba": "Esa carpeta ya está en la lista.",
+      "noEsInstalacion": "Esa carpeta no es una instalación de WoW: le falta el fichero .build.info en su raíz. Elige la carpeta que contiene _retail_ o _forever_."
+    }
+  },
+  "nombre": {
+    "editar": "Cambiar: {{que}}",
+    "guardar": "Guardar el nombre",
+    "cancelar": "Cancelar"
+  }
 }

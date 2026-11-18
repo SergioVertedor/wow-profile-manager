@@ -26,6 +26,8 @@ pub struct Cuentas {
 #[serde(rename_all = "camelCase")]
 pub struct Cuenta {
     pub carpeta: String,
+    /// Nombre propio que le ha puesto el usuario (spec 018). Lo rellena Detección con las preferencias.
+    pub nombre: Option<String>,
     pub personajes: Vec<Personaje>,
     /// Carpetas de reino de la otra versión del juego: no se listan.
     pub reinos_ignorados: u32,
@@ -98,6 +100,7 @@ fn leer_cuenta(carpeta: String, ruta: &Path, producto: Producto) -> Result<Cuent
     }
     Ok(Cuenta {
         carpeta,
+        nombre: None,
         personajes,
         reinos_ignorados,
     })

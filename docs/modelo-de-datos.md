@@ -35,6 +35,7 @@ classDiagram
     class Instalacion {
       raiz
       fuente
+      nombre
     }
     class VersionJuego {
       carpeta
@@ -44,6 +45,7 @@ classDiagram
     }
     class Cuenta {
       carpeta
+      nombre
     }
     class Personaje {
       carpetaReino
@@ -78,6 +80,7 @@ Una carpeta raíz de WoW en este equipo.
 |---|---|
 | `raiz` | ruta absoluta. **Nunca sale del equipo** (no va al paquete) |
 | `fuente` | `registro`, `battlenet` o `manual` |
+| `nombre` | nombre propio que pone el usuario («Casa»); sin él, «Instalación N» junto a la ruta |
 | `versiones` | las subcarpetas con juego dentro |
 
 **Detección**, en este orden. Se juntan los resultados y se quitan las rutas repetidas:
@@ -87,7 +90,12 @@ Una carpeta raíz de WoW en este equipo.
    y versiones [V]. Es un formato binario sin documentar: se usa como **pista** y nunca se da por buena una ruta
    sin comprobarla en disco.
 3. **Manual**: el usuario elige una carpeta. Siempre está disponible, aunque las otras fuentes no encuentren
-   nada.
+   nada. Se recuerda entre arranques; si deja de existir, se lista como «no encontrada» hasta que se quita.
+
+Las carpetas a mano y los nombres propios viven en `preferencias.json`, en la carpeta de datos de la app y
+**nunca dentro de una instalación**. La clave de una instalación es su raíz normalizada (sin mayúsculas ni
+separador final); la de una cuenta, raíz + carpeta de versión + carpeta de cuenta. Quitar una carpeta a mano
+borra también sus nombres.
 
 Regla: una carpeta solo es una instalación si tiene `.build.info` en su raíz [V].
 
@@ -110,7 +118,8 @@ Una subcarpeta de la instalación (`_retail_`, `_forever_`…).
 
 Una carpeta de `WTF/Account/`.
 
-- Identidad: (versión, carpeta).
+- Identidad: (instalación, versión, carpeta).
+- `nombre`: nombre propio que pone el usuario («Principal»); sin él, «Cuenta N» del `#N` de la carpeta.
 - Solo cuentan las carpetas con forma `<número>#<número>` [V]. Las demás (por ejemplo una copia `…#1.back`, o
   `SavedVariables`) se ignoran y se dice cuántas.
 - Tiene sus `SavedVariables/` y sus ficheros de cuenta (`macros-cache.txt`, `bindings-cache.wtf`…).
@@ -121,13 +130,14 @@ Una carpeta `WTF/Account/<cuenta>/<reino>/<personaje>/`.
 
 | campo | qué es |
 |---|---|
-| `carpetaReino`, `carpetaPersonaje` | **identidad**, junto con la cuenta |
+| `carpetaReino`, `carpetaPersonaje` | **identidad**, junto con la instalación, la versión y la cuenta |
 | `nombreEnDatos` | cómo aparece en los `SavedVariables`; **se resuelve**, puede quedar sin resolver |
 
 **El nombre de la carpeta no es el nombre del personaje** [V]. En un mismo reino conviven una carpeta con `ø`
 en el nombre y otra con el nombre en ASCII y un sufijo hexadecimal (`…8D31D`). Por eso:
 
-- La identidad es la carpeta, nunca el nombre.
+- La identidad es la carpeta, nunca el nombre. Dos personajes con la misma carpeta en dos instalaciones son
+  personajes distintos: la interfaz enseña siempre de qué instalación es cada uno.
 - `nombreEnDatos` se resuelve en este orden:
   1. De los datos: una clave de personaje que exista en los `SavedVariables` de la cuenta (`profileKeys` y
      similares) y case con la carpeta.

@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { I18nextProvider } from "react-i18next";
 import App from "./App";
+import type { Deteccion } from "./nucleo";
 import { crearTextos, type Idioma } from "./textos";
 
 // `mockIPC` sustituye el canal con Rust: estos tests prueban la interfaz, no el núcleo. Que el comando exista y
@@ -11,6 +12,9 @@ afterEach(() => {
   cleanup();
   clearMocks();
 });
+
+/** Lo que da `detectar_instalaciones` sin nada instalado. */
+const SIN_NADA: Deteccion = { instalaciones: [], noEncontradas: [], preferencias: null };
 
 function pintar(idioma: Idioma) {
   render(
@@ -25,7 +29,7 @@ describe("App", () => {
     const pedidos: string[] = [];
     mockIPC((comando) => {
       pedidos.push(comando);
-      return comando === "info_app" ? { nombre: "WoW Profile Manager", version: "9.9.9" } : [];
+      return comando === "info_app" ? { nombre: "WoW Profile Manager", version: "9.9.9" } : SIN_NADA;
     });
 
     pintar("es");
@@ -70,7 +74,7 @@ describe("App", () => {
             koFi: "https://ko-fi.com/tonotabidev",
             licencia: "https://www.gnu.org/licenses/gpl-3.0.html",
           }
-        : [],
+        : SIN_NADA,
     );
 
     pintar("es");

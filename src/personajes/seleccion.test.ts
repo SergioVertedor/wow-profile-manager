@@ -5,6 +5,7 @@ import { contarPersonajes, entradasDeVersion, resolverEleccion, SIN_ELEGIR } fro
 function cuenta(carpeta: string, ...personajes: string[]): Cuenta {
   return {
     carpeta,
+    nombre: null,
     reinosIgnorados: 0,
     personajes: personajes.map((p) => ({ carpetaReino: "R", carpetaPersonaje: p, nombreEnDatos: null })),
   };
@@ -26,6 +27,7 @@ const INSTALACIONES: Instalacion[] = [
   {
     raiz: "C:\\WoW",
     fuente: "registro",
+    nombre: null,
     versiones: [version("_classic_"), version("_retail_", cuenta("1#1", "A", "B"), cuenta("1#2", "C"))],
   },
 ];

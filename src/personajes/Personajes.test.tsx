@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { I18nextProvider } from "react-i18next";
-import type { Addon, Cuenta, Instalacion, Personaje, VersionJuego } from "../nucleo";
+import { useDeteccion } from "../instalaciones/useDeteccion";
+import type { Addon, Cuenta, Deteccion, Personaje, VersionJuego } from "../nucleo";
 import { crearTextos, type Idioma } from "../textos";
 import Personajes from "./Personajes";
 
@@ -15,9 +16,14 @@ function pintar(idioma: Idioma, respuesta: () => unknown) {
   mockIPC((comando) => (comando === "detectar_instalaciones" ? respuesta() : undefined));
   render(
     <I18nextProvider i18n={crearTextos(idioma)}>
-      <Personajes />
+      <ConDeteccion />
     </I18nextProvider>,
   );
+}
+
+/** Como en `App`: la detección la da el hook y Personajes la recibe. */
+function ConDeteccion() {
+  return <Personajes {...useDeteccion()} />;
 }
 
 function pj(carpetaReino: string, carpetaPersonaje: string, texto: string | null = null): Personaje {
@@ -39,6 +45,7 @@ const FOREVER: VersionJuego = {
     cuentas: [
       {
         carpeta: "107710745#1",
+        nombre: null,
         reinosIgnorados: 2,
         personajes: [
           pj("93", "Goldberg-Joestar", "Goldberg Joestar"),
@@ -53,6 +60,7 @@ const FOREVER: VersionJuego = {
 
 const RETAIL_CUENTA_1: Cuenta = {
   carpeta: "107710745#1",
+  nombre: null,
   reinosIgnorados: 0,
   personajes: [
     pj("Dun Modr", "Allagan"),
@@ -67,12 +75,17 @@ const RETAIL: VersionJuego = {
   carpeta: "_retail_",
   producto: "wow",
   build: "12.1.5.70961",
-  cuentas: { ignoradas: 0, cuentas: [RETAIL_CUENTA_1, { carpeta: "107710745#2", reinosIgnorados: 0, personajes: [pj("Uldum", "Mordekaiser")] }] },
+  cuentas: { ignoradas: 0, cuentas: [RETAIL_CUENTA_1, { carpeta: "107710745#2", nombre: null, reinosIgnorados: 0, personajes: [pj("Uldum", "Mordekaiser")] }] },
   addons: { addons: [], ignoradas: 0 },
 };
 
-function instalacion(...versiones: VersionJuego[]): Instalacion[] {
-  return [{ raiz: "C:\\Juegos\\World of Warcraft", fuente: "registro", versiones }];
+const SIN_NADA: Deteccion = { instalaciones: [], noEncontradas: [], preferencias: null };
+
+function instalacion(...versiones: VersionJuego[]): Deteccion {
+  return {
+    ...SIN_NADA,
+    instalaciones: [{ raiz: "C:\\Juegos\\World of Warcraft", fuente: "registro", nombre: null, versiones }],
+  };
 }
 
 const ficha = () => screen.getByRole("region", { name: /Personaje elegido|Selected character/ });
@@ -167,7 +180,7 @@ describe("Personajes", () => {
 
     const buscar = await screen.findByRole("searchbox", { name: "Buscar personaje" });
     fireEvent.change(buscar, { target: { value: "APANE" } });
-    expect(within(lista()).getAllByRole("button").map((b) => b.textContent)).toEqual(["AApañerouno"]);
+    expect(within(lista()).getAllByRole("listitem").map((b) => b.textContent)).toEqual(["AApañerouno"]);
 
     fireEvent.change(buscar, { target: { value: "zz" } });
     expect(within(lista()).getByText("Ningún personaje coincide con «zz».")).toBeDefined();
@@ -233,7 +246,7 @@ describe("Personajes", () => {
   it("una cuenta sin personajes lo dice en la lista", async () => {
     const vacia: VersionJuego = {
       ...FOREVER,
-      cuentas: { ignoradas: 0, cuentas: [{ carpeta: "1#1", reinosIgnorados: 0, personajes: [] }] },
+      cuentas: { ignoradas: 0, cuentas: [{ carpeta: "1#1", nombre: null, reinosIgnorados: 0, personajes: [] }] },
     };
     pintar("es", () => instalacion(vacia));
 
@@ -241,8 +254,63 @@ describe("Personajes", () => {
     expect(screen.queryByRole("region", { name: "Personaje elegido" })).toBeNull();
   });
 
+  it("con varias instalaciones, cada versión y la ficha dicen de cuál son", async () => {
+    pintar("es", () => ({
+      ...SIN_NADA,
+      instalaciones: [
+        { raiz: "C:\\WoW", fuente: "registro", nombre: "Casa", versiones: [FOREVER] },
+        { raiz: "E:\\WoW", fuente: "manual", nombre: null, versiones: [RETAIL] },
+      ],
+    }));
+
+    await screen.findByRole("group", { name: "Versión del juego" });
+    expect(within(versiones()).getByRole("button", { name: "Casa · WoW Forever 3" })).toBeDefined();
+    expect(within(versiones()).getByRole("button", { name: "Instalación 2 · World of Warcraft (Retail) 13" })).toBeDefined();
+    expect(within(ficha()).getByText("Casa")).toBeDefined();
+  });
+
+  it("con una sola instalación, la versión va sin su nombre pero la ficha lo dice", async () => {
+    pintar("es", () => instalacion(FOREVER));
+
+    await screen.findByRole("group", { name: "Versión del juego" });
+    expect(within(versiones()).getByRole("button", { name: "WoW Forever 3" })).toBeDefined();
+    expect(within(ficha()).getByText("Instalación 1")).toBeDefined();
+  });
+
+  it("renombra la cuenta desde la lista sin perder el personaje elegido", async () => {
+    const llamadas: { comando: string; argumentos: unknown }[] = [];
+    mockIPC((comando, argumentos) => {
+      llamadas.push({ comando, argumentos });
+      return comando === "detectar_instalaciones" ? instalacion(RETAIL) : null;
+    });
+    render(
+      <I18nextProvider i18n={crearTextos("es")}>
+        <ConDeteccion />
+      </I18nextProvider>,
+    );
+
+    await screen.findByRole("region", { name: "Personajes de la cuenta" });
+    fireEvent.click(within(lista()).getByRole("button", { name: "Angharad" }));
+    fireEvent.click(within(lista()).getByRole("button", { name: "Cambiar: Nombre de la cuenta" }));
+    const campo = within(lista()).getByRole("textbox", { name: "Nombre de la cuenta" });
+    expect(campo.getAttribute("placeholder")).toBe("Cuenta 1");
+    fireEvent.change(campo, { target: { value: " Principal " } });
+    fireEvent.submit(campo);
+
+    expect(await within(ficha()).findByText("Principal")).toBeDefined();
+    expect(within(lista()).getByRole("option", { name: "Principal" })).toBeDefined();
+    expect(within(ficha()).getByRole("heading", { name: "Angharad" })).toBeDefined();
+    expect(llamadas.find((l) => l.comando === "nombrar_cuenta")?.argumentos).toEqual({
+      raiz: "C:\\Juegos\\World of Warcraft",
+      version: "_retail_",
+      cuenta: "107710745#1",
+      nombre: " Principal ",
+    });
+    expect(llamadas.filter((l) => l.comando === "detectar_instalaciones")).toHaveLength(1);
+  });
+
   it("si no hay ninguna instalación, lo dice", async () => {
-    pintar("en", () => []);
+    pintar("en", () => SIN_NADA);
 
     expect(await screen.findByText("No WoW installation found on this computer.")).toBeDefined();
   });

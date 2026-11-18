@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Info, Users, type LucideIcon } from "lucide-react";
+import { HardDrive, Info, Users, type LucideIcon } from "lucide-react";
 import AcercaDe from "./AcercaDe";
 import css from "./App.module.css";
+import Instalaciones from "./instalaciones/Instalaciones";
+import { useDeteccion } from "./instalaciones/useDeteccion";
 import { pedirInfoApp, type InfoApp } from "./nucleo";
 import Personajes from "./personajes/Personajes";
 
@@ -11,15 +13,17 @@ type Estado =
   | { tipo: "listo"; info: InfoApp }
   | { tipo: "error"; mensaje: string };
 
-/** Vistas de la ventana. Con dos basta un estado; cuando lleguen los flujos con pasos se medirá un router. */
-type Vista = "personajes" | "acercaDe";
+/** Vistas de la ventana. Con tres basta un estado; cuando lleguen los flujos con pasos se medirá un router. */
+type Vista = "personajes" | "instalaciones" | "acercaDe";
 
-const ICONOS: Record<Vista, LucideIcon> = { personajes: Users, acercaDe: Info };
+const ICONOS: Record<Vista, LucideIcon> = { personajes: Users, instalaciones: HardDrive, acercaDe: Info };
 
 function App() {
   const { t } = useTranslation();
   const [estado, setEstado] = useState<Estado>({ tipo: "cargando" });
   const [vista, setVista] = useState<Vista>("personajes");
+  // La detección vive aquí para que Personajes e Instalaciones vean lo mismo y cambiar de vista no relea el disco.
+  const deteccion = useDeteccion();
 
   useEffect(() => {
     pedirInfoApp()
@@ -42,12 +46,14 @@ function App() {
         </div>
         <nav className={css.navegacion} aria-label={t("nav.etiqueta")}>
           <BotonVista vista="personajes" actual={vista} elegir={setVista} />
+          <BotonVista vista="instalaciones" actual={vista} elegir={setVista} />
           {estado.tipo === "listo" && <BotonVista vista="acercaDe" actual={vista} elegir={setVista} />}
         </nav>
         {estado.tipo === "listo" && <p className={css.pie}>{t("versionApp", { version: estado.info.version })}</p>}
       </aside>
       <main className={css.contenido}>
-        {vista === "personajes" && <Personajes />}
+        {vista === "personajes" && <Personajes {...deteccion} />}
+        {vista === "instalaciones" && <Instalaciones {...deteccion} />}
         {vista === "acercaDe" && estado.tipo === "listo" && <AcercaDe info={estado.info} />}
       </main>
     </div>

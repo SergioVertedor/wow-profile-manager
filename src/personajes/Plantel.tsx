@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Search } from "lucide-react";
+import NombreEditable from "../instalaciones/NombreEditable";
 import type { Cuenta, Personaje } from "../nucleo";
 import css from "./Plantel.module.css";
 import {
@@ -20,6 +21,9 @@ type Props = Readonly<{
   cuenta: Cuenta;
   producto: string;
   etiquetaCuenta: (carpeta: string) => string;
+  /** «Cuenta N» o la carpeta: lo que se ve si la cuenta elegida no tiene nombre propio. */
+  cuentaPorDefecto: string;
+  renombrarCuenta: (nombre: string) => Promise<void>;
   elegirCuenta: (carpeta: string) => void;
   personaje: Personaje | null;
   elegirPersonaje: (clave: string) => void;
@@ -79,8 +83,23 @@ export default function Plantel(props: Props) {
   );
 }
 
-/** Con una cuenta, su nombre; con varias, un desplegable para cambiar. */
-function CabeceraCuenta({ cuentas, cuenta, etiquetaCuenta, elegirCuenta }: Props) {
+/** Con una cuenta, su nombre; con varias, un desplegable para cambiar. Al lado, el lápiz para renombrarla (spec 018). */
+function CabeceraCuenta(props: Props) {
+  const { t } = useTranslation();
+  const { cuenta, cuentaPorDefecto, renombrarCuenta } = props;
+  return (
+    <NombreEditable
+      etiqueta={t("plantel.nombreCuenta")}
+      valor={cuenta.nombre}
+      porDefecto={cuentaPorDefecto}
+      guardar={renombrarCuenta}
+    >
+      <ElegirCuenta {...props} />
+    </NombreEditable>
+  );
+}
+
+function ElegirCuenta({ cuentas, cuenta, etiquetaCuenta, elegirCuenta }: Props) {
   const { t } = useTranslation();
   if (cuentas.length === 1) {
     return <h2 className={css.cuenta}>{etiquetaCuenta(cuenta.carpeta)}</h2>;

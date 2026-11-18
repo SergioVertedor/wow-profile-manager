@@ -1,0 +1,59 @@
+/* Nombre editable en el sitio: el texto y un lápiz discreto; al editar, un campo con guardar y cancelar. */
+.fila {
+  display: flex;
+  gap: var(--espacio-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+  min-width: 0;
+}
+
+.lapiz {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radio-s);
+  background: none;
+  color: var(--color-texto-2);
+  cursor: pointer;
+  transition: color var(--duracion), background-color var(--duracion), border-color var(--duracion);
+}
+
+.lapiz:hover {
+  border-color: var(--color-linea-control);
+  background: var(--blanco-velo);
+  color: var(--color-oro);
+}
+
+.lapiz[aria-disabled="true"] {
+  cursor: progress;
+}
+
+.campo {
+  flex: 1;
+  min-width: 0;
+  padding: var(--espacio-1) var(--espacio-3);
+  border: 1px solid var(--color-linea-control);
+  border-radius: var(--radio-s);
+  background: var(--color-hundido);
+  font-weight: 600;
+}
+
+.campo::placeholder {
+  color: var(--color-texto-3);
+}
+
+.alerta {
+  color: var(--color-alerta);
+  font-size: var(--texto-pequeno);
+}

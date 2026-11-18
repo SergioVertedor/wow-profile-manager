@@ -5,7 +5,8 @@
   "nav": {
     "etiqueta": "Views",
     "personajes": "Characters",
-    "acercaDe": "About"
+    "acercaDe": "About",
+    "instalaciones": "Installations"
   },
   "personajes": {
     "titulo": "Characters",
@@ -13,7 +14,8 @@
     "ninguna": "No WoW installation found on this computer.",
     "versiones": "Game version",
     "fuente": {
-      "registro": "Found in the Windows registry"
+      "registro": "Found in the Windows registry",
+      "manual": "Added by hand"
     },
     "build": "Build",
     "addons": "Addons",
@@ -26,7 +28,8 @@
     "addonsIgnorados_other": "{{count}} folders in Interface/AddOns have no .toc the game loads and were skipped.",
     "verAddons_one": "Show the installed addon",
     "verAddons_other": "Show the {{count}} installed addons",
-    "addon": "{{titulo}} · {{version}}"
+    "addon": "{{titulo}} · {{version}}",
+    "versionDeInstalacion": "{{instalacion}} · {{version}}"
   },
   "plantel": {
     "etiqueta": "Characters in the account",
@@ -38,7 +41,8 @@
     "sinResultados": "No character matches “{{consulta}}”.",
     "sinPersonajes": "This account has no characters yet: log in to the game with one.",
     "reinosIgnorados_one": "{{count}} realm folder belongs to the other game version and was skipped.",
-    "reinosIgnorados_other": "{{count}} realm folders belong to the other game version and were skipped."
+    "reinosIgnorados_other": "{{count}} realm folders belong to the other game version and were skipped.",
+    "nombreCuenta": "Account name"
   },
   "ficha": {
     "etiqueta": "Selected character"
@@ -58,7 +62,36 @@
   "errores": {
     "lecturaFallida": "Could not read {{ruta}}: {{detalle}}",
     "desconocido": "Unexpected error: {{mensaje}}",
-    "enlaceNoAbierto": "Could not open {{url}}: {{detalle}}"
+    "enlaceNoAbierto": "Could not open {{url}}: {{detalle}}",
+    "escrituraFallida": "Could not save {{ruta}}: {{detalle}}",
+    "preferenciasIlegibles": "{{ruta}} cannot be read: the app carries on without names or hand-added folders, and no changes will be saved until you fix or delete it.",
+    "nombreNoValido": "A name can have up to {{maximo}} characters on a single line."
   },
-  "versionApp": "Version {{version}}"
+  "versionApp": "Version {{version}}",
+  "instalaciones": {
+    "titulo": "Installations",
+    "explicacion": "The WoW folders the app knows about. If yours is missing (moved, on another drive or portable), add it by hand. Names are only stored on this computer.",
+    "anadir": "Add folder",
+    "porDefecto": "Installation {{numero}}",
+    "nombre": "Installation name",
+    "fuente": {
+      "registro": "Windows registry",
+      "manual": "By hand"
+    },
+    "sinVersiones": "no game versions",
+    "noEncontrada": "Not found: the folder is gone, cannot be read or is missing its .build.info file.",
+    "quitar": "Remove",
+    "quitarEtiqueta": "Remove {{nombre}} from the list",
+    "ninguna": "No installations yet. Add your WoW folder by hand.",
+    "alta": {
+      "anadida": "Folder added.",
+      "yaEstaba": "That folder is already in the list.",
+      "noEsInstalacion": "That folder is not a WoW installation: its .build.info file is missing. Choose the folder that contains _retail_ or _forever_."
+    }
+  },
+  "nombre": {
+    "editar": "Rename: {{que}}",
+    "guardar": "Save the name",
+    "cancelar": "Cancel"
+  }
 }

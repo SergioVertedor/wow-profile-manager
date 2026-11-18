@@ -23,17 +23,35 @@ export function pedirInfoApp(): Promise<InfoApp> {
 /** Error del núcleo: código estable y sus datos (`src-tauri/src/error.rs`). */
 export type ErrorNucleo =
   | { codigo: "lecturaFallida"; datos: { ruta: string; detalle: string } }
-  | { codigo: "enlaceNoAbierto"; datos: { url: string; detalle: string } };
+  | { codigo: "enlaceNoAbierto"; datos: { url: string; detalle: string } }
+  | { codigo: "escrituraFallida"; datos: { ruta: string; detalle: string } }
+  | { codigo: "preferenciasIlegibles"; datos: { ruta: string } }
+  | { codigo: "nombreNoValido"; datos: { maximo: number } };
 
 export function esErrorNucleo(valor: unknown): valor is ErrorNucleo {
   return typeof valor === "object" && valor !== null && "codigo" in valor && "datos" in valor;
 }
 
 /** Lo que devuelve `detectar_instalaciones` (`src-tauri/src/deteccion.rs`, `descubrimiento.rs` y `addons.rs`). */
+export interface Deteccion {
+  instalaciones: Instalacion[];
+  /** Carpetas añadidas a mano que ya no son una instalación: se enseñan hasta que el usuario las quita. */
+  noEncontradas: CarpetaPerdida[];
+  /** Por qué no se pudieron leer las preferencias; `null` si se leyeron. Se detecta igual, sin ellas. */
+  preferencias: ErrorNucleo | null;
+}
+
 export interface Instalacion {
   raiz: string;
-  fuente: "registro";
+  fuente: "registro" | "manual";
+  /** Nombre propio que le ha puesto el usuario; `null` si no tiene. */
+  nombre: string | null;
   versiones: VersionJuego[];
+}
+
+export interface CarpetaPerdida {
+  raiz: string;
+  nombre: string | null;
 }
 
 export interface VersionJuego {
@@ -60,6 +78,8 @@ export interface Addon {
 
 export interface Cuenta {
   carpeta: string;
+  /** Nombre propio que le ha puesto el usuario; `null` si no tiene. */
+  nombre: string | null;
   personajes: Personaje[];
   reinosIgnorados: number;
 }
@@ -71,8 +91,31 @@ export interface Personaje {
   nombreEnDatos: { texto: string; origen: "datos" | "carpeta" } | null;
 }
 
-export function pedirInstalaciones(): Promise<Instalacion[]> {
-  return invoke<Instalacion[]>("detectar_instalaciones");
+export function pedirDeteccion(): Promise<Deteccion> {
+  return invoke<Deteccion>("detectar_instalaciones");
+}
+
+/** Qué pasó al añadir una carpeta a mano (`Alta` en `src-tauri/src/deteccion.rs`). */
+export type Alta = "cancelada" | "anadida" | "yaEstaba" | "noEsInstalacion";
+
+/** Abre el selector de carpetas del sistema desde el núcleo: la interfaz no elige rutas. */
+export function anadirCarpeta(): Promise<Alta> {
+  return invoke<Alta>("anadir_carpeta");
+}
+
+/** Olvida una carpeta añadida a mano, con sus nombres. No toca la carpeta. */
+export function quitarCarpeta(raiz: string): Promise<void> {
+  return invoke("quitar_carpeta", { raiz });
+}
+
+/** Un nombre vacío borra el que hubiera. */
+export function nombrarInstalacion(raiz: string, nombre: string): Promise<void> {
+  return invoke("nombrar_instalacion", { raiz, nombre });
+}
+
+/** Un nombre vacío borra el que hubiera. */
+export function nombrarCuenta(raiz: string, version: string, cuenta: string, nombre: string): Promise<void> {
+  return invoke("nombrar_cuenta", { raiz, version, cuenta, nombre });
 }
 
 /** Enlaces que sabe abrir el núcleo (`src-tauri/src/enlaces.rs`). La interfaz nunca le pasa una URL. */

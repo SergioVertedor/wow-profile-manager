@@ -12,6 +12,12 @@ pub enum ErrorNucleo {
     LecturaFallida { ruta: String, detalle: String },
     /// El sistema no pudo abrir un enlace (por ejemplo, sin navegador por defecto).
     EnlaceNoAbierto { url: String, detalle: String },
+    /// No se pudo escribir un fichero de la app (las preferencias). `detalle` es el mensaje del sistema operativo.
+    EscrituraFallida { ruta: String, detalle: String },
+    /// `preferencias.json` existe pero no se entiende. No se sobrescribe: arreglarlo o borrarlo es del usuario.
+    PreferenciasIlegibles { ruta: String },
+    /// Un nombre propio demasiado largo o con caracteres de control.
+    NombreNoValido { maximo: usize },
 }
 
 impl ErrorNucleo {
