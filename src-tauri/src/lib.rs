@@ -194,6 +194,15 @@ async fn deshacer_operacion(
     operaciones.deshacer(&id, &huella, sistema::juego_en_marcha)
 }
 
+/// Restaura una importación que se cortó a mitad, cuando el usuario lo pide (spec 025).
+#[tauri::command]
+async fn restaurar_operacion(
+    id: String,
+    operaciones: State<'_, Operaciones>,
+) -> Result<(), error::ErrorNucleo> {
+    operaciones.restaurar_operacion(&id, sistema::juego_en_marcha)
+}
+
 /// Borra una operación terminada. `restaurada_a_mano`: el usuario confirma que ya devolvió a mano lo que faltaba.
 #[tauri::command]
 async fn borrar_operacion(
@@ -333,6 +342,32 @@ async fn plan_importacion(
     paquetes.vista_previa(&sha256, ubicados, &pedido, sistema::juego_en_marcha())
 }
 
+/// Aplica el paquete abierto (`sha256`) en esos personajes, si el plan sigue siendo el que se enseñó (`huella`): una
+/// operación por personaje (spec 025). Devuelve qué pasó en cada uno.
+#[tauri::command]
+async fn aplicar_importacion(
+    sha256: String,
+    huella: String,
+    personajes: Vec<deteccion::PersonajePedido>,
+    pedido: importacion::Pedido,
+    almacen: State<'_, Almacen>,
+    paquetes: State<'_, PaquetesAbiertos>,
+    operaciones: State<'_, Operaciones>,
+) -> Result<Vec<importacion::ResultadoPersonaje>, error::ErrorNucleo> {
+    let ubicados = personajes
+        .iter()
+        .map(|p| ubicar(p, &almacen))
+        .collect::<Result<Vec<_>, _>>()?;
+    paquetes.aplicar(
+        &sha256,
+        &huella,
+        ubicados,
+        &pedido,
+        &operaciones,
+        sistema::juego_en_marcha,
+    )
+}
+
 /// Abre en el navegador uno de los enlaces conocidos. La interfaz no puede pasar una URL: solo el nombre del enlace.
 #[tauri::command]
 fn abrir_enlace(enlace: enlaces::Enlace) -> Result<(), error::ErrorNucleo> {
@@ -358,6 +393,7 @@ pub fn con_comandos<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Bui
         listar_operaciones,
         plan_deshacer,
         deshacer_operacion,
+        restaurar_operacion,
         borrar_operacion,
         abrir_carpeta_operacion,
         propuesta_exportacion,
@@ -365,6 +401,7 @@ pub fn con_comandos<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Bui
         abrir_paquete,
         cerrar_paquete,
         plan_importacion,
+        aplicar_importacion,
         abrir_enlace
     ])
 }

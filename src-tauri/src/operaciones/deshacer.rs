@@ -1,12 +1,17 @@
-//! Deshacer (spec 022, `docs/flujos.md`, «Deshacer»): devolver la carpeta de un personaje exactamente como estaba antes
-//! de eliminarla. Es otra operación, de tipo `deshacer`, con el mismo orden de escritura: primero copia lo que haya ahora
-//! (el juego pudo volver a crear la carpeta) y después restaura. La original pasa a `deshecha`.
+//! Deshacer (`docs/flujos.md`, «Deshacer»): devolver lo que tocó una operación a como estaba antes. Es otra operación,
+//! de tipo `deshacer`, con el mismo orden de escritura: primero copia lo que haya ahora y después restaura. La original
+//! pasa a `deshecha`.
+//!
+//! - Una **eliminación** (spec 022) deja la carpeta del personaje exactamente como estaba: también quita lo que el juego
+//!   volvió a crear y antes no estaba.
+//! - Una **importación** (spec 025) solo devuelve sus ficheros: quita los que creó y restaura los demás desde su copia.
+//!   No toca ningún otro.
 
 use super::{
-    Accion, Antes, CARPETA_ACCOUNT, CARPETA_WTF, Cambio, Despues, Destino, Diario, ESQUEMA, Estado,
-    MAXIMO_CAMBIOS, Operaciones, Tipo, ahora_rfc3339, comprobar, contenido, copia_n, ejecutar,
-    en_disco, enlace, es_enlace, ficheros_de, guardar, leer, relativa_con_barras, ruta_segura,
-    sha256, sigue_como_antes,
+    Accion, Antes, Cambio, Despues, Destino, Diario, ESQUEMA, Estado, MAXIMO_CAMBIOS, Operaciones,
+    Tipo, ahora_rfc3339, base_de, comprobar, comprobar_bases, contenido, copia_n, ejecutar,
+    en_disco, ficheros_de, guardar, leer, relativa_con_barras, ruta_segura, sha256,
+    sigue_como_antes,
 };
 use crate::deteccion::producto_de;
 use crate::disco::{clave_de_ruta, subcarpetas};
@@ -26,6 +31,8 @@ pub struct PlanDeshacer {
     pub sobran: usize,
     /// Los que existen ahora y cambian (se pisan o se quitan): lo que el juego guardó en ellos desde entonces se pierde.
     pub cambian: Vec<String>,
+    /// Los de la cuenta: cambian para todos los personajes de esa cuenta.
+    pub de_cuenta: Vec<String>,
     /// Huella del estado actual de esos ficheros: deshacer solo sigue si no ha cambiado desde que se enseñó.
     pub huella: String,
 }
@@ -53,6 +60,12 @@ impl Preparado {
                 .filter(|c| c.antes.existia)
                 .map(|c| c.ruta.clone())
                 .collect(),
+            de_cuenta: self
+                .cambios
+                .iter()
+                .filter(|c| c.de_cuenta)
+                .map(|c| c.ruta.clone())
+                .collect(),
             huella: huella(&self.cambios),
         }
     }
@@ -77,6 +90,7 @@ impl Operaciones {
         }
         // Como al eliminar: una pendiente se termina antes, para que el siguiente arranque no la restaure encima.
         self.recuperar_sin_cerrojo(&juego_en_marcha);
+        self.sin_importacion_a_medias()?;
         let preparado = self.preparar_deshacer(id)?;
         if huella(&preparado.cambios) != huella_vista {
             return Err(ErrorNucleo::PlanCaducado {});
@@ -89,6 +103,7 @@ impl Operaciones {
             creada: ahora_rfc3339(),
             terminada: None,
             estado: Estado::Preparando,
+            paquete: None,
             deshace: Some(id.to_owned()),
             deshecha_por: None,
             error: None,
@@ -112,15 +127,20 @@ impl Operaciones {
     fn preparar_deshacer(&self, id: &str) -> Result<Preparado, ErrorNucleo> {
         let original_dir = self.carpeta_de(id)?;
         let original = leer(&original_dir).ok_or(ErrorNucleo::OperacionNoEncontrada {})?;
-        if original.tipo != Tipo::Eliminacion || original.estado != Estado::Completa {
+        if !se_puede_deshacer(&original) {
             return Err(ErrorNucleo::NoDeshacible {});
         }
         mismo_juego(&original.destino)?;
         if let Some(posterior) = self.posterior_que_la_toca(id, &original)? {
             return Err(ErrorNucleo::OperacionPosterior { id: posterior });
         }
-        let (carpeta, base) = carpeta_del_personaje(&original)?;
-        let actuales = ficheros_actuales(&carpeta, &base)?;
+        comprobar_bases(&original)?;
+        // Solo una eliminación quita lo que hay ahora y antes no estaba: una importación no tocó nada más.
+        let actuales = if original.tipo == Tipo::Eliminacion {
+            ficheros_actuales(&original.destino)?
+        } else {
+            BTreeMap::new()
+        };
         construir(&original_dir, original, actuales)
     }
 
@@ -171,55 +191,35 @@ fn mismo_juego(destino: &Destino) -> Result<(), ErrorNucleo> {
     }
 }
 
-/// La carpeta del personaje y su ruta relativa (`WTF/Account/<cuenta>/<reino>/<personaje>`). El diario está en disco y
-/// pudo tocarse a mano: los nombres tienen que ser normales, ningún tramo que exista puede ser un enlace y todos los
-/// cambios tienen que caer dentro de la carpeta.
-fn carpeta_del_personaje(original: &Diario) -> Result<(PathBuf, String), ErrorNucleo> {
-    let destino = &original.destino;
-    let base = format!(
-        "{CARPETA_WTF}/{CARPETA_ACCOUNT}/{}/{}/{}",
-        destino.cuenta, destino.carpeta_reino, destino.carpeta_personaje
-    );
-    let fuera = || ErrorNucleo::escritura(Path::new(&base), &"ruta fuera de WTF/Account");
-    let carpeta = ruta_segura(&destino.raiz_version, &base).ok_or_else(fuera)?;
-    let prefijo = format!("{base}/");
-    if !original
-        .cambios
-        .iter()
-        .all(|c| c.ruta.starts_with(&prefijo))
-    {
-        return Err(fuera());
-    }
-    let mut tramo = destino.raiz_version.clone();
-    for parte in Path::new(&base).components() {
-        tramo.push(parte);
-        if es_enlace(&tramo) {
-            return Err(enlace(&tramo));
-        }
-    }
-    Ok((carpeta, base))
+/// Una eliminación o una importación `completa` (el historial ofrece «Deshacer» con la misma regla).
+pub(super) fn se_puede_deshacer(diario: &Diario) -> bool {
+    matches!(diario.tipo, Tipo::Eliminacion | Tipo::Importacion)
+        && diario.estado == Estado::Completa
 }
 
 /// Los ficheros que hay ahora en la carpeta del personaje (si el juego la volvió a crear), por su ruta relativa en
 /// minúsculas: Windows no distingue mayúsculas. `ficheros_de` rechaza los enlaces de dentro.
 fn ficheros_actuales(
-    carpeta: &Path,
-    base: &str,
+    destino: &Destino,
 ) -> Result<BTreeMap<String, (String, PathBuf)>, ErrorNucleo> {
+    let base = base_de(destino, false);
+    let carpeta = ruta_segura(&destino.raiz_version, &base)
+        .ok_or_else(|| ErrorNucleo::escritura(Path::new(&base), &"ruta fuera de WTF/Account"))?;
     if !carpeta.exists() {
         return Ok(BTreeMap::new());
     }
-    Ok(ficheros_de(carpeta)?
+    Ok(ficheros_de(&carpeta)?
         .into_iter()
         .map(|fichero| {
-            let ruta = format!("{base}/{}", relativa_con_barras(carpeta, &fichero));
+            let ruta = format!("{base}/{}", relativa_con_barras(&carpeta, &fichero));
             (ruta.to_lowercase(), (ruta, fichero))
         })
         .collect())
 }
 
-/// Un `restaurar` por cada fichero de la original que hoy no está como antes, y un `borrar` por cada fichero que hay
-/// ahora y antes no estaba. Los que ya están como antes no se tocan.
+/// Un `restaurar` por cada fichero de la original que existía y hoy no está como antes, un `borrar` por cada fichero que
+/// la original creó y sigue ahí, y otro por cada uno de `actuales` (los que hay ahora y antes no estaban). Los que ya
+/// están como antes no se tocan.
 fn construir(
     original_dir: &Path,
     original: Diario,
@@ -229,22 +229,38 @@ fn construir(
     let mut fuentes = Vec::new();
     let mut copias = 0;
     for cambio in &original.cambios {
+        actuales.remove(&cambio.ruta.to_lowercase());
+        let actual = contenido(&en_disco(&original, cambio)?)?;
         let (Some(sha), Some(bytes), Some(copia)) = (
             &cambio.antes.sha256,
             cambio.antes.bytes,
             &cambio.antes.copia,
         ) else {
-            return Err(ErrorNucleo::NoDeshacible {});
+            // Solo una importación crea ficheros: deshacerla los quita si siguen ahí.
+            if original.tipo != Tipo::Importacion || cambio.antes.existia {
+                return Err(ErrorNucleo::NoDeshacible {});
+            }
+            if actual.is_some() {
+                cambios.push(Cambio {
+                    ruta: cambio.ruta.clone(),
+                    accion: Accion::Borrar,
+                    de_cuenta: cambio.de_cuenta,
+                    entrada: None,
+                    antes: antes_de(actual, &mut copias),
+                    despues: Despues::NO_EXISTE,
+                });
+                fuentes.push(None);
+            }
+            continue;
         };
-        actuales.remove(&cambio.ruta.to_lowercase());
-        let actual = contenido(&en_disco(&original, cambio)?)?;
         if actual.as_ref().is_some_and(|(hash, _)| hash == sha) {
             continue;
         }
         cambios.push(Cambio {
             ruta: cambio.ruta.clone(),
             accion: Accion::Restaurar,
-            de_cuenta: false,
+            de_cuenta: cambio.de_cuenta,
+            entrada: None,
             antes: antes_de(actual, &mut copias),
             despues: Despues {
                 existe: true,
@@ -259,6 +275,7 @@ fn construir(
             ruta,
             accion: Accion::Borrar,
             de_cuenta: false,
+            entrada: None,
             antes: antes_de(contenido(&fichero)?, &mut copias),
             despues: Despues::NO_EXISTE,
         });
@@ -302,7 +319,7 @@ fn aplicar(diario: &Diario, fuentes: &[Option<PathBuf>]) -> Result<(), ErrorNucl
                 escribir_atomico(&destino, &bytes)?;
                 comprobar(&destino, sha)?;
             }
-            (Accion::Restaurar, _, _) => {
+            _ => {
                 return Err(ErrorNucleo::escritura(
                     &destino,
                     &"sin copia de la que restaurar",
