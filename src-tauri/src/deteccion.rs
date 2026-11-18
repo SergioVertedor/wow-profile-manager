@@ -3,6 +3,7 @@
 //! guardadas en Preferencias); el agente de Battle.net llega con #35.
 
 use crate::addons::{Addons, descubrir_addons};
+use crate::agente_battlenet;
 use crate::bpsv;
 use crate::descubrimiento::{Cuentas, descubrir};
 use crate::disco::{clave_de_ruta, leer_texto, subcarpetas};
@@ -17,6 +18,8 @@ use std::path::{Path, PathBuf};
 #[serde(rename_all = "lowercase")]
 pub enum Fuente {
     Registro,
+    /// `product.db` del agente de Battle.net (spec 020). Es una pista: lo que no se puede leer se calla.
+    Battlenet,
     Manual,
 }
 
@@ -113,35 +116,49 @@ const PREFIJO_INTERFAZ: &str = "SET engineSurveyPatch ";
 pub fn detectar_en_el_sistema(
     preferencias: Result<Preferencias, ErrorNucleo>,
 ) -> Result<Deteccion, ErrorNucleo> {
-    detectar_con(&rutas_del_registro(), preferencias)
+    detectar_con(&rutas_del_registro(), &rutas_del_agente(), preferencias)
 }
 
 fn detectar_con(
     registro: &[PathBuf],
+    agente: &[PathBuf],
     preferencias: Result<Preferencias, ErrorNucleo>,
 ) -> Result<Deteccion, ErrorNucleo> {
     let (preferencias, error) = match preferencias {
         Ok(preferencias) => (preferencias, None),
         Err(error) => (Preferencias::default(), Some(error)),
     };
-    let mut deteccion = detectar(registro, &preferencias)?;
+    let mut deteccion = detectar(registro, agente, &preferencias)?;
     deteccion.preferencias = error;
     Ok(deteccion)
 }
 
-/// Convierte las raíces del registro y las elegidas a mano en instalaciones, con los nombres que les ha puesto el
-/// usuario. Una carpeta solo es una instalación si tiene `.build.info` [V]; las rutas repetidas cuentan una vez (el
-/// registro gana).
+/// Las raíces que la app encuentra sola (registro y agente de Battle.net). Al añadir una carpeta a mano, estas ya se
+/// conocen.
+pub fn rutas_automaticas() -> Vec<PathBuf> {
+    let mut rutas = rutas_del_registro();
+    rutas.extend(rutas_del_agente());
+    rutas
+}
+
+/// Convierte las raíces del registro, del agente de Battle.net y las elegidas a mano en instalaciones, con los nombres
+/// que les ha puesto el usuario. Una carpeta solo es una instalación si tiene `.build.info` [V]; las rutas repetidas
+/// cuentan una vez y gana la primera fuente, en ese orden.
 pub fn detectar(
     registro: &[PathBuf],
+    agente: &[PathBuf],
     preferencias: &Preferencias,
 ) -> Result<Deteccion, ErrorNucleo> {
-    let candidatas = registro.iter().map(|raiz| (raiz, Fuente::Registro)).chain(
-        preferencias
-            .carpetas_manuales
-            .iter()
-            .map(|raiz| (raiz, Fuente::Manual)),
-    );
+    let candidatas = registro
+        .iter()
+        .map(|raiz| (raiz, Fuente::Registro))
+        .chain(agente.iter().map(|raiz| (raiz, Fuente::Battlenet)))
+        .chain(
+            preferencias
+                .carpetas_manuales
+                .iter()
+                .map(|raiz| (raiz, Fuente::Manual)),
+        );
     let mut vistas = HashSet::new();
     let mut deteccion = Deteccion {
         instalaciones: Vec::new(),
@@ -168,7 +185,8 @@ pub fn detectar(
                     nombre,
                 });
             }
-            (Ok(None), Fuente::Registro) => {}
+            // El agente es una pista: una ruta suya que no es una instalación o no se puede leer se calla.
+            (Ok(None), Fuente::Registro) | (Ok(None) | Err(_), Fuente::Battlenet) => {}
             (Err(error), Fuente::Registro) => return Err(error),
         }
     }
@@ -186,10 +204,11 @@ fn leer_instalacion(
     }
 }
 
-/// Añade a las preferencias una carpeta elegida a mano si es una instalación y no se conocía ya.
-pub fn dar_de_alta(raiz: &Path, registro: &[PathBuf], preferencias: &mut Preferencias) -> Alta {
+/// Añade a las preferencias una carpeta elegida a mano si es una instalación y no se conocía ya (`conocidas`: las que
+/// la app encuentra sola).
+pub fn dar_de_alta(raiz: &Path, conocidas: &[PathBuf], preferencias: &mut Preferencias) -> Alta {
     let clave = clave_de_ruta(raiz);
-    if registro.iter().any(|r| clave_de_ruta(r) == clave) || preferencias.es_manual(raiz) {
+    if conocidas.iter().any(|r| clave_de_ruta(r) == clave) || preferencias.es_manual(raiz) {
         return Alta::YaEstaba;
     }
     if !raiz.join(BUILD_INFO).is_file() {
@@ -285,6 +304,13 @@ fn interfaz_de(config_wtf: &str) -> Option<String> {
     })
 }
 
+/// `product.db` del agente de Battle.net, en `%ProgramData%` (spec 020). Sin la variable, la ruta de siempre.
+fn rutas_del_agente() -> Vec<PathBuf> {
+    let program_data = std::env::var_os("ProgramData")
+        .map_or_else(|| PathBuf::from(r"C:\ProgramData"), PathBuf::from);
+    agente_battlenet::raices(&program_data.join(r"Battle.net\Agent\product.db"))
+}
+
 /// Raíces que dice el registro: `Uninstall\World of Warcraft`, valor `InstallLocation` [V, en la vista de 32 bits
 /// (`WOW6432Node`)]. Se mira también la de 64 bits; lo repetido lo junta `detectar`.
 #[cfg(windows)]
@@ -343,7 +369,7 @@ mod tests {
     }
 
     fn solo_registro(raiz: &Path) -> Vec<Instalacion> {
-        detectar(&[raiz.to_path_buf()], &Preferencias::default())
+        detectar(&[raiz.to_path_buf()], &[], &Preferencias::default())
             .unwrap()
             .instalaciones
     }
@@ -399,7 +425,7 @@ mod tests {
 
         let registro = [tmp.path().to_path_buf(), otra_forma];
 
-        let deteccion = detectar(&registro, &Preferencias::default()).unwrap();
+        let deteccion = detectar(&registro, &[], &Preferencias::default()).unwrap();
         assert_eq!(deteccion.instalaciones.len(), 1);
     }
 
@@ -454,7 +480,7 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         instalacion_de_prueba(tmp.path());
         let json = serde_json::to_value(
-            detectar(&[tmp.path().to_path_buf()], &Preferencias::default()).unwrap(),
+            detectar(&[tmp.path().to_path_buf()], &[], &Preferencias::default()).unwrap(),
         )
         .unwrap();
         assert_eq!(json["noEncontradas"], serde_json::json!([]));
@@ -491,7 +517,7 @@ mod tests {
         preferencias.nombrar_instalacion(&manual, Some("Portátil".into()));
         preferencias.nombrar_cuenta(&manual, "_retail_", "1#1", Some("Alts".into()));
 
-        let deteccion = detectar(&[registrada], &preferencias).unwrap();
+        let deteccion = detectar(&[registrada], &[], &preferencias).unwrap();
 
         let resumen: Vec<_> = deteccion
             .instalaciones
@@ -519,7 +545,7 @@ mod tests {
         preferencias.anadir_carpeta(perdida.clone());
         preferencias.nombrar_instalacion(&perdida, Some("Casa".into()));
         // Del registro, una raíz sin `.build.info` no se lista: no es del usuario quitarla.
-        let deteccion = detectar(&[tmp.path().join("vacia")], &preferencias).unwrap();
+        let deteccion = detectar(&[tmp.path().join("vacia")], &[], &preferencias).unwrap();
 
         assert!(deteccion.instalaciones.is_empty());
         assert_eq!(
@@ -538,16 +564,53 @@ mod tests {
         let mut preferencias = Preferencias::default();
         preferencias.anadir_carpeta(tmp.path().to_path_buf());
 
-        let deteccion = detectar(&[tmp.path().to_path_buf()], &preferencias).unwrap();
+        let deteccion = detectar(&[tmp.path().to_path_buf()], &[], &preferencias).unwrap();
 
         assert_eq!(deteccion.instalaciones.len(), 1);
         assert_eq!(deteccion.instalaciones[0].fuente, Fuente::Registro);
     }
 
     #[test]
+    fn el_agente_es_la_segunda_fuente_y_se_junta_con_el_registro() {
+        let tmp = tempfile::tempdir().unwrap();
+        let comun = tmp.path().join("comun");
+        let solo_agente = tmp.path().join("agente");
+        for raiz in [&comun, &solo_agente] {
+            create_dir_all(raiz).unwrap();
+            instalacion_de_prueba(raiz);
+        }
+        // El agente escribe la ruta con `/`: tiene que casar con la del registro.
+        let comun_con_barras = PathBuf::from(comun.display().to_string().replace('\\', "/"));
+        let mut preferencias = Preferencias::default();
+        preferencias.anadir_carpeta(solo_agente.clone());
+
+        let deteccion = detectar(
+            std::slice::from_ref(&comun),
+            &[
+                comun_con_barras,
+                solo_agente.clone(),
+                tmp.path().join("no-es-wow"),
+            ],
+            &preferencias,
+        )
+        .unwrap();
+
+        let fuentes: Vec<_> = deteccion
+            .instalaciones
+            .iter()
+            .map(|i| (i.raiz.clone(), i.fuente))
+            .collect();
+        assert_eq!(
+            fuentes,
+            [(comun, Fuente::Registro), (solo_agente, Fuente::Battlenet)]
+        );
+        assert!(deteccion.no_encontradas.is_empty());
+    }
+
+    #[test]
     fn preferencias_ilegibles_se_detecta_igual_y_se_dice() {
         let error = ErrorNucleo::PreferenciasIlegibles { ruta: "x".into() };
-        let deteccion = detectar_con(&[], Err(error.clone())).unwrap();
+        let deteccion = detectar_con(&[], &[], Err(error.clone())).unwrap();
         assert_eq!(deteccion.preferencias, Some(error));
     }
 

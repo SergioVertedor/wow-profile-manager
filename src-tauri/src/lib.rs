@@ -2,6 +2,7 @@
 //! puerta de entrada desde la interfaz y no contienen lógica: delegan en módulos que se prueban sin Tauri.
 
 mod addons;
+mod agente_battlenet;
 mod bpsv;
 mod claves_personaje;
 mod descubrimiento;
@@ -64,8 +65,8 @@ async fn anadir_carpeta<R: tauri::Runtime>(
     else {
         return Ok(deteccion::Alta::Cancelada);
     };
-    let registro = deteccion::rutas_del_registro();
-    almacen.cambiar(|p| Ok(deteccion::dar_de_alta(&raiz, &registro, p)))
+    let conocidas = deteccion::rutas_automaticas();
+    almacen.cambiar(|p| Ok(deteccion::dar_de_alta(&raiz, &conocidas, p)))
 }
 
 /// Olvida una carpeta añadida a mano, con su nombre y los de sus cuentas. No toca la carpeta.
