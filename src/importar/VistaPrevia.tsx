@@ -1,5 +1,5 @@
 // Paso «Vista previa» (spec 024): el plan del núcleo tal cual, por personaje y en los grupos de `docs/flujos.md`. Pedirlo
-// no escribe nada. Aplicar llega en la entrega 2 de #63.
+// no escribe nada. Al pie, «Aplicar» (spec 025).
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TriangleAlert } from "lucide-react";
@@ -9,9 +9,11 @@ import {
   type FicheroPlan,
   type PedidoImportacion,
   type PlanPersonaje,
+  type ResultadoImportacion,
   type ResumenPaquete,
   type VistaPrevia as Plan,
 } from "../nucleo";
+import AplicarImportacion from "./AplicarImportacion";
 import { mensajeDeError } from "../textos/errores";
 import { tamanoLegible } from "../textos/formato";
 import { etiquetaDeCategoria } from "./etiquetas";
@@ -20,11 +22,18 @@ import css from "./Importar.module.css";
 
 type Estado = { tipo: "cargando" } | { tipo: "listo"; vista: Plan } | { tipo: "error"; error: unknown };
 
-type Props = Readonly<{ resumen: ResumenPaquete; destinos: readonly Destino[]; pedido: PedidoImportacion }>;
+type Props = Readonly<{
+  resumen: ResumenPaquete;
+  destinos: readonly Destino[];
+  pedido: PedidoImportacion;
+  alAplicar: (resultados: ResultadoImportacion[]) => void;
+}>;
 
-export default function VistaPrevia({ resumen, destinos, pedido }: Props) {
+export default function VistaPrevia({ resumen, destinos, pedido, alAplicar }: Props) {
   const { t } = useTranslation();
   const [estado, setEstado] = useState<Estado>({ tipo: "cargando" });
+  // Sube tras un fallo al aplicar: el plan se vuelve a pedir, porque el disco pudo cambiar.
+  const [vuelta, setVuelta] = useState(0);
   // El plan depende de lo elegido en los pasos anteriores: se compara por valor, no por identidad.
   const peticion = JSON.stringify({ personajes: destinos.map((d) => d.pedido), pedido });
 
@@ -40,7 +49,7 @@ export default function VistaPrevia({ resumen, destinos, pedido }: Props) {
     return () => {
       vigente = false;
     };
-  }, [resumen.sha256, peticion]);
+  }, [resumen.sha256, peticion, vuelta]);
 
   if (estado.tipo === "cargando") {
     return <p className={css.nota}>{t("importar.calculando")}</p>;
@@ -88,7 +97,18 @@ export default function VistaPrevia({ resumen, destinos, pedido }: Props) {
           vista={vista}
         />
       ))}
-      <p className={css.nota}>{t("importar.soloVistaPrevia")}</p>
+      <AplicarImportacion
+        resumen={resumen}
+        vista={vista}
+        destinos={destinos}
+        pedido={pedido}
+        nombreDe={nombreDe}
+        alAplicar={alAplicar}
+        alFallar={() => {
+          setEstado({ tipo: "cargando" });
+          setVuelta((v) => v + 1);
+        }}
+      />
     </div>
   );
 }

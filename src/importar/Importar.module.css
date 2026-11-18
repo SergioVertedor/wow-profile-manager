@@ -288,3 +288,26 @@
 .conflicto {
   color: var(--color-aviso);
 }
+
+/* Pie de la vista previa (spec 025): el motivo si no se puede aplicar y el botón, a la derecha. */
+.aplicar {
+  display: flex;
+  gap: var(--espacio-3);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.resultados {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  padding: 0;
+  list-style: none;
+}
+
+.resultados > li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  align-items: flex-start;
+}

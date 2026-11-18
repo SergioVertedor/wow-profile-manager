@@ -1,20 +1,29 @@
-// Vista «Importar» (spec 024, entrega 1 de #63): abrir un `.wowprofile`, elegir uno o varios personajes destino, elegir
-// qué se importa y ver la vista previa. Esta entrega no aplica: no escribe nada en el WTF.
+// Vista «Importar» (specs 024 y 025): abrir un `.wowprofile`, elegir uno o varios personajes destino, elegir qué se
+// importa, ver la vista previa, aplicar y ver el resultado, con «Deshacer» por personaje.
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FolderOpen } from "lucide-react";
 import { nombreDeProducto } from "../instalaciones/nombres";
 import type { UsoDeteccion } from "../instalaciones/useDeteccion";
-import { abrirPaquete, cerrarPaquete, type Deteccion, type ResumenPaquete } from "../nucleo";
+import {
+  abrirPaquete,
+  cerrarPaquete,
+  type Deteccion,
+  type ResultadoImportacion,
+  type ResumenPaquete,
+} from "../nucleo";
 import { mensajeDeError } from "../textos/errores";
 import { fechaLegible } from "../textos/formato";
 import { pedidoDe, seleccionPorDefecto, type Destino } from "./importacion";
 import css from "./Importar.module.css";
 import PasoDestino from "./PasoDestino";
 import PasoSeleccion from "./PasoSeleccion";
+import Resultado from "./Resultado";
 import VistaPrevia from "./VistaPrevia";
 
-export default function Importar({ estado }: UsoDeteccion) {
+type Props = UsoDeteccion & Readonly<{ irAHistorial: () => void }>;
+
+export default function Importar({ estado, irAHistorial }: Props) {
   const { t } = useTranslation();
   const [abierto, setAbierto] = useState<ResumenPaquete | null>(null);
   const [abriendo, setAbriendo] = useState(false);
@@ -61,12 +70,16 @@ export default function Importar({ estado }: UsoDeteccion) {
         </p>
       )}
       {abierto === null && <p className={css.nota}>{t("importar.explicacion")}</p>}
-      {abierto !== null && <Contenido resumen={abierto} estado={estado} />}
+      {abierto !== null && <Contenido resumen={abierto} estado={estado} irAHistorial={irAHistorial} />}
     </section>
   );
 }
 
-function Contenido({ resumen, estado }: Readonly<{ resumen: ResumenPaquete; estado: UsoDeteccion["estado"] }>) {
+function Contenido({
+  resumen,
+  estado,
+  irAHistorial,
+}: Readonly<{ resumen: ResumenPaquete; estado: UsoDeteccion["estado"]; irAHistorial: () => void }>) {
   const { t } = useTranslation();
   if (estado.tipo === "error") {
     return (
@@ -79,15 +92,20 @@ function Contenido({ resumen, estado }: Readonly<{ resumen: ResumenPaquete; esta
     return <p className={css.nota}>{t("personajes.buscando")}</p>;
   }
   // Abrir otro paquete empieza de cero.
-  return <Asistente key={resumen.sha256} resumen={resumen} deteccion={estado.deteccion} />;
+  return (
+    <Asistente key={resumen.sha256} resumen={resumen} deteccion={estado.deteccion} irAHistorial={irAHistorial} />
+  );
 }
 
-type Paso = "destino" | "seleccion" | "vistaPrevia";
-const PASOS: readonly Paso[] = ["destino", "seleccion", "vistaPrevia"];
+type Paso = "destino" | "seleccion" | "vistaPrevia" | "resultado";
+const PASOS: readonly Paso[] = ["destino", "seleccion", "vistaPrevia", "resultado"];
 
-function Asistente({ resumen, deteccion }: Readonly<{ resumen: ResumenPaquete; deteccion: Deteccion }>) {
+type PropsAsistente = Readonly<{ resumen: ResumenPaquete; deteccion: Deteccion; irAHistorial: () => void }>;
+
+function Asistente({ resumen, deteccion, irAHistorial }: PropsAsistente) {
   const { t } = useTranslation();
   const [paso, setPaso] = useState<Paso>("destino");
+  const [resultados, setResultados] = useState<ResultadoImportacion[]>([]);
   const [destinos, setDestinos] = useState<ReadonlyMap<string, Destino>>(new Map());
   const [seleccion, setSeleccion] = useState<ReadonlySet<string>>(() => seleccionPorDefecto(resumen));
   const [decisiones, setDecisiones] = useState<ReadonlyMap<string, boolean>>(new Map());
@@ -120,16 +138,34 @@ function Asistente({ resumen, deteccion }: Readonly<{ resumen: ResumenPaquete; d
           />
         )}
         {paso === "vistaPrevia" && (
-          <VistaPrevia resumen={resumen} destinos={lista} pedido={pedidoDe(resumen, seleccion, lista, decisiones)} />
+          <VistaPrevia
+            resumen={resumen}
+            destinos={lista}
+            pedido={pedidoDe(resumen, seleccion, lista, decisiones)}
+            alAplicar={(hechos) => {
+              setResultados(hechos);
+              setPaso("resultado");
+            }}
+          />
+        )}
+        {paso === "resultado" && (
+          <Resultado
+            resultados={resultados}
+            producto={resumen.manifiesto.origen.producto}
+            nombreDe={(cuenta, personaje) =>
+              lista.find((d) => d.pedido.cuenta === cuenta && d.pedido.personaje === personaje)?.nombre ?? personaje
+            }
+            irAHistorial={irAHistorial}
+          />
         )}
       </div>
       <nav className={css.botones} aria-label={t("importar.pasosEtiqueta")}>
-        {indice > 0 && (
+        {indice > 0 && paso !== "resultado" && (
           <button type="button" className={css.secundario} onClick={() => setPaso(PASOS[indice - 1])}>
             {t("importar.atras")}
           </button>
         )}
-        {indice < PASOS.length - 1 && (
+        {indice < PASOS.indexOf("vistaPrevia") && (
           <button
             type="button"
             className={css.boton}

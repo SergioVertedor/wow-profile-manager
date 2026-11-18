@@ -43,7 +43,26 @@ const ELIMINACION: Operacion = {
   ficheros: 54,
   bytes: 120_000,
   deshacible: true,
+  aMedias: false,
+  paquete: null,
   sinDevolver: [],
+};
+
+const IMPORTACION: Operacion = {
+  ...ELIMINACION,
+  id: "20261118-120000-00000003",
+  tipo: "importacion",
+  paquete: { nombre: "Druida feral", sha256: "a".repeat(64) },
+};
+
+const IMPORTACION_A_MEDIAS: Operacion = {
+  ...IMPORTACION,
+  id: "20261118-130000-00000004",
+  estado: "escribiendo",
+  terminada: null,
+  deshacible: false,
+  aMedias: true,
+  sinDevolver: [{ ruta: "C:\\WoW\\_forever_\\WTF\\Account\\1#1\\config-cache.wtf", copia: "C:\\datos\\copias\\0" }],
 };
 
 const SIN_RESTAURAR: Operacion = {
@@ -138,6 +157,7 @@ describe("Historial", () => {
         vuelven: 2,
         sobran: 1,
         cambian: ["WTF/Account/1#1/93/Goldberg-Soulreaper/AddOns.txt"],
+        deCuenta: [],
         huella: "h1",
       }),
       deshacer_operacion: () => "20261118-100000-00000002",
@@ -148,7 +168,7 @@ describe("Historial", () => {
     expect(within(dialogo).getByRole("heading", { name: "¿Deshacer la eliminación de Goldberg?" })).toBeTruthy();
     expect(
       within(dialogo).getByText(
-        "Vuelven 2 ficheros a la carpeta del personaje. Se quita 1 fichero que antes no estaba.",
+        "Vuelven 2 ficheros a como estaban. Se quita 1 fichero que antes no estaba.",
       ),
     ).toBeTruthy();
     expect(within(dialogo).getByText("WTF/Account/1#1/93/Goldberg-Soulreaper/AddOns.txt")).toBeTruthy();
@@ -167,7 +187,7 @@ describe("Historial", () => {
   it("si el plan ya no vale, lo dice en el diálogo", async () => {
     pintar({
       listar_operaciones: () => historial([ELIMINACION]),
-      plan_deshacer: () => ({ vuelven: 2, sobran: 0, cambian: [], huella: "h1" }),
+      plan_deshacer: () => ({ vuelven: 2, sobran: 0, cambian: [], deCuenta: [], huella: "h1" }),
       deshacer_operacion: () => Promise.reject({ codigo: "planCaducado", datos: {} }),
     });
     fireEvent.click(await screen.findByRole("button", { name: "Deshacer" }));
@@ -175,6 +195,50 @@ describe("Historial", () => {
     fireEvent.click(within(dialogo).getByRole("button", { name: "Deshacer" }));
 
     expect((await within(dialogo).findByRole("alert")).textContent).toMatch(/Algún fichero ha cambiado/);
+  });
+
+  it("una importación dice su perfil y al deshacerla avisa de lo que es de la cuenta", async () => {
+    pintar({
+      listar_operaciones: () => historial([IMPORTACION]),
+      plan_deshacer: () => ({
+        vuelven: 1,
+        sobran: 1,
+        cambian: ["WTF/Account/1#1/config-cache.wtf"],
+        deCuenta: ["WTF/Account/1#1/config-cache.wtf"],
+        huella: "h1",
+      }),
+    });
+
+    const fila = await screen.findByRole("listitem", { name: "Importación: Goldberg" });
+    expect(within(fila).getByText("Perfil «Druida feral»")).toBeTruthy();
+    fireEvent.click(within(fila).getByRole("button", { name: "Deshacer" }));
+    const dialogo = await screen.findByRole("dialog");
+    expect(within(dialogo).getByRole("heading", { name: "¿Deshacer la importación en Goldberg?" })).toBeTruthy();
+    expect(within(dialogo).getByText(/Estos son de la cuenta/)).toBeTruthy();
+  });
+
+  it("una importación a medias no se deshace ni se borra: se restaura al confirmarlo", async () => {
+    const { llamadas, alCambiarWtf } = pintar({
+      listar_operaciones: () => historial([IMPORTACION_A_MEDIAS]),
+      restaurar_operacion: () => null,
+    });
+
+    const fila = await screen.findByRole("listitem", { name: "Importación: Goldberg" });
+    expect(within(fila).getByText("A medias")).toBeTruthy();
+    expect(within(fila).getByRole("alert").textContent).toMatch(/Se cortó a mitad de escribir/);
+    expect(within(fila).queryByRole("button", { name: "Deshacer" })).toBeNull();
+    expect(within(fila).queryByRole("button", { name: "Borrar" })).toBeNull();
+    fireEvent.click(within(fila).getByRole("button", { name: "Restaurar" }));
+    expect(veces(llamadas, "restaurar_operacion")).toBe(0);
+
+    const dialogo = await screen.findByRole("dialog");
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Restaurar" }));
+    expect((await within(dialogo).findByRole("status")).textContent).toBe("Hecho: todo está como antes de importar.");
+    expect(llamadas.find((l) => l.comando === "restaurar_operacion")?.argumentos).toEqual({
+      id: IMPORTACION_A_MEDIAS.id,
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Cerrar" }));
+    expect(alCambiarWtf).toHaveBeenCalledOnce();
   });
 
   it("borrar una sin restaurar exige confirmar que se restauró a mano", async () => {

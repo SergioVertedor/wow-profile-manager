@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { I18nextProvider } from "react-i18next";
@@ -6,6 +6,17 @@ import type { UsoDeteccion } from "../instalaciones/useDeteccion";
 import type { Deteccion, ResumenPaquete, VistaPrevia } from "../nucleo";
 import { crearTextos } from "../textos";
 import Importar from "./Importar";
+
+// jsdom no implementa el diálogo modal: lo justo para abrirlo y cerrarlo (con su evento `close`, como el navegador).
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+    this.open = true;
+  };
+  HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
+    this.open = false;
+    this.dispatchEvent(new Event("close"));
+  };
+});
 
 afterEach(() => {
   cleanup();
@@ -68,6 +79,7 @@ const RESUMEN: ResumenPaquete = {
 const VISTA: VistaPrevia = {
   juegoAbierto: true,
   interfazDestino: 16002,
+  huella: "h".repeat(64),
   plan: {
     incompatibles: [],
     personajes: [
@@ -107,12 +119,13 @@ function pintar(respuestas: Record<string, () => unknown>) {
     llamadas.push({ comando, argumentos });
     return respuestas[comando]?.();
   });
+  const irAHistorial = vi.fn();
   const vista = render(
     <I18nextProvider i18n={crearTextos("es")}>
-      <Importar {...USO} />
+      <Importar {...USO} irAHistorial={irAHistorial} />
     </I18nextProvider>,
   );
-  return { llamadas, vista };
+  return { llamadas, vista, irAHistorial };
 }
 
 describe("Importar", () => {
@@ -144,7 +157,8 @@ describe("Importar", () => {
     expect(screen.getByText(/WoW está abierto/)).toBeTruthy();
     expect(screen.getByText("Macros de la cuenta: decide si se aplica en esta cuenta.")).toBeTruthy();
     expect(screen.getByText("Viejo → Foco", { exact: false })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Aplicar/ })).toBeNull();
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Aplicar…" }).disabled).toBe(true);
+    expect(screen.getByText("Cierra WoW para poder aplicar.")).toBeTruthy();
 
     const plan = llamadas.find((l) => l.comando === "plan_importacion");
     expect(plan?.argumentos).toEqual({
@@ -178,6 +192,63 @@ describe("Importar", () => {
       seleccion: ["macros", "macros-cuenta"],
       cuentas: [{ cuenta: "1#1", entrada: "macros-cuenta", aceptar: false }],
     });
+  });
+
+  it("aplica con la huella de la vista previa y enseña el resultado con «Deshacer»", async () => {
+    const lista: VistaPrevia = {
+      ...VISTA,
+      juegoAbierto: false,
+      plan: { ...VISTA.plan, personajes: VISTA.plan.personajes.map((p) => ({ ...p, conflictos: [] })) },
+    };
+    const { llamadas, irAHistorial } = pintar({
+      abrir_paquete: () => ({ resultado: "abierta", resumen: RESUMEN }),
+      plan_importacion: () => lista,
+      aplicar_importacion: () => [
+        { cuenta: "1#1", reino: "93", personaje: "Goldberg-Joestar", resultado: "completa", operacion: "op1", ficheros: 1 },
+      ],
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Goldberg Joestar/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Aplicar…" }));
+    const dialogo = screen.getByRole("dialog");
+    expect(within(dialogo).getByText("Goldberg Joestar: 1 fichero")).toBeTruthy();
+    expect(llamadas.some((l) => l.comando === "aplicar_importacion")).toBe(false);
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Aplicar" }));
+
+    expect(await screen.findByText("Hecho: 1 fichero escrito.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Deshacer" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Atrás" })).toBeNull();
+    const aplicar = llamadas.find((l) => l.comando === "aplicar_importacion");
+    expect(aplicar?.argumentos).toMatchObject({ sha256: RESUMEN.sha256, huella: VISTA.huella });
+    fireEvent.click(screen.getByRole("button", { name: "Ver historial" }));
+    expect(irAHistorial).toHaveBeenCalledOnce();
+  });
+
+  it("si aplicar falla, lo dice y vuelve a pedir la vista previa", async () => {
+    const lista: VistaPrevia = {
+      ...VISTA,
+      juegoAbierto: false,
+      plan: { ...VISTA.plan, personajes: VISTA.plan.personajes.map((p) => ({ ...p, conflictos: [] })) },
+    };
+    const { llamadas } = pintar({
+      abrir_paquete: () => ({ resultado: "abierta", resumen: RESUMEN }),
+      plan_importacion: () => lista,
+      aplicar_importacion: () => Promise.reject({ codigo: "planCaducado", datos: {} }),
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Goldberg Joestar/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Aplicar…" }));
+    const dialogo = screen.getByRole("dialog");
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Aplicar" }));
+
+    expect((await within(dialogo).findByRole("alert")).textContent).toMatch(/Algún fichero ha cambiado/);
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Cancelar" }));
+    await waitFor(() => expect(llamadas.filter((l) => l.comando === "plan_importacion")).toHaveLength(2));
   });
 
   it("dice por qué un paquete no vale y no deja nada abierto", async () => {

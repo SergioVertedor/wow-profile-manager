@@ -75,7 +75,7 @@
     "operacionFallidaRestaurada": "No se pudo terminar y se ha dejado todo como estaba (operación {{id}}): {{detalle}}",
     "enlaceNoAdmitido": "Hay un enlace o una unión de carpetas en {{ruta}}. No se sigue: podría borrar ficheros fuera de WTF. Quítalo a mano si quieres eliminar la carpeta.",
     "operacionNoEncontrada": "Esa operación ya no está en el historial. Vuelve a cargarlo.",
-    "noDeshacible": "Esta operación ya no se puede deshacer: solo se deshace una eliminación terminada que no esté deshecha.",
+    "noDeshacible": "Esta operación ya no se puede deshacer: solo se deshace una eliminación o una importación terminada que no esté deshecha.",
     "operacionPosterior": "Antes hay que deshacer la operación {{id}}: es más reciente y tocó los mismos ficheros.",
     "juegoDistinto": "En {{raiz}} ya no está la misma versión del juego (se movió, se borró o se reinstaló). No se ha escrito nada y la copia sigue en la operación.",
     "planCaducado": "Algún fichero ha cambiado desde que se mostró qué iba a pasar. No se ha escrito nada: vuelve a intentarlo para verlo de nuevo.",
@@ -89,7 +89,11 @@
     "paqueteInvalido": "El fichero no es un perfil válido: {{motivo}}",
     "versionPaquete": "Este perfil es de una versión más nueva del formato ({{version}}). Actualiza la app para importarlo.",
     "paqueteNoAbierto": "El perfil ya no está abierto. Vuelve a abrirlo.",
-    "destinosNoValidos": "Los personajes elegidos tienen que ser de una misma instalación y de la versión del juego del perfil."
+    "destinosNoValidos": "Los personajes elegidos tienen que ser de una misma instalación y de la versión del juego del perfil.",
+    "noRestaurable": "Esta operación no se restaura desde aquí: solo una importación que se quedó a medias.",
+    "operacionAMedias": "Una importación se quedó a medias (operación {{id}}). Restáurala desde el Historial antes de hacer nada más.",
+    "paqueteCambiado": "El fichero del perfil ya no está donde lo abriste o ha cambiado. Vuelve a abrirlo.",
+    "conflictosSinDecidir": "Falta decidir lo que afecta a toda la cuenta."
   },
   "versionApp": "Versión {{version}}",
   "instalaciones": {
@@ -142,7 +146,9 @@
     "pendientes_one": "Hay una operación a medias, pero WoW está abierto. Cierra el juego y vuelve a abrir la app para terminarla.",
     "pendientes_other": "Hay {{count}} operaciones a medias, pero WoW está abierto. Cierra el juego y vuelve a abrir la app para terminarlas.",
     "ilegibles_one": "Hay una operación cuyo diario no se entiende. No se ha tocado.",
-    "ilegibles_other": "Hay {{count}} operaciones cuyo diario no se entiende. No se han tocado."
+    "ilegibles_other": "Hay {{count}} operaciones cuyo diario no se entiende. No se han tocado.",
+    "aMedias_one": "Una importación se cortó a mitad y no se ha tocado. Restáurala desde el Historial: hasta entonces no se puede hacer ninguna otra operación.",
+    "aMedias_other": "{{count}} importaciones se cortaron a mitad y no se han tocado. Restáuralas desde el Historial: hasta entonces no se puede hacer ninguna otra operación."
   },
   "historial": {
     "titulo": "Historial",
@@ -177,22 +183,29 @@
     "ilegibles_other": "Hay {{count}} operaciones cuyo diario no se entiende. No se tocan; puedes abrir sus carpetas.",
     "abrir": "Abrir carpeta",
     "deshacer": "Deshacer",
-    "borrar": "Borrar"
+    "borrar": "Borrar",
+    "perfil": "Perfil «{{nombre}}»",
+    "aMedias": "Se cortó a mitad de escribir. «Restaurar» deja estos ficheros como estaban antes de importar:",
+    "restaurar": "Restaurar"
   },
   "deshacer": {
-    "titulo": "¿Deshacer la eliminación de {{nombre}}?",
-    "contenido_one": "Vuelve {{count}} fichero a la carpeta del personaje.",
-    "contenido_other": "Vuelven {{count}} ficheros a la carpeta del personaje.",
-    "nada": "La carpeta ya está como antes de eliminarla: no se escribe nada, solo se marca como deshecha.",
-    "aviso": "El juego ya ha vuelto a crear la carpeta. Estos ficheros se sustituyen o se quitan, y lo que el juego guardó en ellos desde entonces se pierde:",
+    "titulo": {
+      "eliminacion": "¿Deshacer la eliminación de {{nombre}}?",
+      "importacion": "¿Deshacer la importación en {{nombre}}?"
+    },
+    "contenido_one": "Vuelve {{count}} fichero a como estaba.",
+    "contenido_other": "Vuelven {{count}} ficheros a como estaban.",
+    "nada": "Todo está ya como antes: no se escribe nada, solo se marca como deshecha.",
+    "aviso": "Estos ficheros se sustituyen o se quitan. Si el juego guardó algo en ellos desde entonces, se pierde:",
     "copia": "Antes de escribir se guarda una copia de lo que hay ahora, en una operación nueva del historial.",
     "cancelar": "Cancelar",
     "confirmar": "Deshacer",
     "deshaciendo": "Deshaciendo…",
     "cerrar": "Cerrar",
-    "hecho": "Hecho: la carpeta vuelve a estar como antes de eliminarla (operación {{id}}).",
+    "hecho": "Hecho: todo vuelve a estar como antes (operación {{id}}).",
     "sobran_one": "Se quita {{count}} fichero que antes no estaba.",
-    "sobran_other": "Se quitan {{count}} ficheros que antes no estaban."
+    "sobran_other": "Se quitan {{count}} ficheros que antes no estaban.",
+    "deCuenta": "Estos son de la cuenta: cambian para todos sus personajes:"
   },
   "borrar": {
     "titulo": "¿Borrar la operación {{id}}?",
@@ -257,7 +270,8 @@
     "pasos": {
       "destino": "Destino",
       "seleccion": "Qué se importa",
-      "vistaPrevia": "Vista previa"
+      "vistaPrevia": "Vista previa",
+      "resultado": "Resultado"
     },
     "atras": "Atrás",
     "siguiente": "Siguiente",
@@ -299,10 +313,44 @@
       "cambiado": "Cambia",
       "quitado": "Se quita"
     },
-    "soloVistaPrevia": "Esta versión solo enseña la vista previa: todavía no aplica la importación.",
     "otrasCategorias": {
       "config-addon": "Configuración de addons",
       "modo-edicion": "Modo Edición"
-    }
+    },
+    "aplicarImportacion": "Aplicar…",
+    "noSePuedeAplicar": {
+      "juegoAbierto": "Cierra WoW para poder aplicar.",
+      "conflictos": "Decide antes lo que afecta a toda la cuenta.",
+      "nada": "No hay nada que escribir: todo está ya igual."
+    },
+    "confirmar": {
+      "titulo": "¿Aplicar «{{perfil}}»?",
+      "personaje_one": "{{nombre}}: {{count}} fichero",
+      "personaje_other": "{{nombre}}: {{count}} ficheros",
+      "cuenta": "Incluye ficheros de la cuenta: cambian para todos sus personajes.",
+      "copia": "Antes de escribir se guarda una copia de cada fichero que cambia. Cada personaje queda en su propia línea del historial y se deshace por separado.",
+      "cancelar": "Cancelar",
+      "aplicar": "Aplicar",
+      "aplicando": "Aplicando…"
+    },
+    "resultado": {
+      "completa_one": "Hecho: {{count}} fichero escrito.",
+      "completa_other": "Hecho: {{count}} ficheros escritos.",
+      "sinCambios": "Nada que escribir: ya estaba igual.",
+      "fallida": "No se aplicó.",
+      "noAplicada": "No se aplicó: falló un personaje anterior.",
+      "deshecha": "Deshecha."
+    },
+    "siguientePaso": "Entra al juego con cada personaje y comprueba que todo está bien. Las habilidades de los botones las colocas tú: el perfil trae la disposición y las teclas, no lo que hay en cada botón.",
+    "verHistorial": "Ver historial"
+  },
+  "restaurar": {
+    "titulo": "¿Restaurar la importación en {{nombre}}?",
+    "explicacion": "Los ficheros que llegó a escribir vuelven a como estaban antes de importar, desde sus copias. Lo que no llegó a escribir no se toca.",
+    "cancelar": "Cancelar",
+    "confirmar": "Restaurar",
+    "restaurando": "Restaurando…",
+    "cerrar": "Cerrar",
+    "hecho": "Hecho: todo está como antes de importar."
   }
 }
