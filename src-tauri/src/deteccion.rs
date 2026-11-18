@@ -101,8 +101,8 @@ pub struct VersionJuego {
     pub soportada: bool,
     /// Columna `Version` de `.build.info` en la fila del producto.
     pub build: Option<String>,
-    /// `engineSurveyPatch` de `WTF/Config.wtf`. Sin él, la versión no se puede exportar todavía.
-    pub interfaz: Option<String>,
+    /// `engineSurveyPatch` de `WTF/Config.wtf`, como número (el formato lo pide entero). Sin él no se puede exportar.
+    pub interfaz: Option<u32>,
     /// Vacío si la versión no está soportada: no se mira dentro.
     pub cuentas: Cuentas,
     /// Vacío si la versión no está soportada.
@@ -259,7 +259,7 @@ fn leer_version(
     let (cuentas, addons, interfaz) = match soportado {
         Some(p) => (
             descubrir(&wtf.join(CARPETA_ACCOUNT), p)?,
-            descubrir_addons(&ruta.join(CARPETA_INTERFACE).join(CARPETA_ADDONS), p)?,
+            addons_de(ruta, p)?,
             leer_texto(&wtf.join(CONFIG_WTF))?.and_then(|t| interfaz_de(&t)),
         ),
         None => (
@@ -301,15 +301,38 @@ fn build_de(build_info: &str, producto: &str) -> Option<String> {
         .and_then(|fila| fila.get("Version").map(|v| (*v).to_owned()))
 }
 
-/// Valor de `SET engineSurveyPatch "16001"` en `Config.wtf` [V].
-fn interfaz_de(config_wtf: &str) -> Option<String> {
+/// Valor de `SET engineSurveyPatch "16001"` en `Config.wtf` [V]. Si no es un número, no hay interfaz.
+fn interfaz_de(config_wtf: &str) -> Option<u32> {
     config_wtf.lines().find_map(|linea| {
         linea
             .trim()
             .strip_prefix(PREFIJO_INTERFAZ)
-            .map(|valor| valor.trim().trim_matches('"').to_owned())
-            .filter(|valor| !valor.is_empty())
+            .and_then(|valor| valor.trim().trim_matches('"').parse().ok())
     })
+}
+
+/// Los addons instalados de una carpeta de versión (`<raíz>/<versión>`).
+pub fn addons_de(raiz_version: &Path, producto: Producto) -> Result<Addons, ErrorNucleo> {
+    descubrir_addons(
+        &raiz_version.join(CARPETA_INTERFACE).join(CARPETA_ADDONS),
+        producto,
+    )
+}
+
+/// Build e interfaz de una carpeta de versión (`<raíz>/<versión>`), para el `origen` de un paquete.
+pub fn origen_de(
+    raiz_version: &Path,
+    producto: Producto,
+) -> Result<(Option<String>, Option<u32>), ErrorNucleo> {
+    let build = match raiz_version.parent() {
+        Some(raiz) => {
+            leer_texto(&raiz.join(BUILD_INFO))?.and_then(|t| build_de(&t, producto.codigo()))
+        }
+        None => None,
+    };
+    let interfaz =
+        leer_texto(&raiz_version.join(CARPETA_WTF).join(CONFIG_WTF))?.and_then(|t| interfaz_de(&t));
+    Ok((build, interfaz))
 }
 
 /// `product.db` del agente de Battle.net, en `%ProgramData%` (spec 020). Sin la variable, la ruta de siempre.
@@ -491,15 +514,15 @@ mod tests {
                     v.carpeta.as_str(),
                     v.producto.as_str(),
                     v.build.as_deref(),
-                    v.interfaz.as_deref(),
+                    v.interfaz,
                 )
             })
             .collect();
         assert_eq!(
             resumen,
             [
-                ("_forever_", "wowf", Some("1.60.1.70938"), Some("16001")),
-                ("_retail_", "wow", Some("12.1.5.70783"), Some("120105")),
+                ("_forever_", "wowf", Some("1.60.1.70938"), Some(16001)),
+                ("_retail_", "wow", Some("12.1.5.70783"), Some(120105)),
             ]
         );
         assert!(
@@ -563,12 +586,18 @@ mod tests {
 
     #[test]
     fn interfaz_solo_si_config_wtf_la_trae() {
-        assert_eq!(
-            interfaz_de("SET engineSurveyPatch \"16001\""),
-            Some("16001".into())
-        );
+        assert_eq!(interfaz_de("SET engineSurveyPatch \"16001\""), Some(16001));
         assert_eq!(interfaz_de("SET locale \"esES\""), None);
         assert_eq!(interfaz_de("SET engineSurveyPatch \"\""), None);
+        assert_eq!(interfaz_de("SET engineSurveyPatch \"16.0\""), None);
+    }
+
+    #[test]
+    fn origen_de_una_version_trae_build_e_interfaz() {
+        let tmp = tempfile::tempdir().unwrap();
+        instalacion_de_prueba(tmp.path());
+        let origen = origen_de(&tmp.path().join("_forever_"), Producto::Forever).unwrap();
+        assert_eq!(origen, (Some("1.60.1.70938".into()), Some(16001)));
     }
 
     #[test]

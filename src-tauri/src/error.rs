@@ -44,6 +44,14 @@ pub enum ErrorNucleo {
     CarpetaNoAbierta { ruta: String, detalle: String },
     /// `preferencias.json` existe pero no se entiende. No se sobrescribe: arreglarlo o borrarlo es del usuario.
     PreferenciasIlegibles { ruta: String },
+    /// No se sabe la versión del cliente o su número de interfaz (`.build.info`, `Config.wtf`): el paquete los exige.
+    ExportacionSinVersion {},
+    /// El nombre del perfil está vacío o pasa de 80 caracteres, o la descripción pasa de 500.
+    PerfilNoValido {},
+    /// No se ha marcado ninguna pieza que exista.
+    SeleccionVacia {},
+    /// Se pasa de los límites del formato (256 piezas, 32 MiB por pieza, 128 MiB en total).
+    PaqueteDemasiadoGrande {},
     /// Un nombre propio demasiado largo o con caracteres de control.
     NombreNoValido { maximo: usize },
 }

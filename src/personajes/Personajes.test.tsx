@@ -39,7 +39,7 @@ const FOREVER: VersionJuego = {
   producto: "wowf",
   soportada: true,
   build: "1.60.1.70938",
-  interfaz: "16001",
+  interfaz: 16001,
   cuentas: {
     ignoradas: 1,
     cuentas: [

@@ -586,7 +586,7 @@ fn ruta_segura(raiz_version: &Path, relativa: &str) -> Option<PathBuf> {
 
 /// Un nombre que Windows usa tal cual (`docs/operacion.schema.json`, `segmento`): sin punto ni espacio al final (Win32
 /// los recorta: `.. ` sería `..`) y sin nombre de dispositivo (`CON`, `NUL`, `COM1`…), con o sin extensión.
-fn segmento_literal(nombre: &str) -> bool {
+pub(crate) fn segmento_literal(nombre: &str) -> bool {
     const DISPOSITIVOS: [&str; 4] = ["CON", "PRN", "AUX", "NUL"];
     const NUMERADOS: [&str; 2] = ["COM", "LPT"];
     let base = nombre
@@ -679,7 +679,7 @@ fn fallida(diario: &Diario, restaurada: bool, error: &ErrorNucleo) -> ErrorNucle
     }
 }
 
-fn sha256(bytes: &[u8]) -> String {
+pub(crate) fn sha256(bytes: &[u8]) -> String {
     Sha256::digest(bytes)
         .iter()
         .map(|b| format!("{b:02x}"))
@@ -713,7 +713,7 @@ fn nuevo_id() -> String {
 }
 
 /// RFC 3339 en UTC, a segundos (`2026-11-18T09:35:49Z`).
-fn ahora_rfc3339() -> String {
+pub(crate) fn ahora_rfc3339() -> String {
     let ahora = time::OffsetDateTime::now_utc();
     format!(
         "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",

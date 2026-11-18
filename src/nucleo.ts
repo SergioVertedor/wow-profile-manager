@@ -38,7 +38,11 @@ export type ErrorNucleo =
   | { codigo: "planCaducado"; datos: Record<string, never> }
   | { codigo: "operacionEnCurso"; datos: Record<string, never> }
   | { codigo: "restauracionManualSinConfirmar"; datos: Record<string, never> }
-  | { codigo: "carpetaNoAbierta"; datos: { ruta: string; detalle: string } };
+  | { codigo: "carpetaNoAbierta"; datos: { ruta: string; detalle: string } }
+  | { codigo: "exportacionSinVersion"; datos: Record<string, never> }
+  | { codigo: "perfilNoValido"; datos: Record<string, never> }
+  | { codigo: "seleccionVacia"; datos: Record<string, never> }
+  | { codigo: "paqueteDemasiadoGrande"; datos: Record<string, never> };
 
 export function esErrorNucleo(valor: unknown): valor is ErrorNucleo {
   return typeof valor === "object" && valor !== null && "codigo" in valor && "datos" in valor;
@@ -71,7 +75,8 @@ export interface VersionJuego {
   producto: string;
   soportada: boolean;
   build: string | null;
-  interfaz: string | null;
+  /** Número de interfaz (`engineSurveyPatch`); sin él no se puede exportar. */
+  interfaz: number | null;
   cuentas: { cuentas: Cuenta[]; ignoradas: number };
   addons: { addons: Addon[]; ignoradas: number };
 }
@@ -153,6 +158,53 @@ export function pedirResumenEliminacion(personaje: PersonajePedido): Promise<Res
 /** Saca la carpeta del personaje del `WTF` y guarda una copia como operación (spec 021). Devuelve su id. */
 export function eliminarPersonaje(personaje: PersonajePedido): Promise<string> {
   return invoke<string>("eliminar_personaje", { personaje });
+}
+
+/** Categorías de un `.wowprofile` que exporta la entrega 1 (`docs/formato-wowprofile.md`). */
+export type Categoria =
+  | "macros"
+  | "teclas"
+  | "teclas-clic"
+  | "opciones"
+  | "chat"
+  | "ventanas"
+  | "marcos-banda"
+  | "addons-activos";
+
+/** Una pieza que se puede exportar (`PiezaPropuesta` en `src-tauri/src/exportacion.rs`). */
+export interface PiezaPropuesta {
+  id: string;
+  categoria: Categoria;
+  /** Dónde estaba en el origen. */
+  ambito: "personaje" | "cuenta";
+  bytes: number;
+  /** Líneas que se quitan al filtrar (estado, addons no instalados). */
+  quitadas: number;
+}
+
+/** Lo que se puede exportar del personaje ahora mismo. */
+export interface PropuestaExportacion {
+  piezas: PiezaPropuesta[];
+  /** Ids de las piezas que ya traen el texto reservado `@@WOWPROFILE:`: no viajan. */
+  apartadas: string[];
+  juegoAbierto: boolean;
+}
+
+export function pedirPropuestaExportacion(personaje: PersonajePedido): Promise<PropuestaExportacion> {
+  return invoke<PropuestaExportacion>("propuesta_exportacion", { personaje });
+}
+
+/** Qué pasó al exportar: el usuario cerró el diálogo de guardar, o el nombre del fichero guardado. */
+export type Exportacion = { resultado: "cancelada" } | { resultado: "exportada"; fichero: string };
+
+/** Arma el `.wowprofile` y abre el diálogo de guardar desde el núcleo: la interfaz no elige rutas. */
+export function exportarPersonaje(
+  personaje: PersonajePedido,
+  seleccion: string[],
+  nombre: string,
+  descripcion: string,
+): Promise<Exportacion> {
+  return invoke<Exportacion>("exportar_personaje", { personaje, seleccion, nombre, descripcion });
 }
 
 /** Qué hizo el núcleo al arrancar con las operaciones que se cortaron (`Recuperacion` en `operaciones.rs`). */

@@ -11,9 +11,11 @@ mod disco;
 mod enlaces;
 mod error;
 mod escritura;
+mod exportacion;
 mod idioma;
 mod info;
 mod operaciones;
+mod paquetes;
 mod preferencias;
 mod sistema;
 mod toc;
@@ -208,6 +210,68 @@ async fn abrir_carpeta_operacion(
     sistema::abrir_carpeta(&operaciones.carpeta_de(&id)?)
 }
 
+/// Qué se puede exportar de un personaje ahora mismo (spec 023). Solo lee.
+#[tauri::command]
+async fn propuesta_exportacion(
+    personaje: deteccion::PersonajePedido,
+    almacen: State<'_, Almacen>,
+) -> Result<exportacion::Propuesta, error::ErrorNucleo> {
+    exportacion::propuesta_de(&ubicar(&personaje, &almacen)?, sistema::juego_en_marcha())
+}
+
+/// Qué pasó al exportar.
+#[derive(serde::Serialize)]
+#[serde(tag = "resultado", rename_all = "camelCase")]
+enum Exportacion {
+    /// El usuario cerró el diálogo de guardar sin elegir.
+    Cancelada,
+    /// Nombre del fichero guardado (sin la carpeta).
+    Exportada { fichero: String },
+}
+
+/// Arma el `.wowprofile` con lo pedido y lo guarda donde elija el usuario en el diálogo de Windows, que se abre desde
+/// aquí: la interfaz no elige rutas. Se valida antes de abrir el diálogo. No escribe en `WTF`.
+#[tauri::command]
+async fn exportar_personaje<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    personaje: deteccion::PersonajePedido,
+    seleccion: Vec<String>,
+    nombre: String,
+    descripcion: String,
+    almacen: State<'_, Almacen>,
+) -> Result<Exportacion, error::ErrorNucleo> {
+    let pedido = exportacion::Pedido {
+        seleccion,
+        nombre,
+        descripcion,
+    };
+    let paquete = exportacion::paquete(&ubicar(&personaje, &almacen)?, &pedido)?;
+    let mut selector = app
+        .dialog()
+        .file()
+        .set_file_name(exportacion::nombre_de_fichero(
+            &paquete.manifiesto.perfil.nombre,
+        ))
+        .add_filter("WoW Profile", &[exportacion::EXTENSION]);
+    if let Some(ventana) = app.get_webview_window(VENTANA_PRINCIPAL) {
+        selector = selector.set_parent(&ventana);
+    }
+    let Some(ruta) = selector
+        .blocking_save_file()
+        .and_then(|c| c.into_path().ok())
+    else {
+        return Ok(Exportacion::Cancelada);
+    };
+    let ruta = exportacion::con_extension(ruta);
+    paquete.guardar(&ruta)?;
+    let fichero = ruta
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
+    Ok(Exportacion::Exportada { fichero })
+}
+
 /// Abre en el navegador uno de los enlaces conocidos. La interfaz no puede pasar una URL: solo el nombre del enlace.
 #[tauri::command]
 fn abrir_enlace(enlace: enlaces::Enlace) -> Result<(), error::ErrorNucleo> {
@@ -235,6 +299,8 @@ pub fn con_comandos<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Bui
         deshacer_operacion,
         borrar_operacion,
         abrir_carpeta_operacion,
+        propuesta_exportacion,
+        exportar_personaje,
         abrir_enlace
     ])
 }
