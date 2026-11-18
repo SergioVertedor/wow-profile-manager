@@ -21,7 +21,7 @@ import {
   type EntradaVersion,
 } from "./seleccion";
 
-export default function Personajes({ estado, actualizar }: UsoDeteccion) {
+export default function Personajes({ estado, actualizar, recargar }: UsoDeteccion) {
   const { t } = useTranslation();
 
   if (estado.tipo !== "listo") {
@@ -37,12 +37,16 @@ export default function Personajes({ estado, actualizar }: UsoDeteccion) {
       </section>
     );
   }
-  return <Seleccion deteccion={estado.deteccion} actualizar={actualizar} />;
+  return <Seleccion deteccion={estado.deteccion} actualizar={actualizar} recargar={recargar} />;
 }
 
-type PropsSeleccion = Readonly<{ deteccion: Deteccion; actualizar: UsoDeteccion["actualizar"] }>;
+type PropsSeleccion = Readonly<{
+  deteccion: Deteccion;
+  actualizar: UsoDeteccion["actualizar"];
+  recargar: UsoDeteccion["recargar"];
+}>;
 
-function Seleccion({ deteccion, actualizar }: PropsSeleccion) {
+function Seleccion({ deteccion, actualizar, recargar }: PropsSeleccion) {
   const { t } = useTranslation();
   const [eleccion, setEleccion] = useState<Eleccion>(SIN_ELEGIR);
   const entradas = entradasDeVersion(deteccion.instalaciones);
@@ -88,6 +92,8 @@ function Seleccion({ deteccion, actualizar }: PropsSeleccion) {
       <Avisos version={entrada.version} />
       {cuenta !== null && (
         <Cuerpo
+          raiz={entrada.instalacion.raiz}
+          recargar={recargar}
           instalacion={instalacion}
           version={entrada.version}
           cuenta={cuenta}
@@ -102,6 +108,8 @@ function Seleccion({ deteccion, actualizar }: PropsSeleccion) {
 }
 
 function Cuerpo({
+  raiz,
+  recargar,
   instalacion,
   version,
   cuenta,
@@ -109,6 +117,8 @@ function Cuerpo({
   cambiar,
   renombrarCuenta,
 }: Readonly<{
+  raiz: string;
+  recargar: () => Promise<void>;
   instalacion: string;
   version: VersionJuego;
   cuenta: Cuenta;
@@ -131,6 +141,9 @@ function Cuerpo({
         version={version}
         cuenta={etiquetaCuenta(cuenta.carpeta)}
         instalacion={instalacion}
+        raiz={raiz}
+        carpetaCuenta={cuenta.carpeta}
+        alEliminar={recargar}
       />
       <Plantel
         key={cuenta.carpeta}

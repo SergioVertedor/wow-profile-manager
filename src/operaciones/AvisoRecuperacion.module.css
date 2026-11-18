@@ -1,0 +1,29 @@
+.avisos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-4);
+}
+
+.aviso {
+  display: flex;
+  gap: var(--espacio-3);
+  align-items: flex-start;
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--aviso-borde);
+  border-radius: var(--radio-m);
+  background: var(--aviso-velo);
+  color: var(--color-texto);
+  font-size: var(--texto-control);
+}
+
+.aviso svg {
+  flex: none;
+  margin-top: 0.15em;
+  color: var(--color-aviso);
+}
+
+.alerta {
+  margin-bottom: var(--espacio-4);
+  color: var(--color-alerta);
+}

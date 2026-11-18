@@ -144,7 +144,8 @@ deja cerrar la ventana sin avisar.
 
 ## Operaciones en disco
 
-Cada importación y cada deshacer es una **operación**: una carpeta dentro de la carpeta de datos de la app.
+Cada importación, cada deshacer y cada eliminación de la carpeta de un personaje es una **operación**: una carpeta
+dentro de la carpeta de datos de la app.
 
 ```
 <carpeta de datos>/operaciones/
@@ -169,7 +170,7 @@ Esquema: [`operacion.schema.json`](operacion.schema.json).
 |---|---|
 | `esquema` | `1` |
 | `id` | `AAAAMMDD-HHMMSS-<8 hex>`, el mismo que la carpeta |
-| `tipo` | `importacion` o `deshacer` |
+| `tipo` | `importacion`, `deshacer` o `eliminacion` (ver [Eliminar la carpeta de un personaje](#eliminar-la-carpeta-de-un-personaje)) |
 | `creada`, `terminada` | RFC 3339 en UTC; `terminada` en cuanto llega a un estado final |
 | `estado` | ver [Estados](#estados) |
 | `paquete` | nombre del perfil y SHA-256 del fichero `.wowprofile` (solo en `importacion`) |
@@ -187,7 +188,7 @@ Acciones:
 | `sobrescribir` | `importacion` | sustituye un fichero entero |
 | `fusionar` | `importacion` | cambia solo algunas claves o un perfil dentro del fichero |
 | `restaurar` | `deshacer` | devuelve un fichero a su contenido anterior |
-| `borrar` | `deshacer` | quita un fichero que la importación había creado |
+| `borrar` | `deshacer`, `eliminacion` | quita un fichero: el que la importación había creado, o uno de la carpeta del personaje |
 
 `ruta` es relativa a la raíz de la versión y siempre empieza por `WTF/Account/`. El schema solo comprueba la
 forma. La app comprueba además, antes de escribir, que cada ruta cae dentro de la carpeta del personaje destino
@@ -246,7 +247,7 @@ La app recorre `operaciones/` buscando operaciones que no estén en un estado fi
 | estado encontrado | qué significa | qué hace la app |
 |---|---|---|
 | `preparando`, `copiada` | se cortó antes de tocar el `WTF` | la marca `cancelada` y lo dice |
-| `escribiendo` | se cortó a mitad: el `WTF` puede estar a medias | lo explica y ofrece restaurar. Si se restaura, `fallida-restaurada` |
+| `escribiendo` | se cortó a mitad: el `WTF` puede estar a medias | lo explica y ofrece restaurar. Si se restaura, `fallida-restaurada`. Una `eliminacion` se restaura sola (ver abajo) |
 | `operacion.json` ilegible | no se sabe en qué punto se cortó | avisa de que el `WTF` **puede** estar a medias, enseña la carpeta de copias y no borra nada |
 
 Restaurar al arrancar exige lo mismo que aplicar: ningún `Wow.exe` en marcha. Si el juego está abierto, al salir
@@ -254,6 +255,26 @@ reescribiría los ficheros encima de la restauración.
 
 Además, si una operación `deshacer` está `completa` y la que deshace no está `deshecha`, la marca `deshecha`: el
 corte fue entre los dos pasos del deshacer.
+
+## Eliminar la carpeta de un personaje
+
+Para limpiar las carpetas que dejan los personajes borrados en el juego (spec 021). Es una operación de tipo
+`eliminacion` con un cambio `borrar` por fichero de la carpeta, y sigue el mismo [orden de escritura](#orden-de-escritura):
+primero las copias verificadas y después quitar. Al terminar se quitan también las carpetas que quedaron vacías.
+
+- **Qué se pide**: la interfaz manda la instalación, la versión, la cuenta, el reino y la carpeta del personaje. El
+  núcleo vuelve a descubrir esa cuenta y solo sigue si el personaje está en la lista; no recibe rutas.
+- **Confirmación**: nombre, reino, cuenta, instalación, ruta, número de ficheros y tamaño, y este aviso.
+- **Si el personaje sigue existiendo**, el juego vuelve a crear la carpeta al entrar con él [V: medido el 2026-11-18].
+  Vuelven del servidor las macros, el Modo Edición y la lectura en voz alta; la configuración de los addons vuelve a la
+  de por defecto, `AddOns.txt` se rehace con todos los addons activados y `bindings-cache.wtf` no vuelve. Eliminar no
+  deja «limpio» a un personaje que existe: le resetea los addons.
+- **No toca** las claves del personaje en los `SavedVariables` de cuenta (por ejemplo, `profileKeys` de AceDB).
+- **Al arrancar**, una `eliminacion` cortada en `escribiendo` se restaura sola si no hay ningún `Wow.exe` en marcha
+  (con el juego abierto se espera al siguiente arranque). Restaurarla solo devuelve ficheros desde copias verificadas a
+  una carpeta que vació la app, sin pisar nada que exista. Así no hay nada del jugador que se pueda perder.
+
+Mientras no haya historial en la interfaz, una eliminación se deshace a mano: copiar cada `copias/<n>` a su `ruta`.
 
 ## Deshacer
 

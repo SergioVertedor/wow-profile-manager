@@ -6,6 +6,7 @@ import css from "./App.module.css";
 import Instalaciones from "./instalaciones/Instalaciones";
 import { useDeteccion } from "./instalaciones/useDeteccion";
 import { pedirInfoApp, type InfoApp } from "./nucleo";
+import AvisoRecuperacion from "./operaciones/AvisoRecuperacion";
 import Personajes from "./personajes/Personajes";
 
 type Estado =
@@ -52,6 +53,7 @@ function App() {
         {estado.tipo === "listo" && <p className={css.pie}>{t("versionApp", { version: estado.info.version })}</p>}
       </aside>
       <main className={css.contenido}>
+        <AvisoRecuperacion alRestaurar={deteccion.recargar} />
         {vista === "personajes" && <Personajes {...deteccion} />}
         {vista === "instalaciones" && <Instalaciones {...deteccion} />}
         {vista === "acercaDe" && estado.tipo === "listo" && <AcercaDe info={estado.info} />}

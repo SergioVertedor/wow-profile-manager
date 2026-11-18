@@ -12,8 +12,20 @@ pub enum ErrorNucleo {
     LecturaFallida { ruta: String, detalle: String },
     /// El sistema no pudo abrir un enlace (por ejemplo, sin navegador por defecto).
     EnlaceNoAbierto { url: String, detalle: String },
-    /// No se pudo escribir un fichero de la app (las preferencias). `detalle` es el mensaje del sistema operativo.
+    /// No se pudo escribir un fichero. `detalle` es el mensaje del sistema operativo.
     EscrituraFallida { ruta: String, detalle: String },
+    /// Hay un `Wow.exe` en marcha: al salir, el juego reescribiría el `WTF`. No se escribe nada.
+    JuegoAbierto {},
+    /// El personaje pedido no está entre los que da Descubrimiento para esa instalación y cuenta.
+    PersonajeNoEncontrado {},
+    /// Hay un enlace o una unión de Windows en la carpeta que se iba a tocar: seguirlo podría salir del `WTF`.
+    EnlaceNoAdmitido { ruta: String },
+    /// Una operación falló. `restaurada`: el `WTF` quedó como antes. Si no, las copias siguen en la operación `id`.
+    OperacionFallida {
+        id: String,
+        restaurada: bool,
+        detalle: String,
+    },
     /// `preferencias.json` existe pero no se entiende. No se sobrescribe: arreglarlo o borrarlo es del usuario.
     PreferenciasIlegibles { ruta: String },
     /// Un nombre propio demasiado largo o con caracteres de control.
@@ -23,6 +35,27 @@ pub enum ErrorNucleo {
 impl ErrorNucleo {
     pub fn lectura(ruta: &Path, error: &std::io::Error) -> Self {
         Self::LecturaFallida {
+            ruta: ruta.display().to_string(),
+            detalle: error.to_string(),
+        }
+    }
+
+    /// Una línea para un diario o para el campo `detalle` de otro error: la ruta y el mensaje del sistema si los hay.
+    pub fn detalle(&self) -> String {
+        match self {
+            Self::LecturaFallida { ruta, detalle } | Self::EscrituraFallida { ruta, detalle } => {
+                format!("{ruta}: {detalle}")
+            }
+            Self::EnlaceNoAdmitido { ruta } | Self::PreferenciasIlegibles { ruta } => ruta.clone(),
+            otro => serde_json::to_value(otro)
+                .ok()
+                .and_then(|v| v["codigo"].as_str().map(str::to_owned))
+                .unwrap_or_default(),
+        }
+    }
+
+    pub fn escritura(ruta: &Path, error: &dyn std::fmt::Display) -> Self {
+        Self::EscrituraFallida {
             ruta: ruta.display().to_string(),
             detalle: error.to_string(),
         }
@@ -40,5 +73,15 @@ mod tests {
         assert_eq!(json["codigo"], "lecturaFallida");
         assert_eq!(json["datos"]["ruta"], "C:/x");
         assert_eq!(json["datos"]["detalle"], "sin permiso");
+    }
+
+    /// La interfaz reconoce un error del núcleo porque trae `codigo` y `datos`: también los que no tienen datos.
+    #[test]
+    fn un_error_sin_datos_lleva_datos_vacios() {
+        let json = serde_json::to_value(ErrorNucleo::JuegoAbierto {}).unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({ "codigo": "juegoAbierto", "datos": {} })
+        );
     }
 }

@@ -1,17 +1,16 @@
 //! Preferencias (spec 018): lo que el usuario le dice a la app y tiene que recordarse entre arranques: las carpetas
-//! de WoW añadidas a mano y los nombres propios de instalaciones y cuentas. Es el único módulo que escribe fuera de
-//! Operaciones, y solo en la carpeta de datos de la app (`%APPDATA%\<identificador>`), nunca dentro de una
-//! instalación.
+//! de WoW añadidas a mano y los nombres propios de instalaciones y cuentas. Escribe solo `preferencias.json`, en la
+//! carpeta de datos de la app (`%APPDATA%\<identificador>`), nunca dentro de una instalación: eso es de Operaciones.
 
 use crate::disco::clave_de_ruta;
 use crate::error::ErrorNucleo;
+use crate::escritura::escribir_atomico;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 const FICHERO: &str = "preferencias.json";
-const TEMPORAL: &str = "preferencias.json.tmp";
 /// Versión del formato del fichero. Uno de una versión posterior no se entiende y se trata como ilegible: así una
 /// versión vieja de la app no lo pisa.
 const VERSION: u32 = 1;
@@ -151,33 +150,17 @@ pub fn cargar(dir: &Path) -> Result<Preferencias, ErrorNucleo> {
     }
 }
 
-/// Escribe las preferencias en `dir` de forma atómica: primero un temporal, que se fuerza a disco, y luego se renombra
-/// encima. Así un corte a mitad, incluso de corriente, deja el fichero anterior entero.
+/// Escribe las preferencias en `dir` con escritura segura: un corte a mitad, incluso de corriente, deja el fichero
+/// anterior entero.
 pub fn guardar(dir: &Path, preferencias: &Preferencias) -> Result<(), ErrorNucleo> {
-    use std::io::Write;
-
-    let temporal = dir.join(TEMPORAL);
     let ruta = dir.join(FICHERO);
     let fichero = Fichero {
         version: VERSION,
         preferencias: preferencias.clone(),
     };
-    let json = serde_json::to_vec_pretty(&fichero).map_err(|e| escritura(&ruta, &e))?;
-    std::fs::create_dir_all(dir).map_err(|e| escritura(dir, &e))?;
-    let mut salida = std::fs::File::create(&temporal).map_err(|e| escritura(&temporal, &e))?;
-    salida
-        .write_all(&json)
-        .and_then(|()| salida.sync_all())
-        .map_err(|e| escritura(&temporal, &e))?;
-    drop(salida);
-    std::fs::rename(&temporal, &ruta).map_err(|e| escritura(&ruta, &e))
-}
-
-fn escritura(ruta: &Path, error: &dyn std::fmt::Display) -> ErrorNucleo {
-    ErrorNucleo::EscrituraFallida {
-        ruta: ruta.display().to_string(),
-        detalle: error.to_string(),
-    }
+    let json =
+        serde_json::to_vec_pretty(&fichero).map_err(|e| ErrorNucleo::escritura(&ruta, &e))?;
+    escribir_atomico(&ruta, &json)
 }
 
 /// Las preferencias de la app, compartidas por los comandos. El cerrojo hace que dos cambios a la vez no se pisen:
@@ -248,7 +231,7 @@ mod tests {
         guardar(&dir, &preferencias).unwrap();
 
         assert_eq!(cargar(&dir).unwrap(), preferencias);
-        assert!(!dir.join(TEMPORAL).exists());
+        assert!(!dir.join("preferencias.json.tmp").exists());
         let json: serde_json::Value =
             serde_json::from_slice(&std::fs::read(dir.join(FICHERO)).unwrap()).unwrap();
         assert_eq!(json["version"], VERSION);

@@ -66,7 +66,12 @@
     "enlaceNoAbierto": "No se pudo abrir {{url}}: {{detalle}}",
     "escrituraFallida": "No se pudo guardar {{ruta}}: {{detalle}}",
     "preferenciasIlegibles": "No se entiende {{ruta}}: se sigue sin nombres ni carpetas a mano, y no se guardarán cambios hasta que lo arregles o lo borres.",
-    "nombreNoValido": "El nombre puede tener hasta {{maximo}} caracteres y una sola línea."
+    "nombreNoValido": "El nombre puede tener hasta {{maximo}} caracteres y una sola línea.",
+    "juegoAbierto": "WoW está abierto. Ciérralo y vuelve a intentarlo: al salir, el juego reescribiría la carpeta.",
+    "personajeNoEncontrado": "Ese personaje ya no está en disco. Vuelve a cargar la lista.",
+    "operacionFallida": "No se pudo terminar ni dejarlo todo como estaba. Las copias siguen en la operación {{id}}, en la carpeta de datos de la app: {{detalle}}",
+    "operacionFallidaRestaurada": "No se pudo terminar y se ha dejado todo como estaba (operación {{id}}): {{detalle}}",
+    "enlaceNoAdmitido": "Hay un enlace o una unión de carpetas en {{ruta}}. No se sigue: podría borrar ficheros fuera de WTF. Quítalo a mano si quieres eliminar la carpeta."
   },
   "versionApp": "Versión {{version}}",
   "instalaciones": {
@@ -95,5 +100,30 @@
     "editar": "Cambiar: {{que}}",
     "guardar": "Guardar el nombre",
     "cancelar": "Cancelar"
+  },
+  "eliminar": {
+    "boton": "Eliminar carpeta",
+    "titulo": "¿Eliminar la carpeta de {{nombre}}?",
+    "contenido_one": "{{count}} fichero, {{tamano}}.",
+    "contenido_other": "{{count}} ficheros, {{tamano}}.",
+    "aviso": "Si el personaje sigue existiendo, el juego volverá a crear la carpeta al entrar con él. Las macros y el Modo Edición vuelven del servidor, pero la configuración de sus addons vuelve a la de por defecto y todos los addons quedan activados.",
+    "copia": "Antes de quitar nada se guarda una copia completa en la carpeta de datos de la app. Las claves del personaje en los ficheros de la cuenta no se tocan.",
+    "cancelar": "Cancelar",
+    "confirmar": "Eliminar carpeta",
+    "eliminando": "Eliminando…",
+    "cerrar": "Cerrar",
+    "hecho": "Carpeta eliminada. La copia está guardada en la operación {{id}}."
+  },
+  "recuperacion": {
+    "canceladas_one": "Una operación se cortó antes de tocar nada y se ha cancelado.",
+    "canceladas_other": "{{count}} operaciones se cortaron antes de tocar nada y se han cancelado.",
+    "restauradas_one": "Una operación se cortó a mitad y se ha dejado todo como estaba.",
+    "restauradas_other": "{{count}} operaciones se cortaron a mitad y se ha dejado todo como estaba.",
+    "sinRestaurar_one": "Una operación cortada a mitad no se pudo deshacer del todo. Sus copias siguen en la carpeta de datos de la app.",
+    "sinRestaurar_other": "{{count}} operaciones cortadas a mitad no se pudieron deshacer del todo. Sus copias siguen en la carpeta de datos de la app.",
+    "pendientes_one": "Hay una operación a medias, pero WoW está abierto. Cierra el juego y vuelve a abrir la app para terminarla.",
+    "pendientes_other": "Hay {{count}} operaciones a medias, pero WoW está abierto. Cierra el juego y vuelve a abrir la app para terminarlas.",
+    "ilegibles_one": "Hay una operación cuyo diario no se entiende. No se ha tocado.",
+    "ilegibles_other": "Hay {{count}} operaciones cuyo diario no se entiende. No se han tocado."
   }
 }

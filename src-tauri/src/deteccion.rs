@@ -9,7 +9,7 @@ use crate::descubrimiento::{Cuentas, descubrir};
 use crate::disco::{clave_de_ruta, leer_texto, subcarpetas};
 use crate::error::ErrorNucleo;
 use crate::preferencias::Preferencias;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
@@ -37,6 +37,14 @@ impl Producto {
             "wow" => Some(Self::Retail),
             "wowf" => Some(Self::Forever),
             _ => None,
+        }
+    }
+
+    /// El valor de `.flavor.info` que le corresponde.
+    pub fn codigo(self) -> &'static str {
+        match self {
+            Self::Retail => "wow",
+            Self::Forever => "wowf",
         }
     }
 }
@@ -104,8 +112,8 @@ pub struct VersionJuego {
 const BUILD_INFO: &str = ".build.info";
 const FLAVOR_INFO: &str = ".flavor.info";
 const COLUMNA_FLAVOR: &str = "Product Flavor";
-const CARPETA_WTF: &str = "WTF";
-const CARPETA_ACCOUNT: &str = "Account";
+pub const CARPETA_WTF: &str = "WTF";
+pub const CARPETA_ACCOUNT: &str = "Account";
 const CONFIG_WTF: &str = "Config.wtf";
 const CARPETA_INTERFACE: &str = "Interface";
 const CARPETA_ADDONS: &str = "AddOns";
@@ -331,6 +339,95 @@ pub fn rutas_del_registro() -> Vec<PathBuf> {
 #[cfg(not(windows))]
 pub fn rutas_del_registro() -> Vec<PathBuf> {
     Vec::new()
+}
+
+/// Un personaje tal como lo pide la interfaz: su instalación y sus carpetas. No es una ruta y no se cree: `ubicar`
+/// lo busca.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PersonajePedido {
+    pub raiz: PathBuf,
+    pub version: String,
+    pub cuenta: String,
+    pub reino: String,
+    pub personaje: String,
+}
+
+/// Un personaje encontrado en disco, con los nombres de carpeta tal como están.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PersonajeUbicado {
+    /// `<raíz>/<versión>`: las rutas de una operación son relativas a ella.
+    pub raiz_version: PathBuf,
+    pub producto: Producto,
+    pub cuenta: String,
+    pub reino: String,
+    pub personaje: String,
+    pub nombre_en_datos: Option<String>,
+}
+
+impl PersonajeUbicado {
+    /// Ruta de su carpeta relativa a la raíz de la versión, con `/` (`WTF/Account/<cuenta>/<reino>/<personaje>`).
+    pub fn ruta_relativa(&self) -> String {
+        format!(
+            "{CARPETA_WTF}/{CARPETA_ACCOUNT}/{}/{}/{}",
+            self.cuenta, self.reino, self.personaje
+        )
+    }
+
+    pub fn carpeta(&self) -> PathBuf {
+        self.raiz_version
+            .join(CARPETA_WTF)
+            .join(CARPETA_ACCOUNT)
+            .join(&self.cuenta)
+            .join(&self.reino)
+            .join(&self.personaje)
+    }
+}
+
+/// Busca un personaje pedido entre los que se detectan: la raíz tiene que ser una de las `conocidas`, y la versión, la
+/// cuenta, el reino y el personaje tienen que salir de leer el disco igual que al listar. Como cada nombre se compara
+/// con uno que da el sistema de ficheros, un `..` o un separador nunca llegan a una ruta.
+pub fn ubicar(
+    pedido: &PersonajePedido,
+    conocidas: &[PathBuf],
+) -> Result<PersonajeUbicado, ErrorNucleo> {
+    let clave = clave_de_ruta(&pedido.raiz);
+    let Some(raiz) = conocidas.iter().find(|r| clave_de_ruta(r) == clave) else {
+        return Err(ErrorNucleo::PersonajeNoEncontrado {});
+    };
+    let Some(version) = subcarpetas(raiz)?
+        .into_iter()
+        .find(|c| c.nombre == pedido.version)
+    else {
+        return Err(ErrorNucleo::PersonajeNoEncontrado {});
+    };
+    let Some(producto) = leer_texto(&version.ruta.join(FLAVOR_INFO))?
+        .and_then(|texto| valor_de(&texto, COLUMNA_FLAVOR))
+        .and_then(|flavor| Producto::desde_flavor(&flavor))
+    else {
+        return Err(ErrorNucleo::PersonajeNoEncontrado {});
+    };
+    let cuentas = descubrir(
+        &version.ruta.join(CARPETA_WTF).join(CARPETA_ACCOUNT),
+        producto,
+    )?;
+    let encontrado = cuentas
+        .cuentas
+        .into_iter()
+        .filter(|c| c.carpeta == pedido.cuenta)
+        .flat_map(|c| c.personajes)
+        .find(|p| p.carpeta_reino == pedido.reino && p.carpeta_personaje == pedido.personaje);
+    let Some(personaje) = encontrado else {
+        return Err(ErrorNucleo::PersonajeNoEncontrado {});
+    };
+    Ok(PersonajeUbicado {
+        raiz_version: version.ruta,
+        producto,
+        cuenta: pedido.cuenta.clone(),
+        reino: personaje.carpeta_reino,
+        personaje: personaje.carpeta_personaje,
+        nombre_en_datos: personaje.nombre_en_datos.map(|n| n.texto),
+    })
 }
 
 #[cfg(test)]
@@ -642,5 +739,71 @@ mod tests {
             Alta::YaEstaba
         );
         assert_eq!(preferencias.carpetas_manuales, [wow]);
+    }
+    fn pedido(raiz: &Path, reino: &str, personaje: &str) -> PersonajePedido {
+        PersonajePedido {
+            raiz: raiz.to_path_buf(),
+            version: "_forever_".into(),
+            cuenta: "1#1".into(),
+            reino: reino.into(),
+            personaje: personaje.into(),
+        }
+    }
+
+    #[test]
+    fn ubica_un_personaje_listado() {
+        let tmp = tempfile::tempdir().unwrap();
+        instalacion_de_prueba(tmp.path());
+        create_dir_all(
+            tmp.path()
+                .join("_forever_/WTF/Account/1#1/93/Goldberg-Soulreaper"),
+        )
+        .unwrap();
+
+        let ubicado = ubicar(
+            &pedido(tmp.path(), "93", "Goldberg-Soulreaper"),
+            &[tmp.path().to_path_buf()],
+        )
+        .unwrap();
+
+        assert_eq!(ubicado.producto, Producto::Forever);
+        assert_eq!(
+            ubicado.ruta_relativa(),
+            "WTF/Account/1#1/93/Goldberg-Soulreaper"
+        );
+        assert!(ubicado.carpeta().is_dir());
+        assert_eq!(
+            ubicado.nombre_en_datos.as_deref(),
+            Some("Goldberg Soulreaper")
+        );
+    }
+
+    #[test]
+    fn no_ubica_lo_que_no_se_lista() {
+        let tmp = tempfile::tempdir().unwrap();
+        instalacion_de_prueba(tmp.path());
+        let cuenta = tmp.path().join("_forever_/WTF/Account/1#1");
+        create_dir_all(cuenta.join("93/Goldberg")).unwrap();
+        create_dir_all(cuenta.join("SavedVariables")).unwrap();
+        let conocidas = [tmp.path().to_path_buf()];
+        let no_encontrado = |p: &PersonajePedido| {
+            assert_eq!(
+                ubicar(p, &conocidas),
+                Err(ErrorNucleo::PersonajeNoEncontrado {})
+            );
+        };
+
+        no_encontrado(&pedido(tmp.path(), "93", "Otro"));
+        no_encontrado(&pedido(tmp.path(), "93", ".."));
+        no_encontrado(&pedido(tmp.path(), "93", "Goldberg/../Goldberg"));
+        // `SavedVariables` de la cuenta no es un reino y lo que hay dentro no son personajes.
+        no_encontrado(&pedido(tmp.path(), "SavedVariables", "Goldberg"));
+        let mut otra_raiz = pedido(tmp.path(), "93", "Goldberg");
+        otra_raiz.raiz = tmp.path().join("otra");
+        no_encontrado(&otra_raiz);
+        let mut sin_flavor = pedido(tmp.path(), "93", "Goldberg");
+        sin_flavor.version = "Data".into();
+        no_encontrado(&sin_flavor);
+        assert!(ubicar(&pedido(tmp.path(), "93", "Goldberg"), &conocidas).is_ok());
     }
 }

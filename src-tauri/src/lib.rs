@@ -10,13 +10,20 @@ mod deteccion;
 mod disco;
 mod enlaces;
 mod error;
+mod escritura;
 mod idioma;
 mod info;
+mod operaciones;
 mod preferencias;
+mod sistema;
 mod toc;
 
 pub use info::NOMBRE_APP;
+pub use operaciones::Operaciones;
 pub use preferencias::Almacen;
+
+/// Carpeta de las operaciones dentro de la carpeta de datos de la app (`docs/flujos.md`).
+pub const CARPETA_OPERACIONES: &str = "operaciones";
 
 /// Etiqueta de la ventana de `tauri.conf.json`; el selector de carpetas se abre como hijo suyo.
 const VENTANA_PRINCIPAL: &str = "main";
@@ -111,6 +118,50 @@ async fn nombrar_cuenta(
     })
 }
 
+/// Busca en disco el personaje que pide la interfaz entre las instalaciones conocidas (registro, agente y a mano).
+fn ubicar(
+    personaje: &deteccion::PersonajePedido,
+    almacen: &Almacen,
+) -> Result<deteccion::PersonajeUbicado, error::ErrorNucleo> {
+    let mut conocidas = deteccion::rutas_automaticas();
+    let preferencias = almacen.leer();
+    if let Ok(preferencias) = &preferencias {
+        conocidas.extend(preferencias.carpetas_manuales.iter().cloned());
+    }
+    // Sin preferencias legibles faltan las carpetas añadidas a mano: si no se encuentra, ese es el motivo que se dice.
+    match (deteccion::ubicar(personaje, &conocidas), preferencias) {
+        (Err(error::ErrorNucleo::PersonajeNoEncontrado {}), Err(motivo)) => Err(motivo),
+        (resultado, _) => resultado,
+    }
+}
+
+/// Cuántos ficheros y bytes tiene la carpeta de un personaje, para confirmar antes de eliminarla. Solo lee.
+#[tauri::command]
+async fn resumen_eliminacion(
+    personaje: deteccion::PersonajePedido,
+    almacen: State<'_, Almacen>,
+) -> Result<operaciones::ResumenEliminacion, error::ErrorNucleo> {
+    Operaciones::resumen_eliminacion(&ubicar(&personaje, &almacen)?)
+}
+
+/// Saca la carpeta de un personaje del `WTF` y la guarda como una operación con copia (spec 021). Devuelve su id.
+#[tauri::command]
+async fn eliminar_personaje(
+    personaje: deteccion::PersonajePedido,
+    almacen: State<'_, Almacen>,
+    operaciones: State<'_, Operaciones>,
+) -> Result<String, error::ErrorNucleo> {
+    operaciones.eliminar_personaje(&ubicar(&personaje, &almacen)?, sistema::juego_en_marcha)
+}
+
+/// Termina las operaciones que se cortaron (la app se cerró o se fue la luz). La interfaz lo llama al arrancar.
+#[tauri::command]
+async fn recuperar_operaciones(
+    operaciones: State<'_, Operaciones>,
+) -> Result<operaciones::Recuperacion, error::ErrorNucleo> {
+    Ok(operaciones.recuperar(sistema::juego_en_marcha))
+}
+
 /// Abre en el navegador uno de los enlaces conocidos. La interfaz no puede pasar una URL: solo el nombre del enlace.
 #[tauri::command]
 fn abrir_enlace(enlace: enlaces::Enlace) -> Result<(), error::ErrorNucleo> {
@@ -130,6 +181,9 @@ pub fn con_comandos<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Bui
         quitar_carpeta,
         nombrar_instalacion,
         nombrar_cuenta,
+        resumen_eliminacion,
+        eliminar_personaje,
+        recuperar_operaciones,
         abrir_enlace
     ])
 }
@@ -140,7 +194,9 @@ pub fn run() {
     let resultado = con_comandos(tauri::Builder::default())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            app.manage(Almacen::en(app.path().app_data_dir()?));
+            let datos = app.path().app_data_dir()?;
+            app.manage(Operaciones::en(datos.join(CARPETA_OPERACIONES)));
+            app.manage(Almacen::en(datos));
             Ok(())
         })
         .run(tauri::generate_context!());
