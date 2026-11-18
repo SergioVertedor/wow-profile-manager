@@ -91,22 +91,45 @@
   font-size: var(--texto-control);
 }
 
-/* Cabecera de reino: se queda fija mientras se recorren sus personajes. */
+/* Cabecera de reino: se queda fija mientras se recorren sus personajes y es el botón que los pliega (spec 019). */
 .reino {
   position: sticky;
   top: calc(-1 * var(--espacio-2));
   z-index: 1;
-  display: flex;
-  justify-content: space-between;
   margin: var(--espacio-1) 0 2px;
-  padding: var(--espacio-1) var(--espacio-2);
   background: var(--color-superficie);
-  color: var(--color-texto-2);
   font-size: var(--texto-pequeno);
   font-variation-settings: var(--liso);
 }
 
+.reino button {
+  display: flex;
+  gap: var(--espacio-1);
+  align-items: center;
+  width: 100%;
+  padding: var(--espacio-1) var(--espacio-2);
+  border: 0;
+  border-radius: var(--radio-s);
+  background: none;
+  color: var(--color-texto-2);
+  font-weight: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--duracion), background-color var(--duracion);
+}
+
+.reino button:hover {
+  background: var(--blanco-velo);
+  color: var(--color-texto);
+}
+
+.reino svg {
+  flex: none;
+  color: var(--color-texto-3);
+}
+
 .reino span {
+  margin-left: auto;
   color: var(--color-texto-3);
   font-weight: 400;
 }

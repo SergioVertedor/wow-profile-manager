@@ -169,10 +169,43 @@ describe("Personajes", () => {
     await screen.findByRole("heading", { name: "Allagan" });
     const reinos = within(lista()).getAllByRole("heading", { level: 3 }).map((h) => h.textContent);
     expect(reinos).toEqual(["Dun Modr2", "C'Thun10"]);
-    expect(within(screen.getByRole("region", { name: "Dun Modr" })).getAllByRole("button").map((b) => b.textContent)).toEqual([
+    expect(within(screen.getByRole("region", { name: "Dun Modr" })).getAllByRole("listitem").map((b) => b.textContent)).toEqual([
       "AAllagan",
       "AApañerouno",
     ]);
+  });
+
+  it("la cabecera de un reino lo pliega y lo despliega, y el recuento se sigue viendo", async () => {
+    pintar("es", () => instalacion(RETAIL));
+
+    const cabecera = await screen.findByRole("button", { name: "Dun Modr2", expanded: true });
+    fireEvent.click(cabecera);
+
+    expect(cabecera.getAttribute("aria-expanded")).toBe("false");
+    expect(within(lista()).queryByRole("button", { name: "Allagan" })).toBeNull();
+    expect(within(lista()).getByRole("button", { name: "Angharad" })).toBeDefined();
+    expect(document.getElementById(cabecera.getAttribute("aria-controls") ?? "")?.hidden).toBe(true);
+
+    fireEvent.click(cabecera);
+    expect(within(lista()).getByRole("button", { name: "Allagan" })).toBeDefined();
+  });
+
+  it("plegar el reino del elegido no cambia la elección", async () => {
+    pintar("es", () => instalacion(RETAIL));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Dun Modr2" }));
+
+    expect(within(ficha()).getByRole("heading", { name: "Allagan" })).toBeDefined();
+  });
+
+  it("mientras se busca, un reino plegado enseña sus resultados", async () => {
+    pintar("es", () => instalacion(RETAIL));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Dun Modr2" }));
+    fireEvent.change(screen.getByRole("searchbox", { name: "Buscar personaje" }), { target: { value: "apañ" } });
+
+    expect(within(lista()).getAllByRole("listitem").map((b) => b.textContent)).toEqual(["AApañerouno"]);
+    expect(screen.getByRole("button", { name: "Dun Modr1" }).getAttribute("aria-expanded")).toBe("true");
   });
 
   it("con más de 10 personajes hay buscador: sin mayúsculas ni acentos, y avisa si no hay nada", async () => {
