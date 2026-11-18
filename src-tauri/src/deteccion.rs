@@ -411,18 +411,19 @@ impl PersonajeUbicado {
             .join(&self.cuenta)
     }
 
-    /// Su carpeta, la de su reino y la de su cuenta no son enlaces ni uniones de Windows: con uno en el camino no se
-    /// sigue, porque podría salir del `WTF`.
+    /// Ningún tramo de su camino desde la raíz de la versión (`WTF`, `Account`, cuenta, reino y personaje) es un enlace
+    /// o una unión de Windows: con uno no se sigue, porque podría salir del `WTF`. Igual que al escribir.
     pub fn comprobar_sin_enlaces(&self) -> Result<(), ErrorNucleo> {
-        let carpeta = self.carpeta();
-        let reino = self.carpeta_cuenta().join(&self.reino);
-        let tramos = [carpeta, reino, self.carpeta_cuenta()];
-        match tramos.iter().find(|t| es_enlace(t)) {
-            Some(enlace) => Err(ErrorNucleo::EnlaceNoAdmitido {
-                ruta: enlace.display().to_string(),
-            }),
-            None => Ok(()),
+        let mut tramo = self.raiz_version.clone();
+        for parte in Path::new(&self.ruta_relativa()).components() {
+            tramo.push(parte);
+            if es_enlace(&tramo) {
+                return Err(ErrorNucleo::EnlaceNoAdmitido {
+                    ruta: tramo.display().to_string(),
+                });
+            }
         }
+        Ok(())
     }
 }
 
@@ -878,28 +879,34 @@ mod tests {
         assert_eq!(pj.comprobar_sin_enlaces(), Ok(()));
     }
 
-    /// Una unión de Windows (`mklink /J`, sin permisos de administrador) en el reino, entre la cuenta y el personaje.
+    /// Una unión de Windows (`mklink /J`, sin permisos de administrador) en cada tramo, de `WTF` al personaje.
     #[cfg(windows)]
     #[test]
-    fn una_union_en_el_reino_no_se_sigue() {
-        let tmp = tempfile::tempdir().unwrap();
-        let fuera = tmp.path().join("fuera");
-        create_dir_all(fuera.join("Goldberg")).unwrap();
-        let pj = ubicado(tmp.path());
-        create_dir_all(pj.carpeta_cuenta()).unwrap();
-        let reino = pj.carpeta_cuenta().join(&pj.reino);
-        let creada = std::process::Command::new("cmd")
-            .args(["/C", "mklink", "/J"])
-            .arg(&reino)
-            .arg(&fuera)
-            .output()
-            .unwrap();
-        assert!(creada.status.success(), "{creada:?}");
-        assert_eq!(
-            pj.comprobar_sin_enlaces(),
-            Err(ErrorNucleo::EnlaceNoAdmitido {
-                ruta: reino.display().to_string()
-            })
-        );
+    fn una_union_en_cualquier_tramo_no_se_sigue() {
+        for tramos_hasta_la_union in 1..=5 {
+            let tmp = tempfile::tempdir().unwrap();
+            let pj = ubicado(tmp.path());
+            let partes: Vec<String> = pj.ruta_relativa().split('/').map(str::to_owned).collect();
+            let union = partes[..tramos_hasta_la_union]
+                .iter()
+                .fold(pj.raiz_version.clone(), |ruta, parte| ruta.join(parte));
+            let fuera = tmp.path().join("fuera");
+            create_dir_all(fuera.join(partes[tramos_hasta_la_union..].join("/"))).unwrap();
+            create_dir_all(union.parent().unwrap()).unwrap();
+            let creada = std::process::Command::new("cmd")
+                .args(["/C", "mklink", "/J"])
+                .arg(&union)
+                .arg(&fuera)
+                .output()
+                .unwrap();
+            assert!(creada.status.success(), "{creada:?}");
+            assert_eq!(
+                pj.comprobar_sin_enlaces(),
+                Err(ErrorNucleo::EnlaceNoAdmitido {
+                    ruta: union.display().to_string()
+                }),
+                "unión tras {tramos_hasta_la_union} tramos"
+            );
+        }
     }
 }

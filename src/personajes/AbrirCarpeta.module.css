@@ -13,7 +13,12 @@
   cursor: pointer;
 }
 
-.boton:hover {
+.boton:hover:not(:disabled) {
   border-color: var(--color-oro);
   color: var(--color-oro);
+}
+
+.boton:disabled {
+  cursor: progress;
+  opacity: 0.6;
 }

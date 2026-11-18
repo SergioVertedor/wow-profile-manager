@@ -199,7 +199,7 @@ pub fn resumen(paquete: &PaqueteLeido) -> Resumen {
         .iter()
         .map(|e| {
             let clasificada = clasificar(e);
-            let contenido = clasificada.as_ref().ok().and_then(|importable| {
+            let que_trae = clasificada.as_ref().ok().and_then(|importable| {
                 paquete
                     .pieza(&e.id)
                     .and_then(|pieza| contenido::contenido(importable.categoria, pieza))
@@ -211,7 +211,7 @@ pub fn resumen(paquete: &PaqueteLeido) -> Resumen {
                 de_cuenta: es_de_cuenta(&e.destino),
                 bytes: e.bytes,
                 incompatible: clasificada.err(),
-                contenido,
+                contenido: que_trae,
             }
         })
         .collect();

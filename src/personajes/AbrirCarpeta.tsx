@@ -13,13 +13,18 @@ type Props = Readonly<{ pedido: PersonajePedido }>;
 export default function AbrirCarpeta({ pedido }: Props) {
   const { t } = useTranslation();
   const [error, setError] = useState<unknown>(null);
+  // Mientras el núcleo la abre, el botón no responde: dos clics abrirían dos ventanas del explorador.
+  const [abriendo, setAbriendo] = useState(false);
   const abrir = () => {
     setError(null);
-    abrirCarpetaPersonaje(pedido).catch(setError);
+    setAbriendo(true);
+    abrirCarpetaPersonaje(pedido)
+      .catch(setError)
+      .finally(() => setAbriendo(false));
   };
   return (
     <>
-      <button type="button" className={css.boton} onClick={abrir}>
+      <button type="button" className={css.boton} onClick={abrir} disabled={abriendo}>
         <FolderOpen aria-hidden size={15} strokeWidth={1.75} />
         {t("ficha.abrirCarpeta")}
       </button>

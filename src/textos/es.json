@@ -345,6 +345,7 @@
     "verHistorial": "Ver historial",
     "queTrae": {
       "boton": "Qué trae",
+      "etiqueta": "Qué trae: {{categoria}}",
       "macros": "Las macros: su nombre, su icono y su texto.",
       "teclas": "Qué tecla hace cada acción.",
       "teclas-clic": "Las acciones asignadas a clics del ratón (lanzamiento con clic).",

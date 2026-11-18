@@ -226,7 +226,9 @@ describe("Importar", () => {
     expect(screen.getByText("WeakAuras")).toBeTruthy();
     expect(screen.getByText(/^Dónde has colocado las ventanas/)).toBeTruthy();
     const decision = screen.getByRole("group", { name: /Macros de la cuenta en la cuenta 1#1/ });
-    expect(within(decision).getByText("Qué trae")).toBeTruthy();
+    // El lector de pantalla oye de qué entrada es cada «Qué trae».
+    expect(within(decision).getByLabelText("Qué trae: Macros de la cuenta")).toBeTruthy();
+    expect(screen.getByLabelText("Qué trae: Addons activos")).toBeTruthy();
     expect(within(decision).getByText("Monta")).toBeTruthy();
   });
 

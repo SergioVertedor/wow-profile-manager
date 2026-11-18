@@ -345,6 +345,7 @@
     "verHistorial": "View history",
     "queTrae": {
       "boton": "What it includes",
+      "etiqueta": "What it includes: {{categoria}}",
       "macros": "Macros: their name, icon and text.",
       "teclas": "Which key does each action.",
       "teclas-clic": "Actions assigned to mouse clicks (click casting).",

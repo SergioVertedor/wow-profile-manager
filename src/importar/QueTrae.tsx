@@ -3,7 +3,7 @@
 import { useTranslation } from "react-i18next";
 import Desplegable from "../comun/Desplegable";
 import type { Contenido, EntradaPaquete } from "../nucleo";
-import { esCategoria } from "./etiquetas";
+import { esCategoria, etiquetaDeCategoria } from "./etiquetas";
 import css from "./Importar.module.css";
 
 type Props = Readonly<{ entrada: EntradaPaquete }>;
@@ -15,7 +15,13 @@ export default function QueTrae({ entrada }: Props) {
     return null;
   }
   return (
-    <Desplegable className={css.queTrae} resumen={t("importar.queTrae.boton")}>
+    <Desplegable
+      className={css.queTrae}
+      resumen={t("importar.queTrae.boton")}
+      etiqueta={t("importar.queTrae.etiqueta", {
+        categoria: etiquetaDeCategoria(t, entrada.categoria, entrada.deCuenta),
+      })}
+    >
       <p>{t(`importar.queTrae.${entrada.categoria}`)}</p>
       {entrada.contenido !== undefined && <ListaContenido contenido={entrada.contenido} />}
     </Desplegable>

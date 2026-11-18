@@ -6,8 +6,8 @@ use crate::paquetes::Categoria;
 use crate::piezas::{clave_de_opcion, lineas_addons, motivo_de_opcion};
 use serde::Serialize;
 
-/// Una ventana de chat con nombre: `NAME <nombre>` dentro de su bloque `WINDOW` [V: 10 ventanas, 4 con nombre]. Las
-/// que no lo tienen no se usan.
+/// Una ventana de chat con nombre: `NAME <nombre>` [V: solo aparece en los bloques `WINDOW`; 10 ventanas, 4 con
+/// nombre]. Las que no lo tienen no se usan.
 const NOMBRE_VENTANA: &str = "NAME ";
 const ACTIVADO: &str = "enabled";
 
@@ -27,7 +27,11 @@ pub enum Contenido {
 pub fn contenido(categoria: Categoria, pieza: &[u8]) -> Option<Contenido> {
     let elementos = match categoria {
         Categoria::Opciones => opciones(pieza),
-        Categoria::Macros => etiquetas_macros(pieza),
+        // Una macro sin nombre y con la primera línea en blanco no tiene nada que enseñar.
+        Categoria::Macros => etiquetas_macros(pieza)
+            .into_iter()
+            .filter(|etiqueta| !etiqueta.is_empty())
+            .collect(),
         Categoria::Teclas => teclas(pieza),
         Categoria::Chat => ventanas_de_chat(pieza),
         Categoria::AddonsActivos => return addons(pieza),
@@ -63,6 +67,7 @@ fn ventanas_de_chat(pieza: &[u8]) -> Vec<String> {
         .collect()
 }
 
+/// `AddOns.txt` solo trae `enabled` o `disabled` [V]: lo que no es `enabled` no se activa.
 fn addons(pieza: &[u8]) -> Option<Contenido> {
     let mut activados = Vec::new();
     let mut desactivados = Vec::new();
@@ -106,6 +111,11 @@ SET trackedQuests \"1\"\r\nSET autoLootDefault \"1\"\r\n";
         let pieza = b"VER 3 0100000000000001 \" \" \"134400\"\r\n#showtooltip\r\n/cast Corte de viento\r\nEND\r\n\
 VER 3 0100000000000002 \"Monta\" \"132261\"\r\n/run Mount()\r\nEND\r\n";
         assert_eq!(lista(Categoria::Macros, pieza), ["#showtooltip", "Monta"]);
+        let sin_nada = b"VER 3 01 \" \" \"1\"
+
+END
+";
+        assert_eq!(contenido(Categoria::Macros, sin_nada), None);
     }
 
     #[test]
