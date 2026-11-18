@@ -1,12 +1,13 @@
 //! Detección (ver `docs/arquitectura.md`): encuentra las instalaciones de WoW y sus versiones del juego, según
-//! `docs/modelo-de-datos.md`. Solo lee. La fuente de este equipo es el registro de Windows; la carpeta elegida a
-//! mano llega con #34 y el agente de Battle.net con #35.
+//! `docs/modelo-de-datos.md`. Solo lee. Fuentes: el registro de Windows y las carpetas elegidas a mano (spec 018,
+//! guardadas en Preferencias); el agente de Battle.net llega con #35.
 
 use crate::addons::{Addons, descubrir_addons};
 use crate::bpsv;
 use crate::descubrimiento::{Cuentas, descubrir};
-use crate::disco::{leer_texto, subcarpetas};
+use crate::disco::{clave_de_ruta, leer_texto, subcarpetas};
 use crate::error::ErrorNucleo;
+use crate::preferencias::Preferencias;
 use serde::Serialize;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -16,6 +17,7 @@ use std::path::{Path, PathBuf};
 #[serde(rename_all = "lowercase")]
 pub enum Fuente {
     Registro,
+    Manual,
 }
 
 /// Productos con los que trabaja la app. Los demás se listan como no soportados.
@@ -42,7 +44,41 @@ pub struct Instalacion {
     /// Ruta absoluta de la raíz. Nunca sale del equipo: no va al paquete.
     pub raiz: PathBuf,
     pub fuente: Fuente,
+    /// Nombre propio que le ha puesto el usuario (spec 018).
+    pub nombre: Option<String>,
     pub versiones: Vec<VersionJuego>,
+}
+
+/// Lo que ve la interfaz al detectar.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Deteccion {
+    pub instalaciones: Vec<Instalacion>,
+    /// Carpetas añadidas a mano que ya no son una instalación (movida, borrada, unidad desconectada). Se siguen
+    /// enseñando, con su nombre, hasta que el usuario las quita.
+    pub no_encontradas: Vec<CarpetaPerdida>,
+    /// Si las preferencias no se pudieron leer, por qué. Se detecta igual, sin nombres ni carpetas a mano.
+    pub preferencias: Option<ErrorNucleo>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CarpetaPerdida {
+    pub raiz: PathBuf,
+    pub nombre: Option<String>,
+}
+
+/// Qué pasó al añadir una carpeta a mano.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Alta {
+    /// El usuario cerró el selector sin elegir.
+    Cancelada,
+    Anadida,
+    /// Ya estaba, del registro o a mano, aunque se escribiera de otra forma.
+    YaEstaba,
+    /// No tiene `.build.info` en su raíz.
+    NoEsInstalacion,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -72,57 +108,114 @@ const CARPETA_INTERFACE: &str = "Interface";
 const CARPETA_ADDONS: &str = "AddOns";
 const PREFIJO_INTERFAZ: &str = "SET engineSurveyPatch ";
 
-/// Instalaciones de este equipo, buscadas en todas las fuentes disponibles.
-pub fn detectar_en_el_sistema() -> Result<Vec<Instalacion>, ErrorNucleo> {
-    let candidatas: Vec<_> = rutas_del_registro()
-        .into_iter()
-        .map(|ruta| (ruta, Fuente::Registro))
-        .collect();
-    detectar(&candidatas)
+/// Instalaciones de este equipo, buscadas en todas las fuentes. Si las preferencias no se pudieron leer, se detecta
+/// sin ellas y se dice por qué.
+pub fn detectar_en_el_sistema(
+    preferencias: Result<Preferencias, ErrorNucleo>,
+) -> Result<Deteccion, ErrorNucleo> {
+    detectar_con(&rutas_del_registro(), preferencias)
 }
 
-/// Convierte raíces candidatas en instalaciones. Una carpeta solo es una instalación si tiene `.build.info` [V];
-/// las rutas repetidas cuentan una vez (la primera fuente gana).
-pub fn detectar(candidatas: &[(PathBuf, Fuente)]) -> Result<Vec<Instalacion>, ErrorNucleo> {
+fn detectar_con(
+    registro: &[PathBuf],
+    preferencias: Result<Preferencias, ErrorNucleo>,
+) -> Result<Deteccion, ErrorNucleo> {
+    let (preferencias, error) = match preferencias {
+        Ok(preferencias) => (preferencias, None),
+        Err(error) => (Preferencias::default(), Some(error)),
+    };
+    let mut deteccion = detectar(registro, &preferencias)?;
+    deteccion.preferencias = error;
+    Ok(deteccion)
+}
+
+/// Convierte las raíces del registro y las elegidas a mano en instalaciones, con los nombres que les ha puesto el
+/// usuario. Una carpeta solo es una instalación si tiene `.build.info` [V]; las rutas repetidas cuentan una vez (el
+/// registro gana).
+pub fn detectar(
+    registro: &[PathBuf],
+    preferencias: &Preferencias,
+) -> Result<Deteccion, ErrorNucleo> {
+    let candidatas = registro.iter().map(|raiz| (raiz, Fuente::Registro)).chain(
+        preferencias
+            .carpetas_manuales
+            .iter()
+            .map(|raiz| (raiz, Fuente::Manual)),
+    );
     let mut vistas = HashSet::new();
-    let mut instalaciones = Vec::new();
+    let mut deteccion = Deteccion {
+        instalaciones: Vec::new(),
+        no_encontradas: Vec::new(),
+        preferencias: None,
+    };
     for (raiz, fuente) in candidatas {
         if !vistas.insert(clave_de_ruta(raiz)) {
             continue;
         }
-        let Some(build_info) = leer_texto(&raiz.join(BUILD_INFO))? else {
-            continue;
-        };
-        instalaciones.push(Instalacion {
-            raiz: raiz.clone(),
-            fuente: *fuente,
-            versiones: leer_versiones(raiz, &build_info)?,
-        });
+        let nombre = preferencias.nombre_instalacion(raiz);
+        match (leer_instalacion(raiz, preferencias), fuente) {
+            (Ok(Some(versiones)), _) => deteccion.instalaciones.push(Instalacion {
+                raiz: raiz.clone(),
+                fuente,
+                nombre,
+                versiones,
+            }),
+            // Una carpeta a mano que no se puede leer (unidad desconectada, permisos) no tumba la detección de las
+            // demás: se lista como no encontrada.
+            (Ok(None) | Err(_), Fuente::Manual) => {
+                deteccion.no_encontradas.push(CarpetaPerdida {
+                    raiz: raiz.clone(),
+                    nombre,
+                });
+            }
+            (Ok(None), Fuente::Registro) => {}
+            (Err(error), Fuente::Registro) => return Err(error),
+        }
     }
-    Ok(instalaciones)
+    Ok(deteccion)
 }
 
-/// Windows no distingue mayúsculas en las rutas y acepta un separador final: `C:\WoW\` y `c:\wow` son la misma.
-fn clave_de_ruta(ruta: &Path) -> String {
-    ruta.to_string_lossy()
-        .trim_end_matches(['\\', '/'])
-        .to_lowercase()
+/// Las versiones de la instalación de `raiz`, o `None` si no tiene `.build.info`.
+fn leer_instalacion(
+    raiz: &Path,
+    preferencias: &Preferencias,
+) -> Result<Option<Vec<VersionJuego>>, ErrorNucleo> {
+    match leer_texto(&raiz.join(BUILD_INFO))? {
+        Some(build_info) => leer_versiones(raiz, &build_info, preferencias).map(Some),
+        None => Ok(None),
+    }
+}
+
+/// Añade a las preferencias una carpeta elegida a mano si es una instalación y no se conocía ya.
+pub fn dar_de_alta(raiz: &Path, registro: &[PathBuf], preferencias: &mut Preferencias) -> Alta {
+    let clave = clave_de_ruta(raiz);
+    if registro.iter().any(|r| clave_de_ruta(r) == clave) || preferencias.es_manual(raiz) {
+        return Alta::YaEstaba;
+    }
+    if !raiz.join(BUILD_INFO).is_file() {
+        return Alta::NoEsInstalacion;
+    }
+    preferencias.anadir_carpeta(raiz.to_path_buf());
+    Alta::Anadida
 }
 
 /// Las versiones son las subcarpetas con `.flavor.info` (`_retail_`, `_forever_`…).
-fn leer_versiones(raiz: &Path, build_info: &str) -> Result<Vec<VersionJuego>, ErrorNucleo> {
+fn leer_versiones(
+    raiz: &Path,
+    build_info: &str,
+    preferencias: &Preferencias,
+) -> Result<Vec<VersionJuego>, ErrorNucleo> {
     let mut versiones = Vec::new();
     for carpeta in subcarpetas(raiz)? {
         let Some(flavor_info) = leer_texto(&carpeta.ruta.join(FLAVOR_INFO))? else {
             continue;
         };
         let producto = valor_de(&flavor_info, COLUMNA_FLAVOR).unwrap_or_default();
-        versiones.push(leer_version(
-            carpeta.nombre,
-            &carpeta.ruta,
-            producto,
-            build_info,
-        )?);
+        let mut version = leer_version(carpeta.nombre, &carpeta.ruta, producto, build_info)?;
+        for cuenta in &mut version.cuentas.cuentas {
+            cuenta.nombre = preferencias.nombre_cuenta(raiz, &version.carpeta, &cuenta.carpeta);
+        }
+        versiones.push(version);
     }
     Ok(versiones)
 }
@@ -195,7 +288,7 @@ fn interfaz_de(config_wtf: &str) -> Option<String> {
 /// Raíces que dice el registro: `Uninstall\World of Warcraft`, valor `InstallLocation` [V, en la vista de 32 bits
 /// (`WOW6432Node`)]. Se mira también la de 64 bits; lo repetido lo junta `detectar`.
 #[cfg(windows)]
-fn rutas_del_registro() -> Vec<PathBuf> {
+pub fn rutas_del_registro() -> Vec<PathBuf> {
     use winreg::RegKey;
     use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY, KEY_WOW64_64KEY};
 
@@ -210,7 +303,7 @@ fn rutas_del_registro() -> Vec<PathBuf> {
 }
 
 #[cfg(not(windows))]
-fn rutas_del_registro() -> Vec<PathBuf> {
+pub fn rutas_del_registro() -> Vec<PathBuf> {
     Vec::new()
 }
 
@@ -249,12 +342,18 @@ mod tests {
         create_dir_all(raiz.join("Data")).unwrap();
     }
 
+    fn solo_registro(raiz: &Path) -> Vec<Instalacion> {
+        detectar(&[raiz.to_path_buf()], &Preferencias::default())
+            .unwrap()
+            .instalaciones
+    }
+
     #[test]
     fn detecta_las_versiones_con_su_build_e_interfaz() {
         let tmp = tempfile::tempdir().unwrap();
         instalacion_de_prueba(tmp.path());
 
-        let instalaciones = detectar(&[(tmp.path().to_path_buf(), Fuente::Registro)]).unwrap();
+        let instalaciones = solo_registro(tmp.path());
 
         assert_eq!(instalaciones.len(), 1);
         let versiones = &instalaciones[0].versiones;
@@ -286,11 +385,7 @@ mod tests {
     #[test]
     fn sin_build_info_no_es_una_instalacion() {
         let tmp = tempfile::tempdir().unwrap();
-        assert!(
-            detectar(&[(tmp.path().to_path_buf(), Fuente::Registro)])
-                .unwrap()
-                .is_empty()
-        );
+        assert!(solo_registro(tmp.path()).is_empty());
     }
 
     #[test]
@@ -302,12 +397,10 @@ mod tests {
             tmp.path().display().to_string().to_uppercase()
         ));
 
-        let candidatas = [
-            (tmp.path().to_path_buf(), Fuente::Registro),
-            (otra_forma, Fuente::Registro),
-        ];
+        let registro = [tmp.path().to_path_buf(), otra_forma];
 
-        assert_eq!(detectar(&candidatas).unwrap().len(), 1);
+        let deteccion = detectar(&registro, &Preferencias::default()).unwrap();
+        assert_eq!(deteccion.instalaciones.len(), 1);
     }
 
     #[test]
@@ -327,7 +420,7 @@ mod tests {
         )
         .unwrap();
 
-        let instalacion = &detectar(&[(tmp.path().to_path_buf(), Fuente::Registro)]).unwrap()[0];
+        let instalacion = &solo_registro(tmp.path())[0];
 
         let clasica = instalacion
             .versiones
@@ -361,9 +454,12 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         instalacion_de_prueba(tmp.path());
         let json = serde_json::to_value(
-            detectar(&[(tmp.path().to_path_buf(), Fuente::Registro)]).unwrap(),
+            detectar(&[tmp.path().to_path_buf()], &Preferencias::default()).unwrap(),
         )
         .unwrap();
+        assert_eq!(json["noEncontradas"], serde_json::json!([]));
+        assert_eq!(json["preferencias"], serde_json::Value::Null);
+        let json = &json["instalaciones"];
         assert_eq!(json[0]["fuente"], "registro");
         assert_eq!(
             json[0]["versiones"][0]["cuentas"]["cuentas"][0]["reinosIgnorados"],
@@ -374,5 +470,114 @@ mod tests {
             "Details!"
         );
         assert!(json[0]["raiz"].is_string());
+        assert_eq!(json[0]["nombre"], serde_json::Value::Null);
+        assert_eq!(
+            json[0]["versiones"][0]["cuentas"]["cuentas"][0]["nombre"],
+            serde_json::Value::Null
+        );
+    }
+
+    #[test]
+    fn las_carpetas_a_mano_se_detectan_con_sus_nombres() {
+        let tmp = tempfile::tempdir().unwrap();
+        let registrada = tmp.path().join("registro");
+        let manual = tmp.path().join("manual");
+        for raiz in [&registrada, &manual] {
+            create_dir_all(raiz).unwrap();
+            instalacion_de_prueba(raiz);
+        }
+        let mut preferencias = Preferencias::default();
+        preferencias.anadir_carpeta(manual.clone());
+        preferencias.nombrar_instalacion(&manual, Some("Portátil".into()));
+        preferencias.nombrar_cuenta(&manual, "_retail_", "1#1", Some("Alts".into()));
+
+        let deteccion = detectar(&[registrada], &preferencias).unwrap();
+
+        let resumen: Vec<_> = deteccion
+            .instalaciones
+            .iter()
+            .map(|i| (i.fuente, i.nombre.as_deref()))
+            .collect();
+        assert_eq!(
+            resumen,
+            [(Fuente::Registro, None), (Fuente::Manual, Some("Portátil"))]
+        );
+        let nombres: Vec<_> = deteccion.instalaciones[1]
+            .versiones
+            .iter()
+            .map(|v| (v.carpeta.as_str(), v.cuentas.cuentas[0].nombre.as_deref()))
+            .collect();
+        assert_eq!(nombres, [("_forever_", None), ("_retail_", Some("Alts"))]);
+        assert!(deteccion.no_encontradas.is_empty());
+    }
+
+    #[test]
+    fn una_carpeta_a_mano_que_ya_no_esta_se_lista_como_no_encontrada() {
+        let tmp = tempfile::tempdir().unwrap();
+        let perdida = tmp.path().join("desaparecida");
+        let mut preferencias = Preferencias::default();
+        preferencias.anadir_carpeta(perdida.clone());
+        preferencias.nombrar_instalacion(&perdida, Some("Casa".into()));
+        // Del registro, una raíz sin `.build.info` no se lista: no es del usuario quitarla.
+        let deteccion = detectar(&[tmp.path().join("vacia")], &preferencias).unwrap();
+
+        assert!(deteccion.instalaciones.is_empty());
+        assert_eq!(
+            deteccion.no_encontradas,
+            [CarpetaPerdida {
+                raiz: perdida,
+                nombre: Some("Casa".into())
+            }]
+        );
+    }
+
+    #[test]
+    fn la_misma_raiz_del_registro_y_a_mano_cuenta_una_vez_como_registro() {
+        let tmp = tempfile::tempdir().unwrap();
+        instalacion_de_prueba(tmp.path());
+        let mut preferencias = Preferencias::default();
+        preferencias.anadir_carpeta(tmp.path().to_path_buf());
+
+        let deteccion = detectar(&[tmp.path().to_path_buf()], &preferencias).unwrap();
+
+        assert_eq!(deteccion.instalaciones.len(), 1);
+        assert_eq!(deteccion.instalaciones[0].fuente, Fuente::Registro);
+    }
+
+    #[test]
+    fn preferencias_ilegibles_se_detecta_igual_y_se_dice() {
+        let error = ErrorNucleo::PreferenciasIlegibles { ruta: "x".into() };
+        let deteccion = detectar_con(&[], Err(error.clone())).unwrap();
+        assert_eq!(deteccion.preferencias, Some(error));
+    }
+
+    #[test]
+    fn dar_de_alta_solo_acepta_instalaciones_nuevas() {
+        let tmp = tempfile::tempdir().unwrap();
+        let wow = tmp.path().join("wow");
+        create_dir_all(&wow).unwrap();
+        instalacion_de_prueba(&wow);
+        let registrada = tmp.path().join("registrada");
+        let mut preferencias = Preferencias::default();
+
+        assert_eq!(
+            dar_de_alta(tmp.path(), &[], &mut preferencias),
+            Alta::NoEsInstalacion
+        );
+        assert_eq!(dar_de_alta(&wow, &[], &mut preferencias), Alta::Anadida);
+        let otra_forma = PathBuf::from(format!("{}\\", wow.display().to_string().to_uppercase()));
+        assert_eq!(
+            dar_de_alta(&otra_forma, &[], &mut preferencias),
+            Alta::YaEstaba
+        );
+        assert_eq!(
+            dar_de_alta(
+                &registrada,
+                std::slice::from_ref(&registrada),
+                &mut preferencias
+            ),
+            Alta::YaEstaba
+        );
+        assert_eq!(preferencias.carpetas_manuales, [wow]);
     }
 }

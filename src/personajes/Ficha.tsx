@@ -6,9 +6,10 @@ import type { Addon, Personaje, VersionJuego } from "../nucleo";
 import css from "./Ficha.module.css";
 import { claveDePersonaje, inicial, muestraReinos, nombreVisible } from "./lista";
 
-type Props = Readonly<{ personaje: Personaje | null; version: VersionJuego; cuenta: string }>;
+type Props = Readonly<{ personaje: Personaje | null; version: VersionJuego; cuenta: string; instalacion: string }>;
 
-export default function Ficha({ personaje, version, cuenta }: Props) {
+/** La instalación va siempre: dos personajes con la misma carpeta en dos instalaciones son personajes distintos. */
+export default function Ficha({ personaje, version, cuenta, instalacion }: Props) {
   const { t } = useTranslation();
   // Una cuenta sin personajes: el escenario queda vacío y la lista dice por qué.
   if (personaje === null) {
@@ -25,6 +26,7 @@ export default function Ficha({ personaje, version, cuenta }: Props) {
       <p className={css.sub}>
         {muestraReinos(version.producto) && <span>{personaje.carpetaReino}</span>}
         <span>{cuenta}</span>
+        <span>{instalacion}</span>
       </p>
       <dl className={css.datos}>
         <div>

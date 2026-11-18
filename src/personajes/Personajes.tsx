@@ -1,10 +1,12 @@
 // Pantalla «Personajes» (spec 017), al estilo de la selección de personaje del juego: selector de versión arriba, el
-// personaje elegido en el centro y la lista de la cuenta a la derecha. Solo enseña lo que devuelve el núcleo.
-import { useEffect, useState } from "react";
-import type { TFunction } from "i18next";
+// personaje elegido en el centro y la lista de la cuenta a la derecha. Solo enseña lo que devuelve el núcleo. Con más
+// de una instalación, cada versión lleva el nombre de la suya (spec 018).
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TriangleAlert } from "lucide-react";
-import { pedirInstalaciones, type Cuenta, type Instalacion, type Personaje, type VersionJuego } from "../nucleo";
+import { conNombreDeCuenta, etiquetaDeInstalacion, nombreDeProducto, normalizarNombre } from "../instalaciones/nombres";
+import type { UsoDeteccion } from "../instalaciones/useDeteccion";
+import { nombrarCuenta, type Cuenta, type Deteccion, type Personaje, type VersionJuego } from "../nucleo";
 import { mensajeDeError } from "../textos/errores";
 import Ficha from "./Ficha";
 import css from "./Personajes.module.css";
@@ -19,20 +21,8 @@ import {
   type EntradaVersion,
 } from "./seleccion";
 
-type Estado =
-  | { tipo: "cargando" }
-  | { tipo: "listo"; instalaciones: Instalacion[] }
-  | { tipo: "error"; error: unknown };
-
-export default function Personajes() {
+export default function Personajes({ estado, actualizar }: UsoDeteccion) {
   const { t } = useTranslation();
-  const [estado, setEstado] = useState<Estado>({ tipo: "cargando" });
-
-  useEffect(() => {
-    pedirInstalaciones()
-      .then((instalaciones) => setEstado({ tipo: "listo", instalaciones }))
-      .catch((error: unknown) => setEstado({ tipo: "error", error }));
-  }, []);
 
   if (estado.tipo !== "listo") {
     return (
@@ -47,12 +37,15 @@ export default function Personajes() {
       </section>
     );
   }
-  return <Seleccion entradas={entradasDeVersion(estado.instalaciones)} />;
+  return <Seleccion deteccion={estado.deteccion} actualizar={actualizar} />;
 }
 
-function Seleccion({ entradas }: Readonly<{ entradas: EntradaVersion[] }>) {
+type PropsSeleccion = Readonly<{ deteccion: Deteccion; actualizar: UsoDeteccion["actualizar"] }>;
+
+function Seleccion({ deteccion, actualizar }: PropsSeleccion) {
   const { t } = useTranslation();
   const [eleccion, setEleccion] = useState<Eleccion>(SIN_ELEGIR);
+  const entradas = entradasDeVersion(deteccion.instalaciones);
   const elegido = resolverEleccion(entradas, eleccion);
 
   if (elegido === null) {
@@ -64,6 +57,23 @@ function Seleccion({ entradas }: Readonly<{ entradas: EntradaVersion[] }>) {
     );
   }
   const { entrada, cuenta, personaje } = elegido;
+  const instalacion = etiquetaDeInstalacion(t, deteccion, entrada.instalacion);
+  // Con una sola instalación su nombre no distingue nada: solo se antepone cuando hay varias.
+  const etiquetaDeEntrada = (otra: EntradaVersion) => {
+    const version = nombreDeProducto(t, otra.version.producto);
+    return deteccion.instalaciones.length > 1
+      ? t("personajes.versionDeInstalacion", {
+          instalacion: etiquetaDeInstalacion(t, deteccion, otra.instalacion),
+          version,
+        })
+      : version;
+  };
+  const renombrarCuenta = (carpeta: string) => (nombre: string) => {
+    const donde = { raiz: entrada.instalacion.raiz, version: entrada.version.carpeta, cuenta: carpeta };
+    return nombrarCuenta(donde.raiz, donde.version, donde.cuenta, nombre).then(() =>
+      actualizar((d) => conNombreDeCuenta(d, donde, normalizarNombre(nombre))),
+    );
+  };
   return (
     <section className={css.pantalla}>
       <header className={css.cabecera}>
@@ -71,16 +81,19 @@ function Seleccion({ entradas }: Readonly<{ entradas: EntradaVersion[] }>) {
         <SelectorVersion
           entradas={entradas}
           actual={entrada.clave}
+          etiqueta={etiquetaDeEntrada}
           elegir={(clave) => setEleccion({ ...SIN_ELEGIR, version: clave })}
         />
       </header>
       <Avisos version={entrada.version} />
       {cuenta !== null && (
         <Cuerpo
+          instalacion={instalacion}
           version={entrada.version}
           cuenta={cuenta}
           personaje={personaje}
           cambiar={(cambio) => setEleccion({ ...eleccion, version: entrada.clave, ...cambio })}
+          renombrarCuenta={renombrarCuenta(cuenta.carpeta)}
         />
       )}
       <Pie entrada={entrada} />
@@ -89,32 +102,44 @@ function Seleccion({ entradas }: Readonly<{ entradas: EntradaVersion[] }>) {
 }
 
 function Cuerpo({
+  instalacion,
   version,
   cuenta,
   personaje,
   cambiar,
+  renombrarCuenta,
 }: Readonly<{
+  instalacion: string;
   version: VersionJuego;
   cuenta: Cuenta;
   personaje: Personaje | null;
   cambiar: (cambio: Partial<Eleccion>) => void;
+  renombrarCuenta: (nombre: string) => Promise<void>;
 }>) {
   const { t } = useTranslation();
   const cuentas = version.cuentas.cuentas;
   const numeros = numerosDeCuenta(cuentas.map((c) => c.carpeta));
-  const etiquetaCuenta = (carpeta: string) => {
+  const porDefecto = (carpeta: string) => {
     const numero = numeros.get(carpeta) ?? null;
     return numero === null ? carpeta : t("plantel.cuenta", { numero });
   };
+  const etiquetaCuenta = (carpeta: string) => cuentas.find((c) => c.carpeta === carpeta)?.nombre ?? porDefecto(carpeta);
   return (
     <div className={css.cuerpo}>
-      <Ficha personaje={personaje} version={version} cuenta={etiquetaCuenta(cuenta.carpeta)} />
+      <Ficha
+        personaje={personaje}
+        version={version}
+        cuenta={etiquetaCuenta(cuenta.carpeta)}
+        instalacion={instalacion}
+      />
       <Plantel
         key={cuenta.carpeta}
         cuentas={cuentas}
         cuenta={cuenta}
         producto={version.producto}
         etiquetaCuenta={etiquetaCuenta}
+        cuentaPorDefecto={porDefecto(cuenta.carpeta)}
+        renombrarCuenta={renombrarCuenta}
         elegirCuenta={(carpeta) => cambiar({ cuenta: carpeta, personaje: null })}
         personaje={personaje}
         elegirPersonaje={(clave) => cambiar({ cuenta: cuenta.carpeta, personaje: clave })}
@@ -126,8 +151,14 @@ function Cuerpo({
 function SelectorVersion({
   entradas,
   actual,
+  etiqueta,
   elegir,
-}: Readonly<{ entradas: EntradaVersion[]; actual: string; elegir: (clave: string) => void }>) {
+}: Readonly<{
+  entradas: EntradaVersion[];
+  actual: string;
+  etiqueta: (entrada: EntradaVersion) => string;
+  elegir: (clave: string) => void;
+}>) {
   const { t } = useTranslation();
   return (
     <div className={css.versiones} role="group" aria-label={t("personajes.versiones")}>
@@ -139,8 +170,7 @@ function SelectorVersion({
           title={entrada.instalacion.raiz}
           onClick={() => elegir(entrada.clave)}
         >
-          {nombreDeProducto(t, entrada.version.producto)}{" "}
-          <span className={css.recuento}>{contarPersonajes(entrada.version)}</span>
+          {etiqueta(entrada)} <span className={css.recuento}>{contarPersonajes(entrada.version)}</span>
         </button>
       ))}
     </div>
@@ -180,9 +210,4 @@ function Pie({ entrada }: Readonly<{ entrada: EntradaVersion }>) {
       )}
     </footer>
   );
-}
-
-/** Nombre legible de los productos conocidos; los demás, tal cual vienen de `.flavor.info`. */
-function nombreDeProducto(t: TFunction, producto: string): string {
-  return producto === "wow" || producto === "wowf" ? t(`productos.${producto}`) : producto;
 }

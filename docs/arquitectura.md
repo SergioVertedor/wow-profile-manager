@@ -26,6 +26,7 @@ flowchart LR
             imp["Importación<br/>planificar, puro"]
             ope["Operaciones<br/>backup, escritura, deshacer"]
             sis["Sistema<br/>proceso de WoW, idioma"]
+            pref["Preferencias<br/>carpetas a mano, nombres"]
         end
     end
     wtf[("WTF e Interface<br/>de la instalación")]
@@ -33,8 +34,9 @@ flowchart LR
     fichero[(".wowprofile")]
 
     ui --> cmd
-    cmd --> det & desc & exp & imp & ope
+    cmd --> det & desc & exp & imp & ope & pref
     desc --> det
+    det --> pref
     desc --> ana
     exp --> desc & ada & pkg
     ada --> ana
@@ -46,6 +48,7 @@ flowchart LR
     pkg -. lee y escribe .-> fichero
     ope == "única escritura" ==> wtf
     ope -. copias y diario .-> datos
+    pref -. lee y escribe preferencias.json .-> datos
 ```
 
 | módulo | hace | toca el disco |
@@ -59,10 +62,13 @@ flowchart LR
 | Importación | calcula el plan: cambios, avisos, bloqueos | no |
 | Operaciones | ejecuta un plan: diario, copias, escritura segura, restauración, historial | **única que escribe en `WTF`** |
 | Sistema | si hay un `Wow.exe` en marcha; idioma de Windows | consulta procesos |
+| Preferencias | carpetas añadidas a mano y nombres propios de instalaciones y cuentas | lee y escribe solo `preferencias.json` en la carpeta de datos de la app |
 
 Criterios de diseño (míos):
 - El catálogo de adaptadores va **dentro del ejecutable**: importar no necesita red.
 - Detección y Descubrimiento no escriben nada nunca, ni cachés, dentro de la instalación.
+- El selector de carpetas lo abre el núcleo (`tauri-plugin-dialog` desde Rust): la interfaz pide «añadir carpeta» y no tiene permiso para abrir diálogos ni para elegir rutas.
+- `preferencias.json` se escribe de forma atómica (temporal y renombrar) y bajo un cerrojo. Si no se entiende, la app sigue sin él y no lo sobrescribe.
 
 ## Exportar
 

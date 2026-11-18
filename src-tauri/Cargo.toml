@@ -24,6 +24,7 @@ sys-locale = "0.3"
 open = "5"
 # Lector de Lua sin pérdidas para los SavedVariables (D-02: 1.467 de 1.467 ficheros reales, idénticos).
 full_moon = "2"
+tauri-plugin-dialog = "2"
 
 # Registro de Windows para encontrar la instalación. Ya estaba en el árbol (dependencia de Tauri).
 [target.'cfg(windows)'.dependencies]

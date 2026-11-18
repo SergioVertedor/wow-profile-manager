@@ -3,6 +3,14 @@
 use crate::error::ErrorNucleo;
 use std::path::{Path, PathBuf};
 
+/// Clave con la que se compara una ruta. Windows no distingue mayúsculas en las rutas y acepta un separador final:
+/// `C:\WoW\` y `c:\wow` son la misma carpeta.
+pub fn clave_de_ruta(ruta: &Path) -> String {
+    ruta.to_string_lossy()
+        .trim_end_matches(['\\', '/'])
+        .to_lowercase()
+}
+
 /// Una subcarpeta con su nombre ya convertido a texto.
 pub struct Subcarpeta {
     pub nombre: String,
