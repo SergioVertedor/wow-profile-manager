@@ -30,9 +30,11 @@ export default function Ficha({ personaje, version, cuenta, instalacion, raiz, c
   const nombre = nombreVisible(personaje);
   const { addons } = version.addons;
   const reino = muestraReinos(version.producto) ? [personaje.carpetaReino] : [];
+  // Cada hermano con su propia clave: si se repiten, React no sabe cuál quitar y se acumulan retratos (#58).
+  const clave = claveDePersonaje(personaje);
   return (
     <section className={css.escenario} aria-label={t("ficha.etiqueta")}>
-      <div key={claveDePersonaje(personaje)} className={css.retrato} aria-hidden>
+      <div key={`retrato-${clave}`} className={css.retrato} aria-hidden>
         {inicial(nombre)}
       </div>
       <h2 className={css.nombre}>{nombre}</h2>
@@ -64,7 +66,7 @@ export default function Ficha({ personaje, version, cuenta, instalacion, raiz, c
         </details>
       )}
       <EliminarPersonaje
-        key={claveDePersonaje(personaje)}
+        key={`eliminar-${clave}`}
         pedido={{
           raiz,
           version: version.carpeta,

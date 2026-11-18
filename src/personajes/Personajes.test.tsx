@@ -130,6 +130,19 @@ describe("Personajes", () => {
     expect(within(ficha()).getByRole("heading", { name: "Goldberg Sp" })).toBeDefined();
   });
 
+  // #58: el retrato y el botón de eliminar compartían `key`; al cambiar de personaje se acumulaban retratos.
+  it("al cambiar varias veces de personaje, la ficha tiene un solo retrato", async () => {
+    pintar("es", () => instalacion(FOREVER));
+    await screen.findByRole("button", { name: "Goldberg Sp" });
+    const personajes = within(lista()).getAllByRole("button", { pressed: false });
+
+    for (const boton of [...personajes, ...personajes]) {
+      fireEvent.click(boton);
+    }
+
+    expect(within(ficha()).getAllByText(/^\p{Lu}$/u)).toHaveLength(1);
+  });
+
   it("con una sola cuenta no hay desplegable; dice su carpeta y cuántos personajes tiene", async () => {
     pintar("es", () => instalacion(FOREVER));
 
