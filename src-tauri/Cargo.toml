@@ -25,6 +25,10 @@ open = "5"
 # Lector de Lua sin pérdidas para los SavedVariables (D-02: 1.467 de 1.467 ficheros reales, idénticos).
 full_moon = "2"
 tauri-plugin-dialog = "2"
+# Hash de las copias de Operaciones. Ya estaba en el Cargo.lock (tauri-codegen): sin crates nuevos.
+sha2 = "0.11"
+# Fecha UTC de las operaciones. Ya estaba en el árbol (cookie, de Tauri): sin crates nuevos.
+time = "0.3"
 
 # Registro de Windows para encontrar la instalación. Ya estaba en el árbol (dependencia de Tauri).
 [target.'cfg(windows)'.dependencies]

@@ -66,7 +66,12 @@
     "enlaceNoAbierto": "Could not open {{url}}: {{detalle}}",
     "escrituraFallida": "Could not save {{ruta}}: {{detalle}}",
     "preferenciasIlegibles": "{{ruta}} cannot be read: the app carries on without names or hand-added folders, and no changes will be saved until you fix or delete it.",
-    "nombreNoValido": "A name can have up to {{maximo}} characters on a single line."
+    "nombreNoValido": "A name can have up to {{maximo}} characters on a single line.",
+    "juegoAbierto": "WoW is running. Close it and try again: on exit, the game would write over the folder.",
+    "personajeNoEncontrado": "That character is no longer on disk. Reload the list.",
+    "operacionFallida": "It could not finish, nor put everything back. The copies are still in operation {{id}}, in the app's data folder: {{detalle}}",
+    "operacionFallidaRestaurada": "It could not finish and everything was put back as it was (operation {{id}}): {{detalle}}",
+    "enlaceNoAdmitido": "There is a link or folder junction at {{ruta}}. It is not followed: it could delete files outside WTF. Remove it by hand if you want to delete the folder."
   },
   "versionApp": "Version {{version}}",
   "instalaciones": {
@@ -95,5 +100,30 @@
     "editar": "Rename: {{que}}",
     "guardar": "Save the name",
     "cancelar": "Cancel"
+  },
+  "eliminar": {
+    "boton": "Delete folder",
+    "titulo": "Delete {{nombre}}'s folder?",
+    "contenido_one": "{{count}} file, {{tamano}}.",
+    "contenido_other": "{{count}} files, {{tamano}}.",
+    "aviso": "If the character still exists, the game will create the folder again when you log in with it. Macros and Edit Mode come back from the server, but its addon settings go back to their defaults and every addon is enabled.",
+    "copia": "Before removing anything, a full copy is saved in the app's data folder. The character's keys in the account files are not touched.",
+    "cancelar": "Cancel",
+    "confirmar": "Delete folder",
+    "eliminando": "Deleting…",
+    "cerrar": "Close",
+    "hecho": "Folder deleted. The copy is saved in operation {{id}}."
+  },
+  "recuperacion": {
+    "canceladas_one": "An operation was cut off before touching anything and has been cancelled.",
+    "canceladas_other": "{{count}} operations were cut off before touching anything and have been cancelled.",
+    "restauradas_one": "An operation was cut off halfway and everything was put back as it was.",
+    "restauradas_other": "{{count}} operations were cut off halfway and everything was put back as it was.",
+    "sinRestaurar_one": "An operation cut off halfway could not be fully undone. Its copies are still in the app's data folder.",
+    "sinRestaurar_other": "{{count}} operations cut off halfway could not be fully undone. Their copies are still in the app's data folder.",
+    "pendientes_one": "An operation is unfinished, but WoW is running. Close the game and open the app again to finish it.",
+    "pendientes_other": "{{count}} operations are unfinished, but WoW is running. Close the game and open the app again to finish them.",
+    "ilegibles_one": "An operation has a log that cannot be read. It has not been touched.",
+    "ilegibles_other": "{{count}} operations have a log that cannot be read. They have not been touched."
   }
 }

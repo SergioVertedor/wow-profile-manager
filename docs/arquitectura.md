@@ -60,8 +60,8 @@ flowchart LR
 | Exportación | arma las piezas de un personaje y sus avisos | no (lo escribe Paquetes) |
 | Paquetes | lee un `.wowprofile` con las comprobaciones del formato; escribe uno nuevo | lee y escribe solo el `.wowprofile` |
 | Importación | calcula el plan: cambios, avisos, bloqueos | no |
-| Operaciones | ejecuta un plan: diario, copias, escritura segura, restauración, historial | **única que escribe en `WTF`** |
-| Sistema | si hay un `Wow.exe` en marcha; idioma de Windows | consulta procesos |
+| Operaciones | ejecuta un plan o una eliminación: diario, copias, escritura segura, restauración, historial | **única que escribe en `WTF`** |
+| Sistema | si hay un `Wow.exe` en marcha (con `tasklist.exe`: el núcleo prohíbe `unsafe`); idioma de Windows | consulta procesos |
 | Preferencias | carpetas añadidas a mano y nombres propios de instalaciones y cuentas | lee y escribe solo `preferencias.json` en la carpeta de datos de la app |
 
 Criterios de diseño (míos):

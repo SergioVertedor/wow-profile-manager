@@ -4619,11 +4619,13 @@ dependencies = [
  "open",
  "serde",
  "serde_json",
+ "sha2 0.11.1",
  "sys-locale",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",
  "tempfile",
+ "time",
  "winreg",
 ]
 

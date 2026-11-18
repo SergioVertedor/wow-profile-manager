@@ -4,13 +4,24 @@
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import type { Addon, Personaje, VersionJuego } from "../nucleo";
+import EliminarPersonaje from "./EliminarPersonaje";
 import css from "./Ficha.module.css";
 import { claveDePersonaje, inicial, muestraReinos, nombreVisible } from "./lista";
 
-type Props = Readonly<{ personaje: Personaje | null; version: VersionJuego; cuenta: string; instalacion: string }>;
+type Props = Readonly<{
+  personaje: Personaje | null;
+  version: VersionJuego;
+  cuenta: string;
+  instalacion: string;
+  /** Dónde está en disco, para pedirle al núcleo que lo elimine. */
+  raiz: string;
+  carpetaCuenta: string;
+  /** Tras eliminar su carpeta: vuelve a leer los personajes. */
+  alEliminar: () => Promise<void>;
+}>;
 
 /** La instalación va siempre: dos personajes con la misma carpeta en dos instalaciones son personajes distintos. */
-export default function Ficha({ personaje, version, cuenta, instalacion }: Props) {
+export default function Ficha({ personaje, version, cuenta, instalacion, raiz, carpetaCuenta, alEliminar }: Props) {
   const { t } = useTranslation();
   // Una cuenta sin personajes: el escenario queda vacío y la lista dice por qué.
   if (personaje === null) {
@@ -18,6 +29,7 @@ export default function Ficha({ personaje, version, cuenta, instalacion }: Props
   }
   const nombre = nombreVisible(personaje);
   const { addons } = version.addons;
+  const reino = muestraReinos(version.producto) ? [personaje.carpetaReino] : [];
   return (
     <section className={css.escenario} aria-label={t("ficha.etiqueta")}>
       <div key={claveDePersonaje(personaje)} className={css.retrato} aria-hidden>
@@ -25,9 +37,9 @@ export default function Ficha({ personaje, version, cuenta, instalacion }: Props
       </div>
       <h2 className={css.nombre}>{nombre}</h2>
       <p className={css.sub}>
-        {muestraReinos(version.producto) && <span>{personaje.carpetaReino}</span>}
-        <span>{cuenta}</span>
-        <span>{instalacion}</span>
+        {[...reino, cuenta, instalacion].map((parte) => (
+          <span key={parte}>{parte}</span>
+        ))}
       </p>
       <dl className={css.datos}>
         <div>
@@ -51,6 +63,19 @@ export default function Ficha({ personaje, version, cuenta, instalacion }: Props
           </ul>
         </details>
       )}
+      <EliminarPersonaje
+        key={claveDePersonaje(personaje)}
+        pedido={{
+          raiz,
+          version: version.carpeta,
+          cuenta: carpetaCuenta,
+          reino: personaje.carpetaReino,
+          personaje: personaje.carpetaPersonaje,
+        }}
+        nombre={nombre}
+        donde={[...reino, cuenta, instalacion]}
+        alTerminar={alEliminar}
+      />
     </section>
   );
 }

@@ -4,7 +4,9 @@
 use std::path::Path;
 use tauri::test::{INVOKE_KEY, get_ipc_response, mock_builder, mock_context, noop_assets};
 use tauri::webview::InvokeRequest;
-use wow_profile_manager_lib::{Almacen, NOMBRE_APP, con_comandos};
+use wow_profile_manager_lib::{
+    Almacen, CARPETA_OPERACIONES, NOMBRE_APP, Operaciones, con_comandos,
+};
 
 fn invocar(comando: &str) -> Result<serde_json::Value, serde_json::Value> {
     invocar_con(comando, serde_json::json!({}))
@@ -24,9 +26,13 @@ fn invocar_en(
     comando: &str,
     argumentos: serde_json::Value,
 ) -> Result<serde_json::Value, serde_json::Value> {
-    let app = con_comandos(mock_builder().manage(Almacen::en(datos.to_path_buf())))
-        .build(mock_context(noop_assets()))
-        .unwrap();
+    let app = con_comandos(
+        mock_builder()
+            .manage(Almacen::en(datos.to_path_buf()))
+            .manage(Operaciones::en(datos.join(CARPETA_OPERACIONES))),
+    )
+    .build(mock_context(noop_assets()))
+    .unwrap();
     let ventana = tauri::WebviewWindowBuilder::new(&app, "main", Default::default())
         .build()
         .unwrap();
@@ -123,4 +129,94 @@ fn un_nombre_no_valido_se_rechaza_con_su_codigo_y_no_escribe() {
     assert_eq!(error["codigo"], "nombreNoValido");
     assert_eq!(error["datos"]["maximo"], 40);
     assert!(!tmp.path().join("preferencias.json").exists());
+}
+
+/// Una instalación añadida a mano en `raiz` con un personaje de Forever de un fichero, y las preferencias en `datos`
+/// que la conocen. Devuelve los argumentos con los que la interfaz pide ese personaje.
+fn instalacion_con_personaje(raiz: &Path, datos: &Path) -> serde_json::Value {
+    std::fs::write(raiz.join(".build.info"), "Product!STRING:0\nwowf\n").unwrap();
+    let version = raiz.join("_forever_");
+    let personaje = version.join("WTF/Account/1#1/93/Goldberg-Soulreaper");
+    std::fs::create_dir_all(&personaje).unwrap();
+    std::fs::write(
+        version.join(".flavor.info"),
+        "Product Flavor!STRING:0\nwowf\n",
+    )
+    .unwrap();
+    std::fs::write(personaje.join("AddOns.txt"), "Prat-3.0: enabled\r\n").unwrap();
+    std::fs::create_dir_all(datos).unwrap();
+    std::fs::write(
+        datos.join("preferencias.json"),
+        serde_json::json!({ "version": 1, "carpetasManuales": [raiz] }).to_string(),
+    )
+    .unwrap();
+    serde_json::json!({ "personaje": {
+        "raiz": raiz, "version": "_forever_", "cuenta": "1#1", "reino": "93", "personaje": "Goldberg-Soulreaper"
+    } })
+}
+
+#[test]
+fn resumen_eliminacion_cuenta_los_ficheros_del_personaje() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (raiz, datos) = (tmp.path().join("wow"), tmp.path().join("datos"));
+    std::fs::create_dir_all(&raiz).unwrap();
+    let pedido = instalacion_con_personaje(&raiz, &datos);
+
+    let resumen = invocar_en(&datos, "resumen_eliminacion", pedido).unwrap();
+
+    assert_eq!(resumen["ficheros"], 1);
+    assert_eq!(resumen["bytes"], 19);
+    assert!(
+        resumen["ruta"]
+            .as_str()
+            .unwrap()
+            .ends_with("Goldberg-Soulreaper")
+    );
+}
+
+#[test]
+fn eliminar_personaje_saca_la_carpeta_o_dice_que_el_juego_esta_abierto() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (raiz, datos) = (tmp.path().join("wow"), tmp.path().join("datos"));
+    std::fs::create_dir_all(&raiz).unwrap();
+    let pedido = instalacion_con_personaje(&raiz, &datos);
+    let carpeta = raiz.join("_forever_/WTF/Account/1#1/93/Goldberg-Soulreaper");
+
+    // Mira los procesos reales: si quien corre los tests está jugando, la respuesta correcta es «juego abierto».
+    match invocar_en(&datos, "eliminar_personaje", pedido) {
+        Ok(id) => {
+            assert!(!carpeta.exists());
+            let diario = datos.join(CARPETA_OPERACIONES).join(id.as_str().unwrap());
+            assert!(diario.join("operacion.json").is_file());
+        }
+        Err(error) => {
+            assert_eq!(error["codigo"], "juegoAbierto");
+            assert!(carpeta.join("AddOns.txt").is_file());
+        }
+    }
+}
+
+#[test]
+fn eliminar_un_personaje_que_no_se_lista_se_rechaza_sin_escribir() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (raiz, datos) = (tmp.path().join("wow"), tmp.path().join("datos"));
+    std::fs::create_dir_all(&raiz).unwrap();
+    let mut pedido = instalacion_con_personaje(&raiz, &datos);
+    pedido["personaje"]["personaje"] = "../../../../..".into();
+
+    let error = invocar_en(&datos, "eliminar_personaje", pedido).unwrap_err();
+
+    assert_eq!(error["codigo"], "personajeNoEncontrado");
+    assert!(!datos.join(CARPETA_OPERACIONES).exists());
+}
+
+#[test]
+fn recuperar_operaciones_sin_operaciones_no_hace_nada() {
+    let respuesta = invocar("recuperar_operaciones").unwrap();
+    assert_eq!(
+        respuesta,
+        serde_json::json!({
+            "canceladas": 0, "restauradas": 0, "sinRestaurar": 0, "pendientes": 0, "ilegibles": 0
+        })
+    );
 }

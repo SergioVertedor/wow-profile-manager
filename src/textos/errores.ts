@@ -6,6 +6,10 @@ import { esErrorNucleo } from "../nucleo";
 
 export function mensajeDeError(t: TFunction, error: unknown): string {
   if (esErrorNucleo(error)) {
+    // Si la operación dejó el WTF como estaba, se dice: es lo primero que necesita saber el usuario.
+    if (error.codigo === "operacionFallida" && error.datos.restaurada) {
+      return t("errores.operacionFallidaRestaurada", error.datos);
+    }
     const desconocido = t("errores.desconocido", { mensaje: error.codigo });
     return t(`errores.${error.codigo}`, { ...error.datos, defaultValue: desconocido });
   }

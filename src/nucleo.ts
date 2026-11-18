@@ -26,7 +26,11 @@ export type ErrorNucleo =
   | { codigo: "enlaceNoAbierto"; datos: { url: string; detalle: string } }
   | { codigo: "escrituraFallida"; datos: { ruta: string; detalle: string } }
   | { codigo: "preferenciasIlegibles"; datos: { ruta: string } }
-  | { codigo: "nombreNoValido"; datos: { maximo: number } };
+  | { codigo: "nombreNoValido"; datos: { maximo: number } }
+  | { codigo: "juegoAbierto"; datos: Record<string, never> }
+  | { codigo: "personajeNoEncontrado"; datos: Record<string, never> }
+  | { codigo: "enlaceNoAdmitido"; datos: { ruta: string } }
+  | { codigo: "operacionFallida"; datos: { id: string; restaurada: boolean; detalle: string } };
 
 export function esErrorNucleo(valor: unknown): valor is ErrorNucleo {
   return typeof valor === "object" && valor !== null && "codigo" in valor && "datos" in valor;
@@ -116,6 +120,44 @@ export function nombrarInstalacion(raiz: string, nombre: string): Promise<void> 
 /** Un nombre vacío borra el que hubiera. */
 export function nombrarCuenta(raiz: string, version: string, cuenta: string, nombre: string): Promise<void> {
   return invoke("nombrar_cuenta", { raiz, version, cuenta, nombre });
+}
+
+/** Un personaje tal como se le pide al núcleo: su instalación y sus carpetas. El núcleo lo busca; no es una ruta. */
+export interface PersonajePedido {
+  raiz: string;
+  version: string;
+  cuenta: string;
+  reino: string;
+  personaje: string;
+}
+
+/** Lo que tiene la carpeta de un personaje, para confirmar antes de eliminarla. */
+export interface ResumenEliminacion {
+  ruta: string;
+  ficheros: number;
+  bytes: number;
+}
+
+export function pedirResumenEliminacion(personaje: PersonajePedido): Promise<ResumenEliminacion> {
+  return invoke<ResumenEliminacion>("resumen_eliminacion", { personaje });
+}
+
+/** Saca la carpeta del personaje del `WTF` y guarda una copia como operación (spec 021). Devuelve su id. */
+export function eliminarPersonaje(personaje: PersonajePedido): Promise<string> {
+  return invoke<string>("eliminar_personaje", { personaje });
+}
+
+/** Qué hizo el núcleo al arrancar con las operaciones que se cortaron (`Recuperacion` en `operaciones.rs`). */
+export interface Recuperacion {
+  canceladas: number;
+  restauradas: number;
+  sinRestaurar: number;
+  pendientes: number;
+  ilegibles: number;
+}
+
+export function recuperarOperaciones(): Promise<Recuperacion> {
+  return invoke<Recuperacion>("recuperar_operaciones");
 }
 
 /** Enlaces que sabe abrir el núcleo (`src-tauri/src/enlaces.rs`). La interfaz nunca le pasa una URL. */
