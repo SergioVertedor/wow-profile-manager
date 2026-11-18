@@ -30,9 +30,10 @@ pub enum ErrorNucleo {
     OperacionNoEncontrada {},
     /// La operación no se puede deshacer: no es una eliminación ni una importación `completa`.
     NoDeshacible {},
-    /// La operación no se restaura a petición: solo una importación cortada a mitad.
+    /// La operación no se restaura a petición: solo una importación cortada a mitad o una que no se pudo restaurar.
     NoRestaurable {},
-    /// Una importación quedó a medias (`id`): hasta restaurarla no se crea ninguna otra operación.
+    /// Una operación sin resolver (`id`: importación a medias o sin restaurar del todo): hasta restaurarla, o borrarla
+    /// tras devolverla a mano, no se crea ninguna otra.
     OperacionAMedias { id: String },
     /// Una operación posterior `completa` (`id`) tocó alguno de los mismos ficheros: hay que deshacerla antes.
     OperacionPosterior { id: String },

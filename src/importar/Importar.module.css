@@ -119,9 +119,10 @@
   font-weight: 650;
 }
 
+/* Crece pero nunca se encoge por debajo de su contenido: si no, se desbordaría por debajo de los botones de abajo,
+   que taparían (y se comerían los clics de) lo que queda debajo. La vista entera hace scroll. */
 .paso {
-  flex: 1;
-  min-height: 0;
+  flex: 1 0 auto;
 }
 
 .botones {

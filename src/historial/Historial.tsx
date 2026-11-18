@@ -165,7 +165,7 @@ function Fila({ operacion, abrir, recargar, trasDeshacer }: PropsFila) {
             alTerminar={trasDeshacer}
           />
         )}
-        {operacion.aMedias && (
+        {operacion.porResolver && (
           <RestaurarOperacion id={operacion.id} nombre={nombre} donde={donde} alTerminar={trasDeshacer} />
         )}
         <BotonAbrir id={operacion.id} abrir={abrir} />

@@ -90,8 +90,8 @@
     "versionPaquete": "This profile uses a newer version of the format ({{version}}). Update the app to import it.",
     "paqueteNoAbierto": "The profile is no longer open. Open it again.",
     "destinosNoValidos": "The chosen characters must belong to one installation and to the profile's game version.",
-    "noRestaurable": "This operation is not restored from here: only an import that was left half done.",
-    "operacionAMedias": "An import was left half done (operation {{id}}). Restore it from History before doing anything else.",
+    "noRestaurable": "This operation is not restored from here: only one that was cut off halfway or could not be fully undone.",
+    "operacionAMedias": "There is an unresolved operation (operation {{id}}): it was cut off halfway or could not be fully undone. Restore it from History or, if you already put things back by hand, delete it there. Until then no other operation runs.",
     "paqueteCambiado": "The profile file is no longer where you opened it, or it has changed. Open it again.",
     "conflictosSinDecidir": "You still need to decide on what affects the whole account."
   },
@@ -345,12 +345,12 @@
     "verHistorial": "View history"
   },
   "restaurar": {
-    "titulo": "Restore the import into {{nombre}}?",
-    "explicacion": "The files it managed to write go back to how they were before the import, from their copies. What it did not write is not touched.",
+    "titulo": "Restore what changed in {{nombre}}?",
+    "explicacion": "The files the operation managed to change go back to how they were, from their copies. What it did not touch is not touched. If one is no longer as the operation left it, it is not overwritten and you are told.",
     "cancelar": "Cancel",
     "confirmar": "Restore",
     "restaurando": "Restoring…",
     "cerrar": "Close",
-    "hecho": "Done: everything is as it was before the import."
+    "hecho": "Done: everything is as it was before the operation."
   }
 }

@@ -411,8 +411,10 @@ export interface Operacion {
   ficheros: number;
   bytes: number;
   deshacible: boolean;
-  /** Una importación cortada a mitad: se ofrece «Restaurar». */
+  /** Una importación cortada a mitad. */
   aMedias: boolean;
+  /** Sin resolver (importación a medias o no restaurada del todo): se ofrece «Restaurar» y bloquea las demás. */
+  porResolver: boolean;
   /**
    * En una `fallida-sin-restaurar` o una importación a medias: lo que hoy no está como antes y dónde está su copia
    * (`null`: no existía).

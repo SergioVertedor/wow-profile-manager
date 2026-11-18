@@ -326,6 +326,65 @@ fn restaurar_a_peticion_no_sigue_una_union_puesta_despues() {
     std::fs::remove_dir(&carpeta).unwrap();
 }
 
+/// Todo se escribe, pero el diario no se puede cerrar como `completa`: lo escrito se devuelve (rollback).
+#[test]
+fn si_no_se_puede_cerrar_el_diario_se_devuelve_lo_escrito() {
+    let e = escenario();
+    let (diario, contenidos) = preparar(&e.personaje, paquete(), tres()).unwrap();
+    let (id, dir) = e.operaciones.nueva_carpeta().unwrap();
+    let diario = Diario { id, ..diario };
+    guardar(&dir, &diario).unwrap();
+
+    let resultado = super::super::ejecutar(&dir, diario, &|| false, |d| {
+        escribir(d, &contenidos)?;
+        // El temporal del diario es una carpeta: guardarlo falla a partir de aquí.
+        create_dir_all(dir.join(format!("{DIARIO}.tmp"))).unwrap();
+        Ok(())
+    });
+
+    let Err(ErrorNucleo::OperacionFallida {
+        restaurada,
+        detalle,
+        ..
+    }) = resultado
+    else {
+        panic!("{resultado:?}");
+    };
+    assert!(restaurada, "{detalle}");
+    assert!(
+        detalle.contains("el diario no se pudo guardar"),
+        "{detalle}"
+    );
+    let carpeta = e.personaje.carpeta();
+    assert!(!carpeta.join("macros-cache.txt").exists());
+    assert_eq!(texto(&carpeta.join("AddOns.txt")), ADDONS_TXT);
+    assert!(!cuenta(&e).join("config-cache.wtf").exists());
+}
+
+/// Una operación que no se pudo restaurar del todo también bloquea las demás, y se puede reintentar.
+#[test]
+fn una_sin_restaurar_bloquea_y_se_reintenta() {
+    let e = escenario();
+    let id = importar(&e);
+    let mut diario = diario_de(&e.datos, &id);
+    diario.estado = Estado::FallidaSinRestaurar;
+    guardar(&e.datos.join(&id), &diario).unwrap();
+
+    assert_eq!(
+        e.operaciones.eliminar_personaje(&e.personaje, || false),
+        Err(ErrorNucleo::OperacionAMedias { id: id.clone() })
+    );
+    e.operaciones.restaurar_operacion(&id, || false).unwrap();
+
+    assert_eq!(diario_de(&e.datos, &id).estado, Estado::FallidaRestaurada);
+    assert_eq!(texto(&e.personaje.carpeta().join("AddOns.txt")), ADDONS_TXT);
+    assert!(
+        e.operaciones
+            .eliminar_personaje(&e.personaje, || false)
+            .is_ok()
+    );
+}
+
 #[test]
 fn solo_se_restaura_a_peticion_una_importacion_a_medias() {
     let e = escenario();

@@ -4,7 +4,7 @@
 use super::deshacer::se_puede_deshacer;
 use super::{
     Destino, Diario, Estado, Operaciones, PaqueteImportado, Tipo, en_disco, es_enlace,
-    hash_en_disco, leer,
+    hash_en_disco, leer, por_resolver,
 };
 use crate::disco::subcarpetas;
 use crate::error::ErrorNucleo;
@@ -55,8 +55,11 @@ struct Resumen {
     bytes: u64,
     /// Si se le puede ofrecer «Deshacer»: una eliminación o una importación `completa`.
     deshacible: bool,
-    /// Una importación cortada a mitad: se le ofrece «Restaurar» y bloquea las demás operaciones (spec 025).
+    /// Una importación cortada a mitad (spec 025).
     a_medias: bool,
+    /// Sin resolver (una importación a medias o una que no se pudo restaurar del todo): se le ofrece «Restaurar» y
+    /// bloquea las demás operaciones.
+    por_resolver: bool,
     /// En una `fallida-sin-restaurar` o una importación a medias, los ficheros que hoy no están como antes y dónde está
     /// su copia.
     sin_devolver: Vec<SinDevolver>,
@@ -147,6 +150,7 @@ fn resumir(dir: &Path, id: String, diario: Diario, bytes: u64, ids: &HashSet<&st
         id,
         deshacible: se_puede_deshacer(&diario),
         a_medias,
+        por_resolver: por_resolver(&diario),
         ficheros: diario.cambios.len(),
         bytes,
         sin_devolver,

@@ -72,7 +72,7 @@ impl Operaciones {
         }
         // Como al eliminar: una pendiente se termina antes, para que el siguiente arranque no la restaure encima.
         self.recuperar_sin_cerrojo(&juego_en_marcha);
-        self.sin_importacion_a_medias()?;
+        self.sin_operacion_por_resolver()?;
         let (mut diario, contenidos) = preparar(personaje, paquete, escrituras)?;
         let (id, dir) = self.nueva_carpeta()?;
         diario.id = id;

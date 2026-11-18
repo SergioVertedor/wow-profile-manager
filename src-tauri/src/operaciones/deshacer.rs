@@ -90,7 +90,7 @@ impl Operaciones {
         }
         // Como al eliminar: una pendiente se termina antes, para que el siguiente arranque no la restaure encima.
         self.recuperar_sin_cerrojo(&juego_en_marcha);
-        self.sin_importacion_a_medias()?;
+        self.sin_operacion_por_resolver()?;
         let preparado = self.preparar_deshacer(id)?;
         if huella(&preparado.cambios) != huella_vista {
             return Err(ErrorNucleo::PlanCaducado {});

@@ -90,8 +90,8 @@
     "versionPaquete": "Este perfil es de una versión más nueva del formato ({{version}}). Actualiza la app para importarlo.",
     "paqueteNoAbierto": "El perfil ya no está abierto. Vuelve a abrirlo.",
     "destinosNoValidos": "Los personajes elegidos tienen que ser de una misma instalación y de la versión del juego del perfil.",
-    "noRestaurable": "Esta operación no se restaura desde aquí: solo una importación que se quedó a medias.",
-    "operacionAMedias": "Una importación se quedó a medias (operación {{id}}). Restáurala desde el Historial antes de hacer nada más.",
+    "noRestaurable": "Esta operación no se restaura desde aquí: solo una que se cortó a mitad o que no se pudo deshacer del todo.",
+    "operacionAMedias": "Hay una operación sin resolver (operación {{id}}): se cortó a mitad o no se pudo deshacer del todo. Restáurala desde el Historial o, si ya la devolviste a mano, bórrala allí. Hasta entonces no se hace ninguna otra.",
     "paqueteCambiado": "El fichero del perfil ya no está donde lo abriste o ha cambiado. Vuelve a abrirlo.",
     "conflictosSinDecidir": "Falta decidir lo que afecta a toda la cuenta."
   },
@@ -345,12 +345,12 @@
     "verHistorial": "Ver historial"
   },
   "restaurar": {
-    "titulo": "¿Restaurar la importación en {{nombre}}?",
-    "explicacion": "Los ficheros que llegó a escribir vuelven a como estaban antes de importar, desde sus copias. Lo que no llegó a escribir no se toca.",
+    "titulo": "¿Restaurar lo que cambió en {{nombre}}?",
+    "explicacion": "Los ficheros que la operación llegó a cambiar vuelven a como estaban, desde sus copias. Lo que no llegó a tocar no se toca. Si alguno ya no está como lo dejó la operación, no se pisa y se dice.",
     "cancelar": "Cancelar",
     "confirmar": "Restaurar",
     "restaurando": "Restaurando…",
     "cerrar": "Cerrar",
-    "hecho": "Hecho: todo está como antes de importar."
+    "hecho": "Hecho: todo está como antes de la operación."
   }
 }

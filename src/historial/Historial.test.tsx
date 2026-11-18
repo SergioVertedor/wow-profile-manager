@@ -44,6 +44,7 @@ const ELIMINACION: Operacion = {
   bytes: 120_000,
   deshacible: true,
   aMedias: false,
+  porResolver: false,
   paquete: null,
   sinDevolver: [],
 };
@@ -62,6 +63,7 @@ const IMPORTACION_A_MEDIAS: Operacion = {
   terminada: null,
   deshacible: false,
   aMedias: true,
+  porResolver: true,
   sinDevolver: [{ ruta: "C:\\WoW\\_forever_\\WTF\\Account\\1#1\\config-cache.wtf", copia: "C:\\datos\\copias\\0" }],
 };
 
@@ -72,6 +74,7 @@ const SIN_RESTAURAR: Operacion = {
   estado: "fallida-sin-restaurar",
   error: "interrumpida. Sin restaurar: …",
   deshacible: false,
+  porResolver: true,
   destino: { ...ELIMINACION.destino, carpetaPersonaje: "Goldberg-Joestar", nombreEnDatos: undefined },
   sinDevolver: [{ ruta: "C:\\WoW\\_forever_\\WTF\\x.lua", copia: "C:\\datos\\operaciones\\20261117-080000-0000beef\\copias\\3" }],
 };
@@ -136,6 +139,7 @@ describe("Historial", () => {
     expect(within(fila).getByRole("alert").textContent).toContain(
       "C:\\WoW\\_forever_\\WTF\\x.lua ← C:\\datos\\operaciones\\20261117-080000-0000beef\\copias\\3",
     );
+    expect(within(fila).getByRole("button", { name: "Restaurar" })).toBeTruthy();
   });
 
   it("cuenta aparte los diarios ilegibles y deja abrir su carpeta", async () => {
@@ -233,7 +237,7 @@ describe("Historial", () => {
 
     const dialogo = await screen.findByRole("dialog");
     fireEvent.click(within(dialogo).getByRole("button", { name: "Restaurar" }));
-    expect((await within(dialogo).findByRole("status")).textContent).toBe("Hecho: todo está como antes de importar.");
+    expect((await within(dialogo).findByRole("status")).textContent).toBe("Hecho: todo está como antes de la operación.");
     expect(llamadas.find((l) => l.comando === "restaurar_operacion")?.argumentos).toEqual({
       id: IMPORTACION_A_MEDIAS.id,
     });

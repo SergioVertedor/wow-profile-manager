@@ -250,7 +250,7 @@ impl Operaciones {
         // Una operación que quedó a medias (al arrancar el juego estaba abierto) se termina antes: si no, el siguiente
         // arranque la restauraría encima de esta. Lo que haga se ve en su diario.
         self.recuperar_sin_cerrojo(&juego_en_marcha);
-        self.sin_importacion_a_medias()?;
+        self.sin_operacion_por_resolver()?;
         let carpeta = personaje.carpeta();
         let ficheros = ficheros_a_quitar(personaje)?;
         let (id, dir) = self.nueva_carpeta()?;
@@ -328,22 +328,23 @@ impl Operaciones {
         recuperacion
     }
 
-    /// Una importación cortada a mitad bloquea cualquier otra operación: otra escritura podría cambiar sus ficheros y
-    /// restaurarla ya no podría devolverlos (spec 025, decisión 13).
-    fn sin_importacion_a_medias(&self) -> Result<(), ErrorNucleo> {
+    /// Una operación sin resolver bloquea cualquier otra: otra escritura podría cambiar sus ficheros y restaurarla ya no
+    /// podría devolverlos (spec 025, decisiones 13 y 16). Sin resolver: una importación cortada a mitad o cualquier
+    /// operación que no se pudo restaurar del todo. Se resuelve restaurándola o, si ya se devolvió a mano, borrándola.
+    fn sin_operacion_por_resolver(&self) -> Result<(), ErrorNucleo> {
         // Si no se puede listar, no se sigue: podría haber una a medias que no se ve.
         let a_medias = subcarpetas(&self.dir)?
             .into_iter()
             .filter_map(|c| leer(&c.ruta).map(|d| (c.nombre, d)))
-            .find(|(_, d)| d.tipo == Tipo::Importacion && d.estado == Estado::Escribiendo);
+            .find(|(_, d)| por_resolver(d));
         match a_medias {
             Some((id, _)) => Err(ErrorNucleo::OperacionAMedias { id }),
             None => Ok(()),
         }
     }
 
-    /// Restaura una importación cortada a mitad, cuando el usuario lo pide. Solo esas: el resto se restaura solo al
-    /// arrancar. El diario está en disco y pudo tocarse a mano: sus rutas se comprueban otra vez (carpeta y enlaces). Si
+    /// Restaura una operación sin resolver cuando el usuario lo pide: una importación cortada a mitad (no se restaura sola
+    /// al arrancar) o un reintento de una que no se pudo restaurar del todo. El diario está en disco y pudo tocarse a mano: sus rutas se comprueban otra vez (carpeta y enlaces). Si
     /// no queda todo como antes, devuelve qué falta.
     pub fn restaurar_operacion(
         &self,
@@ -356,7 +357,7 @@ impl Operaciones {
         }
         let dir = self.carpeta_de(id)?;
         let mut diario = leer(&dir).ok_or(ErrorNucleo::OperacionNoEncontrada {})?;
-        if diario.tipo != Tipo::Importacion || diario.estado != Estado::Escribiendo {
+        if !por_resolver(&diario) {
             return Err(ErrorNucleo::NoRestaurable {});
         }
         comprobar_bases(&diario)?;
@@ -424,14 +425,32 @@ fn ejecutar(
 
     diario.estado = Estado::Escribiendo;
     guardar(dir, &diario)?;
-    if let Err(error) = escribir(&diario) {
-        let restaurada = restaurar(dir, &mut diario, error.detalle());
-        guardar(dir, &diario)?;
-        return Err(fallida(&diario, restaurada, &error));
+    // Escribir y cerrar el diario van juntos: si el diario no dice `completa`, lo escrito no se da por bueno.
+    let cerrada = escribir(&diario).and_then(|()| {
+        let mut completa = diario.clone();
+        completa.terminar(Estado::Completa, None);
+        guardar(dir, &completa).map(|()| completa.id)
+    });
+    cerrada.map_err(|error| devolver(dir, &mut diario, &error))
+}
+
+/// Rollback: deja el `WTF` como antes de la operación y dice si lo consiguió. Si no, el diario dice qué falta y dónde
+/// está su copia (`fallida-sin-restaurar`). Si ni siquiera se puede guardar el diario, en disco sigue `escribiendo`: al
+/// arrancar o al restaurar se vuelve a intentar, y lo que ya está como antes no se toca.
+fn devolver(dir: &Path, diario: &mut Diario, error: &ErrorNucleo) -> ErrorNucleo {
+    let restaurada = restaurar(dir, diario, error.detalle());
+    match guardar(dir, diario) {
+        Ok(()) => fallida(diario, restaurada, error),
+        Err(al_guardar) => ErrorNucleo::OperacionFallida {
+            id: diario.id.clone(),
+            restaurada,
+            detalle: format!(
+                "{}; el diario no se pudo guardar: {}",
+                error.detalle(),
+                al_guardar.detalle()
+            ),
+        },
     }
-    diario.terminar(Estado::Completa, None);
-    guardar(dir, &diario)?;
-    Ok(diario.id)
 }
 
 /// Termina en `cancelada`: el `WTF` no se ha tocado. El juego abierto se devuelve tal cual, para que la interfaz lo
@@ -469,6 +488,13 @@ fn ficheros_a_quitar(personaje: &PersonajeUbicado) -> Result<Vec<PathBuf>, Error
         ));
     }
     Ok(ficheros)
+}
+
+/// Una importación cortada a mitad o una operación que no se pudo restaurar del todo: el `WTF` puede estar a medias.
+fn por_resolver(diario: &Diario) -> bool {
+    let importacion_a_medias =
+        diario.tipo == Tipo::Importacion && diario.estado == Estado::Escribiendo;
+    importacion_a_medias || diario.estado == Estado::FallidaSinRestaurar
 }
 
 /// La carpeta del personaje del destino o, si `de_cuenta`, la de su cuenta, relativa a la raíz y con `/`.
