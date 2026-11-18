@@ -80,7 +80,11 @@
     "planCaducado": "Algún fichero ha cambiado desde que se mostró qué iba a pasar. No se ha escrito nada: vuelve a intentarlo para verlo de nuevo.",
     "operacionEnCurso": "La operación está a medias: no se puede borrar hasta que termine.",
     "restauracionManualSinConfirmar": "Confirma que ya has restaurado a mano lo que faltaba.",
-    "carpetaNoAbierta": "No se pudo abrir {{ruta}}: {{detalle}}"
+    "carpetaNoAbierta": "No se pudo abrir {{ruta}}: {{detalle}}",
+    "exportacionSinVersion": "No se sabe la versión del juego o su número de interfaz (.build.info o WTF/Config.wtf): entra una vez en el juego y vuelve a intentarlo.",
+    "perfilNoValido": "El nombre es obligatorio y puede tener hasta 80 caracteres; la descripción, hasta 500.",
+    "seleccionVacia": "Marca al menos una cosa que exportar.",
+    "paqueteDemasiadoGrande": "Es demasiado grande para un .wowprofile (como mucho 256 piezas, 32 MiB cada una y 128 MiB en total)."
   },
   "versionApp": "Versión {{version}}",
   "instalaciones": {
@@ -194,5 +198,34 @@
     "confirmar": "Borrar",
     "borrando": "Borrando…",
     "deshacer": "Es un deshacer: su copia es lo que el juego había guardado en la carpeta después de eliminarla."
+  },
+  "exportar": {
+    "boton": "Exportar",
+    "titulo": "Exportar a {{nombre}}",
+    "piezas": "Qué se lleva",
+    "deLaCuenta": "de la cuenta",
+    "quitadas_one": "sin {{count}} línea que no viaja",
+    "quitadas_other": "sin {{count}} líneas que no viajan",
+    "categorias": {
+      "macros": "Macros",
+      "teclas": "Teclas",
+      "teclas-clic": "Teclas de clic",
+      "opciones": "Opciones",
+      "chat": "Chat",
+      "ventanas": "Ventanas",
+      "marcos-banda": "Marcos de banda",
+      "addons-activos": "Addons activos"
+    },
+    "nada": "Este personaje no tiene nada que exportar todavía.",
+    "barras": "El contenido de los botones de las barras de acción no viaja: lo guarda el servidor. Sí viajan las teclas, las macros y la lista de addons activos.",
+    "juegoAbierto": "WoW está abierto: lo que hayas cambiado en esta sesión no está en disco hasta que salgas del personaje o escribas /reload.",
+    "apartadas": "No viajan porque ya contienen el texto reservado «@@WOWPROFILE:»: {{piezas}}.",
+    "nombre": "Nombre del perfil",
+    "descripcion": "Descripción (opcional)",
+    "cancelar": "Cancelar",
+    "confirmar": "Guardar…",
+    "exportando": "Guardando…",
+    "cerrar": "Cerrar",
+    "hecho": "Guardado como {{fichero}}."
   }
 }

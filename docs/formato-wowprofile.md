@@ -44,8 +44,8 @@ datos/<id>           ← una pieza por entrada del manifiesto, bytes tal cual
 | `origen.producto` | sí | `wowf` (Forever) o `wow` (Retail), de `.build.info` |
 | `origen.build` | sí | versión del cliente, p. ej. `1.60.1.70938` |
 | `origen.interfaz` | sí | número de interfaz, p. ej. `16001` |
-| `origen.clase` | no | clase del personaje (`DRUID`…), solo si se pudo saber; sirve para avisar, nunca para bloquear |
-| `addons[]` | sí | addons cuya configuración va en el paquete (puede estar vacía) |
+| `origen.clase` | no | clase del personaje (`DRUID`…), solo si se pudo saber; sirve para avisar, nunca para bloquear. La app no la escribe todavía: no se lee de forma fiable de los ficheros |
+| `addons[]` | sí | addons que el paquete menciona: los de sus piezas `config-addon` y los instalados que su `AddOns.txt` deja activados (puede estar vacía) |
 | `entradas[]` | sí | una por pieza en `datos/` |
 
 ### `addons[]`
@@ -90,12 +90,30 @@ en ningún fichero, lo guarda el servidor.
 | `teclas` | `fichero` | `personaje/bindings-cache.wtf` (también si en el origen eran de cuenta) |
 | `teclas-clic` | `fichero` | `personaje/click-bindings-cache.txt` |
 | `opciones` | `fichero-filtrado` | `personaje/config-cache.wtf` o `cuenta/config-cache.wtf` |
-| `chat` | `fichero-filtrado` | `personaje/chat-cache.txt` |
+| `chat` | `fichero` | `personaje/chat-cache.txt` |
 | `ventanas` | `fichero` | `personaje/layout-local.txt` |
-| `modo-edicion` | `fichero` (qué diseño usa) y `adaptador` `modo-edicion` (el diseño) | `personaje/edit-mode-cache-character.txt` y `cuenta/edit-mode-cache-account.txt` |
+| `modo-edicion` | dos entradas: `fichero` (qué diseño usa) y `adaptador` `modo-edicion` (el diseño) | `personaje/edit-mode-cache-character.txt` y `cuenta/edit-mode-cache-account.txt` |
 | `addons-activos` | `fichero-filtrado` | `personaje/AddOns.txt` |
-| `config-addon` | `perfil-acedb`, `fichero` o `adaptador` | `cuenta/SavedVariables/<addon>.lua` o `personaje/SavedVariables/<addon>.lua` |
+| `config-addon` | `perfil-acedb`, `fichero` o `adaptador` | `cuenta/SavedVariables/<addon>.lua` o `personaje/SavedVariables/<addon>.lua`, con `<addon>` = la carpeta del addon (el juego guarda así sus variables) |
 | `marcos-banda` | `fichero` | `personaje/CUFProfiles.txt` |
+
+Reglas de las categorías de fichero:
+
+- **Teclas.** Si el personaje tiene `bindings-cache.wtf`, viaja ese (`ambito: personaje`). Si no, usa las de la cuenta
+  [H] y viaja el de la cuenta (`ambito: cuenta`), siempre hacia `personaje/bindings-cache.wtf`.
+- **Opciones** (`config-cache.wtf`, del personaje y de la cuenta). Se quitan las líneas `SET <clave>` de estado y la de
+  seguridad; las demás viajan, porque son opciones del cliente. Sin distinguir mayúsculas, como los CVar:
+  - exactas: `AllowDangerousScripts` (quitaría al que importa el aviso al ejecutar scripts), `lastSelectedClubId`,
+    `EJLootClass`, `flaggedTutorials`, `closedInfoFrames`, `closedInfoFramesAccountWide`, `numReputationHeaders`,
+    `numCurrencyCategories`;
+  - que empiezan por `tracked`, `hardTracked`, `cameraSaved`, `perksActivities` o `petJournal`;
+  - que contienen `collapsed`.
+- **Addons activos** (`AddOns.txt`). Se quitan las líneas de addons que no están instalados en el origen. Las de
+  `Blizzard_*` siempre viajan: son módulos del cliente, no están en `Interface/AddOns` y se pueden desactivar.
+- **Chat** viaja entero: solo lleva ventanas, colores, tipos de mensaje y canales [V].
+
+No viajan en la `1.0`: `flagged-cache-*` (tutoriales vistos), `character-list-order.txt` (orden de la pantalla de
+selección), `tts-cache-*` y `cooldownmanager.txt` (sin medir), `cache.md5` y las copias `.old` y `.bak` del juego.
 
 ### Tipos de entrada
 

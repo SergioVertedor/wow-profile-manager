@@ -5,6 +5,7 @@ import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import type { Addon, Personaje, VersionJuego } from "../nucleo";
 import EliminarPersonaje from "./EliminarPersonaje";
+import ExportarPersonaje from "./ExportarPersonaje";
 import css from "./Ficha.module.css";
 import { claveDePersonaje, inicial, muestraReinos, nombreVisible } from "./lista";
 
@@ -13,7 +14,7 @@ type Props = Readonly<{
   version: VersionJuego;
   cuenta: string;
   instalacion: string;
-  /** Dónde está en disco, para pedirle al núcleo que lo elimine. */
+  /** Dónde está en disco, para pedirle al núcleo que lo exporte o lo elimine. */
   raiz: string;
   carpetaCuenta: string;
   /** Tras eliminar su carpeta: vuelve a leer los personajes. */
@@ -32,6 +33,14 @@ export default function Ficha({ personaje, version, cuenta, instalacion, raiz, c
   const reino = muestraReinos(version.producto) ? [personaje.carpetaReino] : [];
   // Cada hermano con su propia clave: si se repiten, React no sabe cuál quitar y se acumulan retratos (#58).
   const clave = claveDePersonaje(personaje);
+  const pedido = {
+    raiz,
+    version: version.carpeta,
+    cuenta: carpetaCuenta,
+    reino: personaje.carpetaReino,
+    personaje: personaje.carpetaPersonaje,
+  };
+  const donde = [...reino, cuenta, instalacion];
   return (
     <section className={css.escenario} aria-label={t("ficha.etiqueta")}>
       <div key={`retrato-${clave}`} className={css.retrato} aria-hidden>
@@ -39,7 +48,7 @@ export default function Ficha({ personaje, version, cuenta, instalacion, raiz, c
       </div>
       <h2 className={css.nombre}>{nombre}</h2>
       <p className={css.sub}>
-        {[...reino, cuenta, instalacion].map((parte) => (
+        {donde.map((parte) => (
           <span key={parte}>{parte}</span>
         ))}
       </p>
@@ -65,17 +74,12 @@ export default function Ficha({ personaje, version, cuenta, instalacion, raiz, c
           </ul>
         </details>
       )}
+      <ExportarPersonaje key={`exportar-${clave}`} pedido={pedido} nombre={nombre} donde={donde} />
       <EliminarPersonaje
         key={`eliminar-${clave}`}
-        pedido={{
-          raiz,
-          version: version.carpeta,
-          cuenta: carpetaCuenta,
-          reino: personaje.carpetaReino,
-          personaje: personaje.carpetaPersonaje,
-        }}
+        pedido={pedido}
         nombre={nombre}
-        donde={[...reino, cuenta, instalacion]}
+        donde={donde}
         alTerminar={alEliminar}
       />
     </section>

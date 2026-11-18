@@ -44,7 +44,7 @@ function instalacion(raiz: string, fuente: Instalacion["fuente"], nombre: string
         producto: "wowf",
         soportada: true,
         build: null,
-        interfaz: "1",
+        interfaz: 1,
         cuentas: { cuentas: [], ignoradas: 0 },
         addons: { addons: [], ignoradas: 0 },
       },

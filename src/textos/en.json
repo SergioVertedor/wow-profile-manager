@@ -80,7 +80,11 @@
     "planCaducado": "A file changed since you were shown what would happen. Nothing was written: try again to see it anew.",
     "operacionEnCurso": "The operation is unfinished: it can't be deleted until it ends.",
     "restauracionManualSinConfirmar": "Confirm that you have already restored what was missing by hand.",
-    "carpetaNoAbierta": "Could not open {{ruta}}: {{detalle}}"
+    "carpetaNoAbierta": "Could not open {{ruta}}: {{detalle}}",
+    "exportacionSinVersion": "The game version or its interface number is unknown (.build.info or WTF/Config.wtf): log into the game once and try again.",
+    "perfilNoValido": "The name is required and can be up to 80 characters; the description, up to 500.",
+    "seleccionVacia": "Tick at least one thing to export.",
+    "paqueteDemasiadoGrande": "It is too large for a .wowprofile (at most 256 pieces, 32 MiB each and 128 MiB in total)."
   },
   "versionApp": "Version {{version}}",
   "instalaciones": {
@@ -194,5 +198,34 @@
     "confirmar": "Delete",
     "borrando": "Deleting…",
     "deshacer": "This is an undo: its copy is what the game had saved in the folder after the deletion."
+  },
+  "exportar": {
+    "boton": "Export",
+    "titulo": "Export {{nombre}}",
+    "piezas": "What goes in",
+    "deLaCuenta": "from the account",
+    "quitadas_one": "without {{count}} line that does not travel",
+    "quitadas_other": "without {{count}} lines that do not travel",
+    "categorias": {
+      "macros": "Macros",
+      "teclas": "Key bindings",
+      "teclas-clic": "Click bindings",
+      "opciones": "Options",
+      "chat": "Chat",
+      "ventanas": "Windows",
+      "marcos-banda": "Raid frames",
+      "addons-activos": "Enabled add-ons"
+    },
+    "nada": "This character has nothing to export yet.",
+    "barras": "What is on the action bar buttons does not travel: the server keeps it. Key bindings, macros and the list of enabled add-ons do.",
+    "juegoAbierto": "WoW is open: what you changed this session is not on disk until you log out of the character or type /reload.",
+    "apartadas": "Not included because they already contain the reserved text “@@WOWPROFILE:”: {{piezas}}.",
+    "nombre": "Profile name",
+    "descripcion": "Description (optional)",
+    "cancelar": "Cancel",
+    "confirmar": "Save…",
+    "exportando": "Saving…",
+    "cerrar": "Close",
+    "hecho": "Saved as {{fichero}}."
   }
 }

@@ -1,0 +1,93 @@
+/* «Exportar»: la acción principal de la ficha, en oro. El diálogo usa `estilo/Dialogo.module.css`; aquí solo la lista
+   de piezas y los campos del perfil. */
+.boton {
+  display: inline-flex;
+  gap: var(--espacio-2);
+  align-items: center;
+  margin-top: var(--espacio-6);
+  padding: var(--espacio-2) var(--espacio-5);
+  border: 1px solid var(--color-oro-hondo);
+  border-radius: var(--radio-s);
+  background: linear-gradient(180deg, var(--color-oro-claro), var(--color-oro));
+  color: var(--color-sobre-oro);
+  font-size: var(--texto-control);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.boton:hover:not(:disabled) {
+  background: var(--color-oro-claro);
+}
+
+.boton:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.piezas {
+  margin-top: var(--espacio-4);
+  padding: 0;
+  border: none;
+}
+
+.piezas legend {
+  margin-bottom: var(--espacio-2);
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+}
+
+.pieza {
+  display: flex;
+  gap: var(--espacio-3);
+  align-items: baseline;
+  padding: var(--espacio-1) 0;
+  font-size: var(--texto-control);
+  cursor: pointer;
+}
+
+.categoria {
+  flex: 1;
+}
+
+.detalle,
+.tamano {
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+}
+
+.tamano {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.nota,
+.nada {
+  margin-top: var(--espacio-3);
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+}
+
+.campos {
+  display: grid;
+  gap: var(--espacio-3);
+  margin-top: var(--espacio-4);
+}
+
+.campo {
+  display: grid;
+  gap: var(--espacio-1);
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+}
+
+.campo input,
+.campo textarea {
+  padding: var(--espacio-2) var(--espacio-3);
+  border: 1px solid var(--color-linea-control);
+  border-radius: var(--radio-s);
+  background: var(--color-hundido);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--texto-control);
+  resize: vertical;
+}

@@ -298,3 +298,50 @@ fn un_id_de_operacion_desconocido_se_rechaza() {
         );
     }
 }
+
+#[test]
+fn propuesta_exportacion_lista_las_piezas_del_personaje() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (raiz, datos) = (tmp.path().join("wow"), tmp.path().join("datos"));
+    std::fs::create_dir_all(&raiz).unwrap();
+    let pedido = instalacion_con_personaje(&raiz, &datos);
+
+    let propuesta = invocar_en(&datos, "propuesta_exportacion", pedido).unwrap();
+
+    assert_eq!(propuesta["piezas"][0]["id"], "addons-activos");
+    assert_eq!(propuesta["piezas"][0]["categoria"], "addons-activos");
+    assert_eq!(propuesta["piezas"][0]["ambito"], "personaje");
+    // Prat-3.0 no está instalado en el árbol de prueba: su línea se quita.
+    assert_eq!(propuesta["piezas"][0]["quitadas"], 1);
+    assert_eq!(propuesta["apartadas"], serde_json::json!([]));
+    assert!(propuesta["juegoAbierto"].is_boolean());
+}
+
+/// Solo los casos que fallan antes de abrir el diálogo de guardar: el runtime simulado no tiene quien lo cierre.
+#[test]
+fn exportar_personaje_valida_antes_de_abrir_el_dialogo() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (raiz, datos) = (tmp.path().join("wow"), tmp.path().join("datos"));
+    std::fs::create_dir_all(&raiz).unwrap();
+    let mut pedido = instalacion_con_personaje(&raiz, &datos);
+    pedido["seleccion"] = serde_json::json!(["addons-activos"]);
+    pedido["nombre"] = serde_json::json!("Druida");
+    pedido["descripcion"] = serde_json::json!("");
+
+    let error = invocar_en(&datos, "exportar_personaje", pedido.clone()).unwrap_err();
+    assert_eq!(error["codigo"], "exportacionSinVersion");
+
+    std::fs::write(
+        raiz.join(".build.info"),
+        "Version!STRING:0|Product!STRING:0\n1.60.1.70938|wowf\n",
+    )
+    .unwrap();
+    std::fs::write(
+        raiz.join("_forever_/WTF/Config.wtf"),
+        "SET engineSurveyPatch \"16001\"\r\n",
+    )
+    .unwrap();
+    pedido["seleccion"] = serde_json::json!([]);
+    let error = invocar_en(&datos, "exportar_personaje", pedido).unwrap_err();
+    assert_eq!(error["codigo"], "seleccionVacia");
+}

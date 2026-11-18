@@ -17,7 +17,7 @@ function version(carpeta: string): VersionJuego {
     producto: "wow",
     soportada: true,
     build: null,
-    interfaz: "1",
+    interfaz: 1,
     cuentas: {
       ignoradas: 0,
       cuentas: [
