@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HardDrive, Info, Users, type LucideIcon } from "lucide-react";
+import { HardDrive, History, Info, Users, type LucideIcon } from "lucide-react";
 import AcercaDe from "./AcercaDe";
 import css from "./App.module.css";
 import Instalaciones from "./instalaciones/Instalaciones";
+import Historial from "./historial/Historial";
 import { useDeteccion } from "./instalaciones/useDeteccion";
 import { pedirInfoApp, type InfoApp } from "./nucleo";
 import AvisoRecuperacion from "./operaciones/AvisoRecuperacion";
@@ -14,10 +15,15 @@ type Estado =
   | { tipo: "listo"; info: InfoApp }
   | { tipo: "error"; mensaje: string };
 
-/** Vistas de la ventana. Con tres basta un estado; cuando lleguen los flujos con pasos se medirá un router. */
-type Vista = "personajes" | "instalaciones" | "acercaDe";
+/** Vistas de la ventana. Con cuatro basta un estado; cuando lleguen los flujos con pasos se medirá un router. */
+type Vista = "personajes" | "instalaciones" | "historial" | "acercaDe";
 
-const ICONOS: Record<Vista, LucideIcon> = { personajes: Users, instalaciones: HardDrive, acercaDe: Info };
+const ICONOS: Record<Vista, LucideIcon> = {
+  personajes: Users,
+  instalaciones: HardDrive,
+  historial: History,
+  acercaDe: Info,
+};
 
 function App() {
   const { t } = useTranslation();
@@ -48,6 +54,7 @@ function App() {
         <nav className={css.navegacion} aria-label={t("nav.etiqueta")}>
           <BotonVista vista="personajes" actual={vista} elegir={setVista} />
           <BotonVista vista="instalaciones" actual={vista} elegir={setVista} />
+          <BotonVista vista="historial" actual={vista} elegir={setVista} />
           {estado.tipo === "listo" && <BotonVista vista="acercaDe" actual={vista} elegir={setVista} />}
         </nav>
         {estado.tipo === "listo" && <p className={css.pie}>{t("versionApp", { version: estado.info.version })}</p>}
@@ -56,6 +63,7 @@ function App() {
         <AvisoRecuperacion alRestaurar={deteccion.recargar} />
         {vista === "personajes" && <Personajes {...deteccion} />}
         {vista === "instalaciones" && <Instalaciones {...deteccion} />}
+        {vista === "historial" && <Historial alCambiarWtf={deteccion.recargar} />}
         {vista === "acercaDe" && estado.tipo === "listo" && <AcercaDe info={estado.info} />}
       </main>
     </div>

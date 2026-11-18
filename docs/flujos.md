@@ -169,7 +169,7 @@ Esquema: [`operacion.schema.json`](operacion.schema.json).
 | campo | qué es |
 |---|---|
 | `esquema` | `1` |
-| `id` | `AAAAMMDD-HHMMSS-<8 hex>`, el mismo que la carpeta |
+| `id` | `AAAAMMDD-HHMMSS-<8 hex>`, el mismo que la carpeta. Los 10 bits altos de los 8 hex son el milisegundo, para ordenar dos operaciones del mismo segundo; el resto es al azar |
 | `tipo` | `importacion`, `deshacer` o `eliminacion` (ver [Eliminar la carpeta de un personaje](#eliminar-la-carpeta-de-un-personaje)) |
 | `creada`, `terminada` | RFC 3339 en UTC; `terminada` en cuanto llega a un estado final |
 | `estado` | ver [Estados](#estados) |
@@ -247,7 +247,7 @@ La app recorre `operaciones/` buscando operaciones que no estén en un estado fi
 | estado encontrado | qué significa | qué hace la app |
 |---|---|---|
 | `preparando`, `copiada` | se cortó antes de tocar el `WTF` | la marca `cancelada` y lo dice |
-| `escribiendo` | se cortó a mitad: el `WTF` puede estar a medias | lo explica y ofrece restaurar. Si se restaura, `fallida-restaurada`. Una `eliminacion` se restaura sola (ver abajo) |
+| `escribiendo` | se cortó a mitad: el `WTF` puede estar a medias | lo explica y ofrece restaurar. Si se restaura, `fallida-restaurada`. Una `eliminacion` o un `deshacer` se restauran solos (ver abajo) |
 | `operacion.json` ilegible | no se sabe en qué punto se cortó | avisa de que el `WTF` **puede** estar a medias, enseña la carpeta de copias y no borra nada |
 
 Restaurar al arrancar exige lo mismo que aplicar: ningún `Wow.exe` en marcha. Si el juego está abierto, al salir
@@ -274,7 +274,8 @@ primero las copias verificadas y después quitar. Al terminar se quitan también
   (con el juego abierto se espera al siguiente arranque). Restaurarla solo devuelve ficheros desde copias verificadas a
   una carpeta que vació la app, sin pisar nada que exista. Así no hay nada del jugador que se pueda perder.
 
-Mientras no haya historial en la interfaz, una eliminación se deshace a mano: copiar cada `copias/<n>` a su `ruta`.
+Una eliminación se deshace desde el [historial](#historial) (spec 022). Si la app no está, también a mano: copiar cada
+`copias/<n>` a su `ruta`.
 
 ## Deshacer
 
@@ -298,6 +299,15 @@ Deshacer devuelve los ficheros de una operación `completa` a como estaban antes
 
 **Deshacer un deshacer** (en el diagrama, «rehacer») vuelve a dejar los ficheros como tras la importación. El `deshacer` pasa a `deshecha` y
 la importación original vuelve a `completa` (sin `deshechaPor`), así que se puede volver a deshacer.
+
+**Deshacer una eliminación** (spec 022) deja la carpeta del personaje exactamente como estaba: cada fichero que hoy no
+está como antes se devuelve desde su copia, y los que hay ahora y antes no estaban (el juego volvió a crear la carpeta)
+se quitan; todos con copia previa en el `deshacer`. Los que ya están como antes no se tocan. El plan que se enseña lleva
+una huella (SHA-256 de cada fichero afectado tal como está): si al confirmar el disco ya no es el del plan, no se
+escribe nada y se pide volver a mirarlo. Un `deshacer` no cuenta como «operación posterior» en el paso 1: solo
+devolvió un estado anterior, y lo que se pisaría sale en el plan. Al arrancar, un `deshacer` cortado en `escribiendo` se
+restaura solo, igual que una eliminación: restaurar nunca pisa nada que no escribiera la propia operación. «Rehacer»
+una eliminación (deshacer su `deshacer`) aún no se ofrece: la copia de lo que se pisó queda en el `deshacer`.
 
 El MVP restaura cada fichero entero. Quitar solo el perfil importado de un fichero de cuenta, sin tocar el resto,
 queda para más adelante.

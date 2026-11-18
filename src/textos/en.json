@@ -6,7 +6,8 @@
     "etiqueta": "Views",
     "personajes": "Characters",
     "acercaDe": "About",
-    "instalaciones": "Installations"
+    "instalaciones": "Installations",
+    "historial": "History"
   },
   "personajes": {
     "titulo": "Characters",
@@ -71,7 +72,15 @@
     "personajeNoEncontrado": "That character is no longer on disk. Reload the list.",
     "operacionFallida": "It could not finish, nor put everything back. The copies are still in operation {{id}}, in the app's data folder: {{detalle}}",
     "operacionFallidaRestaurada": "It could not finish and everything was put back as it was (operation {{id}}): {{detalle}}",
-    "enlaceNoAdmitido": "There is a link or folder junction at {{ruta}}. It is not followed: it could delete files outside WTF. Remove it by hand if you want to delete the folder."
+    "enlaceNoAdmitido": "There is a link or folder junction at {{ruta}}. It is not followed: it could delete files outside WTF. Remove it by hand if you want to delete the folder.",
+    "operacionNoEncontrada": "That operation is no longer in the history. Reload it.",
+    "noDeshacible": "This operation can no longer be undone: only a finished deletion that hasn't been undone can be.",
+    "operacionPosterior": "Undo operation {{id}} first: it is more recent and touched the same files.",
+    "juegoDistinto": "{{raiz}} no longer holds the same game version (it was moved, deleted or reinstalled). Nothing was written and the copy is still in the operation.",
+    "planCaducado": "A file changed since you were shown what would happen. Nothing was written: try again to see it anew.",
+    "operacionEnCurso": "The operation is unfinished: it can't be deleted until it ends.",
+    "restauracionManualSinConfirmar": "Confirm that you have already restored what was missing by hand.",
+    "carpetaNoAbierta": "Could not open {{ruta}}: {{detalle}}"
   },
   "versionApp": "Version {{version}}",
   "instalaciones": {
@@ -125,5 +134,65 @@
     "pendientes_other": "{{count}} operations are unfinished, but WoW is running. Close the game and open the app again to finish them.",
     "ilegibles_one": "An operation has a log that cannot be read. It has not been touched.",
     "ilegibles_other": "{{count}} operations have a log that cannot be read. They have not been touched."
+  },
+  "historial": {
+    "titulo": "History",
+    "explicacion": "What the app has changed in the game folders, each with a copy of how it was. Nothing is deleted on its own: you decide when to free space.",
+    "cargando": "Reading the history…",
+    "vacio": "No operations yet.",
+    "total": "{{tamano}} in total",
+    "tipo": {
+      "eliminacion": "Folder deleted",
+      "deshacer": "Undo",
+      "importacion": "Import"
+    },
+    "estado": {
+      "preparando": "Unfinished",
+      "copiada": "Unfinished",
+      "escribiendo": "Unfinished",
+      "completa": "Done",
+      "deshecha": "Undone",
+      "cancelada": "Cancelled",
+      "fallida-restaurada": "Failed; everything left as it was",
+      "fallida-sin-restaurar": "Failed and could not restore"
+    },
+    "ficheros_one": "{{count}} file",
+    "ficheros_other": "{{count}} files",
+    "deshace": "Undoes operation {{id}}.",
+    "deshaceBorrada": "Undid an operation that has since been deleted.",
+    "deshechaPor": "Undone by operation {{id}}.",
+    "sinDevolver": "These files are not as they were before the operation. To restore them by hand, copy each copy back to its place (or remove the extra one):",
+    "copiaDe": "{{ruta}} ← {{copia}}",
+    "sobra": "{{ruta}} (did not exist before: extra)",
+    "ilegibles_one": "One operation has a log that can't be read. It is left alone; you can open its folder.",
+    "ilegibles_other": "{{count}} operations have logs that can't be read. They are left alone; you can open their folders.",
+    "abrir": "Open folder",
+    "deshacer": "Undo",
+    "borrar": "Delete"
+  },
+  "deshacer": {
+    "titulo": "Undo the deletion of {{nombre}}?",
+    "contenido_one": "{{count}} file goes back to the character's folder.",
+    "contenido_other": "{{count}} files go back to the character's folder.",
+    "nada": "The folder is already as it was before the deletion: nothing is written, it is only marked as undone.",
+    "aviso": "The game has already recreated the folder. These files are replaced or removed, and whatever the game saved in them since is lost:",
+    "copia": "Before writing, a copy of what is there now is kept as a new operation in the history.",
+    "cancelar": "Cancel",
+    "confirmar": "Undo",
+    "deshaciendo": "Undoing…",
+    "cerrar": "Close",
+    "hecho": "Done: the folder is back as it was before the deletion (operation {{id}}).",
+    "sobran_one": "{{count}} file that wasn't there before is removed.",
+    "sobran_other": "{{count}} files that weren't there before are removed."
+  },
+  "borrar": {
+    "titulo": "Delete operation {{id}}?",
+    "explicacion": "Frees {{tamano}}. Its copy goes away and it can no longer be undone.",
+    "sinRestaurar": "This operation could not be fully restored: its copy may be all that is left of how those files were.",
+    "confirmarManual": "I have already restored what was missing by hand",
+    "cancelar": "Cancel",
+    "confirmar": "Delete",
+    "borrando": "Deleting…",
+    "deshacer": "This is an undo: its copy is what the game had saved in the folder after the deletion."
   }
 }

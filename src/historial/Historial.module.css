@@ -1,0 +1,173 @@
+/* Historial: cabecera con el total y una tarjeta por operación (qué, a quién, cuándo, estado y acciones). Sigue la
+   forma de Instalaciones. */
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  max-width: 48rem;
+  padding: var(--espacio-5) var(--espacio-7);
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-4);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.titulo {
+  font-size: var(--texto-l);
+}
+
+.total,
+.nota {
+  color: var(--color-texto-2);
+}
+
+.alerta {
+  color: var(--color-alerta);
+  font-size: var(--texto-control);
+}
+
+.aviso {
+  display: flex;
+  gap: var(--espacio-3);
+  align-items: flex-start;
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--aviso-borde);
+  border-radius: var(--radio-m);
+  background: var(--aviso-velo);
+  font-size: var(--texto-control);
+}
+
+.aviso svg {
+  flex: none;
+  margin-top: 0.15em;
+  color: var(--color-aviso);
+}
+
+.lista,
+.ilegibles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ilegibles {
+  gap: var(--espacio-1);
+  margin-top: var(--espacio-2);
+}
+
+.ilegibles li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-3);
+  align-items: center;
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+  padding: var(--espacio-4) var(--espacio-5);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-l);
+  background: var(--color-superficie);
+  box-shadow: inset 0 1px 0 var(--blanco-velo);
+}
+
+.arriba {
+  display: flex;
+  gap: var(--espacio-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nombre {
+  overflow: hidden;
+  color: var(--color-nombre);
+  font-size: var(--texto-m);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tipo {
+  color: var(--color-texto-2);
+  font-size: var(--texto-control);
+}
+
+.estado,
+.estadoFallido {
+  flex: none;
+  padding: 0 var(--espacio-2);
+  border: 1px solid var(--color-linea-control);
+  border-radius: var(--radio-pildora);
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+}
+
+.estadoFallido {
+  border-color: var(--color-alerta);
+  color: var(--color-alerta);
+}
+
+.detalle {
+  color: var(--color-texto-3);
+  font-size: var(--texto-pequeno);
+}
+
+.error {
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+  overflow-wrap: anywhere;
+}
+
+.ficheros {
+  margin: var(--espacio-2) 0 0;
+  padding-left: var(--espacio-5);
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+  overflow-wrap: anywhere;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+  align-items: center;
+  margin-top: var(--espacio-2);
+}
+
+.accion {
+  display: inline-flex;
+  flex: none;
+  gap: var(--espacio-2);
+  align-items: center;
+  padding: var(--espacio-1) var(--espacio-3);
+  border: 1px solid var(--color-linea-control);
+  border-radius: var(--radio-s);
+  background: none;
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+  cursor: pointer;
+  transition: color var(--duracion), border-color var(--duracion);
+}
+
+.accion:hover {
+  border-color: var(--color-oro);
+  color: var(--color-oro-claro);
+}
+
+.accion:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.peligro:hover {
+  border-color: var(--color-alerta);
+  color: var(--color-alerta);
+}

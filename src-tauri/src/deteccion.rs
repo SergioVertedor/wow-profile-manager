@@ -384,6 +384,13 @@ impl PersonajeUbicado {
     }
 }
 
+/// El producto de una carpeta de versión según su `.flavor.info`; `None` si no lo tiene o no es uno soportado.
+pub fn producto_de(raiz_version: &Path) -> Result<Option<Producto>, ErrorNucleo> {
+    Ok(leer_texto(&raiz_version.join(FLAVOR_INFO))?
+        .and_then(|texto| valor_de(&texto, COLUMNA_FLAVOR))
+        .and_then(|flavor| Producto::desde_flavor(&flavor)))
+}
+
 /// Busca un personaje pedido entre los que se detectan: la raíz tiene que ser una de las `conocidas`, y la versión, la
 /// cuenta, el reino y el personaje tienen que salir de leer el disco igual que al listar. Como cada nombre se compara
 /// con uno que da el sistema de ficheros, un `..` o un separador nunca llegan a una ruta.
@@ -401,10 +408,7 @@ pub fn ubicar(
     else {
         return Err(ErrorNucleo::PersonajeNoEncontrado {});
     };
-    let Some(producto) = leer_texto(&version.ruta.join(FLAVOR_INFO))?
-        .and_then(|texto| valor_de(&texto, COLUMNA_FLAVOR))
-        .and_then(|flavor| Producto::desde_flavor(&flavor))
-    else {
+    let Some(producto) = producto_de(&version.ruta)? else {
         return Err(ErrorNucleo::PersonajeNoEncontrado {});
     };
     let cuentas = descubrir(

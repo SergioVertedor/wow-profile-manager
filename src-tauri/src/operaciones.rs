@@ -2,7 +2,14 @@
 //! una carpeta en `<datos>/operaciones/<id>/` con su diario (`operacion.json`) y las copias de lo que había. Nada se
 //! quita del `WTF` sin una copia verificada, y nada de esta carpeta se borra solo (D-04).
 //!
-//! Por ahora hay un tipo, `eliminacion` (spec 021): sacar la carpeta de un personaje.
+//! Hay dos tipos: `eliminacion` (spec 021), sacar la carpeta de un personaje, y `deshacer` (spec 022), devolverla.
+//! El historial (listar, borrar, abrir) vive en `historial.rs` y deshacer en `deshacer.rs`.
+
+mod deshacer;
+mod historial;
+
+pub use deshacer::PlanDeshacer;
+pub use historial::Historial;
 
 use crate::deteccion::{CARPETA_ACCOUNT, CARPETA_WTF, PersonajeUbicado};
 use crate::disco::subcarpetas;
@@ -27,6 +34,7 @@ const INTERRUMPIDA: &str = "interrumpida";
 #[serde(rename_all = "camelCase")]
 enum Tipo {
     Eliminacion,
+    Deshacer,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -36,6 +44,7 @@ enum Estado {
     Copiada,
     Escribiendo,
     Completa,
+    Deshecha,
     Cancelada,
     FallidaRestaurada,
     FallidaSinRestaurar,
@@ -44,6 +53,7 @@ enum Estado {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 enum Accion {
+    Restaurar,
     Borrar,
 }
 
@@ -63,15 +73,50 @@ struct Destino {
 #[serde(rename_all = "camelCase")]
 struct Antes {
     existia: bool,
-    sha256: String,
-    bytes: u64,
-    copia: String,
+    /// Hash, tamaño y copia: solo si existía.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    sha256: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    bytes: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    copia: Option<String>,
+}
+
+impl Antes {
+    const NO_EXISTIA: Self = Self {
+        existia: false,
+        sha256: None,
+        bytes: None,
+        copia: None,
+    };
+
+    fn guardado(sha256: String, bytes: u64, copia: String) -> Self {
+        Self {
+            existia: true,
+            sha256: Some(sha256),
+            bytes: Some(bytes),
+            copia: Some(copia),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Despues {
     existe: bool,
+    /// Hash y tamaño: solo si existe.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    sha256: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    bytes: Option<u64>,
+}
+
+impl Despues {
+    const NO_EXISTE: Self = Self {
+        existe: false,
+        sha256: None,
+        bytes: None,
+    };
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -96,6 +141,12 @@ struct Diario {
     #[serde(skip_serializing_if = "Option::is_none")]
     terminada: Option<String>,
     estado: Estado,
+    /// Solo en `deshacer`: la operación que deshace.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    deshace: Option<String>,
+    /// Solo con `estado: deshecha`: la operación que la deshizo.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    deshecha_por: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<String>,
     destino: Destino,
@@ -196,7 +247,11 @@ impl Operaciones {
                 return Err(error);
             }
         };
-        ejecutar(&dir, diario, &carpeta, &juego_en_marcha)
+        ejecutar(&dir, diario, &juego_en_marcha, |diario| {
+            quitar(diario)?;
+            quitar_carpetas_vacias(&carpeta);
+            Ok(())
+        })
     }
 
     /// Al arrancar (`docs/flujos.md`, «Al arrancar»): las cortadas antes de tocar el `WTF` se cancelan; las cortadas a
@@ -211,11 +266,17 @@ impl Operaciones {
         let Ok(carpetas) = subcarpetas(&self.dir) else {
             return recuperacion;
         };
+        let mut deshechas = Vec::new();
         for carpeta in carpetas {
             let Some(mut diario) = leer(&carpeta.ruta) else {
                 recuperacion.ilegibles += 1;
                 continue;
             };
+            if let (Tipo::Deshacer, Estado::Completa, Some(original)) =
+                (diario.tipo, diario.estado, &diario.deshace)
+            {
+                deshechas.push((original.clone(), diario.id.clone()));
+            }
             match diario.estado {
                 Estado::Preparando | Estado::Copiada => {
                     diario.terminar(Estado::Cancelada, Some(INTERRUMPIDA.into()));
@@ -238,7 +299,26 @@ impl Operaciones {
                 recuperacion.ilegibles += 1;
             }
         }
+        for (original, por) in deshechas {
+            // Si no se puede guardar, se vuelve a intentar en el siguiente arranque.
+            self.marcar_deshecha(&original, &por).ok();
+        }
         recuperacion
+    }
+
+    /// La original de un `deshacer` `completa` pasa a `deshecha`, si aún no lo está: la app pudo cortarse entre los dos
+    /// pasos del deshacer. Si ya no existe (se borró), no hay nada que marcar.
+    fn marcar_deshecha(&self, original: &str, por: &str) -> Result<(), ErrorNucleo> {
+        // El id sale de un diario en disco: solo vale si es una carpeta de la lista.
+        let Ok(dir) = self.carpeta_de(original) else {
+            return Ok(());
+        };
+        let Some(mut diario) = leer(&dir).filter(|d| d.estado == Estado::Completa) else {
+            return Ok(());
+        };
+        diario.estado = Estado::Deshecha;
+        diario.deshecha_por = Some(por.to_owned());
+        guardar(&dir, &diario)
     }
 
     /// Crea `<dir>/<id>/` con un id nuevo. `create_dir` falla si ya existe, así que dos operaciones nunca comparten
@@ -258,12 +338,12 @@ impl Operaciones {
     }
 }
 
-/// Pasos 3 a 6 con el diario ya guardado en `preparando`.
+/// Pasos 3 a 6 con el diario ya guardado en `preparando`. `escribir` es el paso 5 de cada tipo: si falla, se restaura.
 fn ejecutar(
     dir: &Path,
     mut diario: Diario,
-    carpeta: &Path,
     juego_en_marcha: &impl Fn() -> bool,
+    escribir: impl FnOnce(&Diario) -> Result<(), ErrorNucleo>,
 ) -> Result<String, ErrorNucleo> {
     if let Err(error) = copiar(dir, &diario) {
         return cancelar(dir, &mut diario, error);
@@ -277,12 +357,11 @@ fn ejecutar(
 
     diario.estado = Estado::Escribiendo;
     guardar(dir, &diario)?;
-    if let Err(error) = quitar(&diario) {
+    if let Err(error) = escribir(&diario) {
         let restaurada = restaurar(dir, &mut diario, error.detalle());
         guardar(dir, &diario)?;
         return Err(fallida(&diario, restaurada, &error));
     }
-    quitar_carpetas_vacias(carpeta);
     diario.terminar(Estado::Completa, None);
     guardar(dir, &diario)?;
     Ok(diario.id)
@@ -351,13 +430,8 @@ fn preparar(
             ruta: format!("{base}/{}", relativa_con_barras(carpeta, fichero)),
             accion: Accion::Borrar,
             de_cuenta: false,
-            antes: Antes {
-                existia: true,
-                sha256: sha256(&bytes),
-                bytes: bytes.len() as u64,
-                copia: format!("{CARPETA_COPIAS}/{n}"),
-            },
-            despues: Despues { existe: false },
+            antes: Antes::guardado(sha256(&bytes), bytes.len() as u64, copia_n(n)),
+            despues: Despues::NO_EXISTE,
         });
     }
     Ok(Diario {
@@ -367,6 +441,8 @@ fn preparar(
         creada: ahora_rfc3339(),
         terminada: None,
         estado: Estado::Preparando,
+        deshace: None,
+        deshecha_por: None,
         error: None,
         destino: Destino {
             raiz_version: personaje.raiz_version.clone(),
@@ -384,11 +460,14 @@ fn preparar(
 /// fichero cambió entre medias), se para sin haber tocado el `WTF`.
 fn copiar(dir: &Path, diario: &Diario) -> Result<(), ErrorNucleo> {
     for cambio in &diario.cambios {
+        let (Some(sha), Some(copia)) = (&cambio.antes.sha256, &cambio.antes.copia) else {
+            continue;
+        };
         let origen = en_disco(diario, cambio)?;
         let bytes = std::fs::read(&origen).map_err(|e| ErrorNucleo::lectura(&origen, &e))?;
-        let copia = dir.join(&cambio.antes.copia);
+        let copia = dir.join(copia);
         escribir_atomico(&copia, &bytes)?;
-        comprobar_copia(&copia, &cambio.antes)?;
+        comprobar(&copia, sha)?;
     }
     Ok(())
 }
@@ -397,13 +476,24 @@ fn copiar(dir: &Path, diario: &Diario) -> Result<(), ErrorNucleo> {
 fn quitar(diario: &Diario) -> Result<(), ErrorNucleo> {
     for cambio in &diario.cambios {
         let ruta = en_disco(diario, cambio)?;
+        sigue_como_antes(&ruta, cambio)?;
         std::fs::remove_file(&ruta).map_err(|e| ErrorNucleo::escritura(&ruta, &e))?;
     }
     Ok(())
 }
 
-/// Devuelve a su sitio cada fichero que ya no está, desde su copia verificada. Lo que sigue en su sitio no se toca.
-/// Deja el diario en `fallida-restaurada` o, si alguna copia no cuadra o no se puede escribir,
+/// Justo antes de escribir o quitar: el fichero tiene que seguir como cuando se copió. Si otro programa (el juego, el
+/// antivirus, una sincronización) lo cambió entre medias, su contenido nuevo no tiene copia: se para y se restaura.
+fn sigue_como_antes(ruta: &Path, cambio: &Cambio) -> Result<(), ErrorNucleo> {
+    if hash_en_disco(ruta)? == cambio.antes.sha256 {
+        Ok(())
+    } else {
+        Err(ErrorNucleo::escritura(ruta, &"cambió desde que se copió"))
+    }
+}
+
+/// Deja cada fichero como estaba antes de la operación, desde su copia verificada, sin pisar nada desconocido (ver
+/// `restaurar_uno`). Deja el diario en `fallida-restaurada` o, si alguna copia no cuadra o no se puede escribir,
 /// `fallida-sin-restaurar` con la lista de lo que falta. Devuelve si quedó todo restaurado.
 fn restaurar(dir: &Path, diario: &mut Diario, motivo: String) -> bool {
     let mut faltan = Vec::new();
@@ -422,31 +512,57 @@ fn restaurar(dir: &Path, diario: &mut Diario, motivo: String) -> bool {
     }
 }
 
-/// Un fichero que sigue en su sitio se deja si es el de antes. Si es otro (el juego volvió a crear la carpeta), no se
-/// pisa: queda sin restaurar y se dice.
+/// Un fichero que ya está como `antes` se deja. Solo se toca si no está o si está como lo dejó la propia operación
+/// (`despues`): entonces vuelve a `antes` (su copia, o quitarlo si no existía). Si es otro (el juego volvió a crear la
+/// carpeta), no se pisa: queda sin restaurar y se dice.
 fn restaurar_uno(dir: &Path, diario: &Diario, cambio: &Cambio) -> Result<(), ErrorNucleo> {
     let destino = en_disco(diario, cambio)?;
-    if destino.exists() {
-        return comprobar_copia(&destino, &cambio.antes)
-            .map(|_| ())
-            .map_err(|_| {
-                ErrorNucleo::escritura(&destino, &"cambió desde la operación; no se pisa")
-            });
+    let actual = hash_en_disco(&destino)?;
+    if actual == cambio.antes.sha256 {
+        return Ok(());
     }
-    let copia = dir.join(&cambio.antes.copia);
-    let bytes = comprobar_copia(&copia, &cambio.antes)?;
+    let lo_dejo_ella = actual.is_none() || actual == cambio.despues.sha256;
+    if !lo_dejo_ella {
+        return Err(ErrorNucleo::escritura(
+            &destino,
+            &"cambió desde la operación; no se pisa",
+        ));
+    }
+    let (Some(sha), Some(copia)) = (&cambio.antes.sha256, &cambio.antes.copia) else {
+        return std::fs::remove_file(&destino).map_err(|e| ErrorNucleo::escritura(&destino, &e));
+    };
+    let bytes = comprobar(&dir.join(copia), sha)?;
     escribir_atomico(&destino, &bytes)?;
-    comprobar_copia(&destino, &cambio.antes).map(|_| ())
+    comprobar(&destino, sha).map(|_| ())
 }
 
-/// Lee `ruta` y comprueba que tiene el hash de `antes`. Devuelve sus bytes.
-fn comprobar_copia(ruta: &Path, antes: &Antes) -> Result<Vec<u8>, ErrorNucleo> {
+/// Lee `ruta` y comprueba que tiene el hash `sha`. Devuelve sus bytes.
+fn comprobar(ruta: &Path, sha: &str) -> Result<Vec<u8>, ErrorNucleo> {
     let bytes = std::fs::read(ruta).map_err(|e| ErrorNucleo::lectura(ruta, &e))?;
-    if sha256(&bytes) == antes.sha256 {
+    if sha256(&bytes) == sha {
         Ok(bytes)
     } else {
         Err(ErrorNucleo::escritura(ruta, &"la copia no cuadra"))
     }
+}
+
+/// Hash y tamaño de lo que hay en `ruta`, o `None` si no hay nada.
+fn contenido(ruta: &Path) -> Result<Option<(String, u64)>, ErrorNucleo> {
+    match std::fs::read(ruta) {
+        Ok(bytes) => Ok(Some((sha256(&bytes), bytes.len() as u64))),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(error) => Err(ErrorNucleo::lectura(ruta, &error)),
+    }
+}
+
+/// El hash de lo que hay en `ruta`, o `None` si no hay nada.
+fn hash_en_disco(ruta: &Path) -> Result<Option<String>, ErrorNucleo> {
+    Ok(contenido(ruta)?.map(|(hash, _)| hash))
+}
+
+/// Nombre de la copia número `n` dentro de la carpeta de la operación.
+fn copia_n(n: usize) -> String {
+    format!("{CARPETA_COPIAS}/{n}")
 }
 
 fn en_disco(diario: &Diario, cambio: &Cambio) -> Result<PathBuf, ErrorNucleo> {
@@ -459,11 +575,32 @@ fn en_disco(diario: &Diario, cambio: &Cambio) -> Result<PathBuf, ErrorNucleo> {
 /// está en disco y podría haberse tocado a mano.
 fn ruta_segura(raiz_version: &Path, relativa: &str) -> Option<PathBuf> {
     let relativa = Path::new(relativa);
-    let normal = relativa
-        .components()
-        .all(|c| matches!(c, Component::Normal(_)));
+    let normal = relativa.components().all(|c| match c {
+        Component::Normal(nombre) => nombre.to_str().is_some_and(segmento_literal),
+        _ => false,
+    });
     let dentro = relativa.starts_with(Path::new(CARPETA_WTF).join(CARPETA_ACCOUNT));
-    (normal && dentro).then(|| raiz_version.join(relativa))
+    // Tramo a tramo, para que la ruta lleve los separadores del sistema y no una mezcla de `/` y `\`.
+    (normal && dentro).then(|| raiz_version.join(relativa.components().collect::<PathBuf>()))
+}
+
+/// Un nombre que Windows usa tal cual (`docs/operacion.schema.json`, `segmento`): sin punto ni espacio al final (Win32
+/// los recorta: `.. ` sería `..`) y sin nombre de dispositivo (`CON`, `NUL`, `COM1`…), con o sin extensión.
+fn segmento_literal(nombre: &str) -> bool {
+    const DISPOSITIVOS: [&str; 4] = ["CON", "PRN", "AUX", "NUL"];
+    const NUMERADOS: [&str; 2] = ["COM", "LPT"];
+    let base = nombre
+        .split('.')
+        .next()
+        .unwrap_or_default()
+        .to_ascii_uppercase();
+    let dispositivo = DISPOSITIVOS.contains(&base.as_str())
+        || NUMERADOS.iter().any(|p| {
+            base.len() == p.len() + 1
+                && base.starts_with(p)
+                && base.chars().last().is_some_and(|c| c.is_ascii_digit())
+        });
+    !nombre.is_empty() && !nombre.ends_with(['.', ' ']) && !dispositivo
 }
 
 /// Quita las carpetas que quedaron vacías, de la más honda a la de la carpeta del personaje. Si una no se puede quitar
@@ -549,7 +686,14 @@ fn sha256(bytes: &[u8]) -> String {
         .collect()
 }
 
-/// `AAAAMMDD-HHMMSS-<8 hex>` en UTC. Los 8 hex salen de `RandomState`, que la biblioteca estándar siembra al azar.
+/// Bits altos del sufijo del id: el milisegundo (0–999 cabe en 10).
+const BITS_MILISEGUNDO: u32 = 10;
+/// Bits bajos del sufijo del id: al azar.
+const BITS_AZAR: u32 = 32 - BITS_MILISEGUNDO;
+const MASCARA_AZAR: u64 = (1 << BITS_AZAR) - 1;
+
+/// `AAAAMMDD-HHMMSS-<8 hex>` en UTC. Los bits altos de los 8 hex son el milisegundo, para que dos operaciones del mismo
+/// segundo se ordenen por el id; los bajos salen de `RandomState`, que la biblioteca estándar siembra al azar.
 fn nuevo_id() -> String {
     use std::hash::BuildHasher;
 
@@ -564,7 +708,7 @@ fn nuevo_id() -> String {
         ahora.hour(),
         ahora.minute(),
         ahora.second(),
-        azar & 0xffff_ffff
+        (u64::from(ahora.millisecond()) << BITS_AZAR) | (azar & MASCARA_AZAR)
     )
 }
 
@@ -583,23 +727,24 @@ fn ahora_rfc3339() -> String {
 }
 
 #[cfg(test)]
-mod tests {
+pub(super) mod tests {
     use super::*;
     use crate::deteccion::Producto;
     use std::fs::{create_dir_all, write};
 
-    const ADDONS_TXT: &str = "Prat-3.0: enabled\r\n";
-    const PRAT_LUA: &str = "Prat3DB = {}\r\n";
+    pub(super) const ADDONS_TXT: &str = "Prat-3.0: enabled\r\n";
+    pub(super) const FLAVOR_FOREVER: &str = "Product Flavor!STRING:0\r\nwowf\r\n";
+    pub(super) const PRAT_LUA: &str = "Prat3DB = {}\r\n";
 
-    struct Escenario {
-        _tmp: tempfile::TempDir,
-        personaje: PersonajeUbicado,
-        operaciones: Operaciones,
-        datos: PathBuf,
+    pub(super) struct Escenario {
+        pub(super) _tmp: tempfile::TempDir,
+        pub(super) personaje: PersonajeUbicado,
+        pub(super) operaciones: Operaciones,
+        pub(super) datos: PathBuf,
     }
 
     /// Una versión con una cuenta, un personaje con dos ficheros (uno en `SavedVariables`) y otro personaje al lado.
-    fn escenario() -> Escenario {
+    pub(super) fn escenario() -> Escenario {
         let tmp = tempfile::tempdir().unwrap();
         let raiz_version = tmp.path().join("_forever_");
         let personaje = PersonajeUbicado {
@@ -612,6 +757,7 @@ mod tests {
         };
         let carpeta = personaje.carpeta();
         create_dir_all(carpeta.join("SavedVariables")).unwrap();
+        write(raiz_version.join(".flavor.info"), FLAVOR_FOREVER).unwrap();
         write(carpeta.join("AddOns.txt"), ADDONS_TXT).unwrap();
         write(carpeta.join("SavedVariables/Prat-3.0.lua"), PRAT_LUA).unwrap();
         let vecino = raiz_version.join("WTF/Account/1#1/93/Goldberg-Joestar");
@@ -626,7 +772,7 @@ mod tests {
         }
     }
 
-    fn diario_de(datos: &Path, id: &str) -> Diario {
+    pub(super) fn diario_de(datos: &Path, id: &str) -> Diario {
         leer(&datos.join(id)).unwrap()
     }
 
@@ -653,8 +799,9 @@ mod tests {
             "WTF/Account/1#1/93/Goldberg-Soulreaper/SavedVariables/Prat-3.0.lua"
         );
         for cambio in &diario.cambios {
-            let copia = std::fs::read(e.datos.join(&id).join(&cambio.antes.copia)).unwrap();
-            assert_eq!(sha256(&copia), cambio.antes.sha256);
+            let copia = std::fs::read(e.datos.join(&id).join(cambio.antes.copia.as_ref().unwrap()))
+                .unwrap();
+            assert_eq!(Some(sha256(&copia)), cambio.antes.sha256);
         }
     }
 
@@ -742,7 +889,7 @@ mod tests {
     }
 
     /// Deja una operación como si la app se hubiera cortado en `estado` tras quitar solo el primer fichero.
-    fn cortada(e: &Escenario, estado: Estado) -> String {
+    pub(super) fn cortada(e: &Escenario, estado: Estado) -> String {
         let id = e
             .operaciones
             .eliminar_personaje(&e.personaje, || false)
@@ -755,7 +902,7 @@ mod tests {
         for cambio in diario.cambios.iter().skip(1) {
             let destino = en_disco(&diario, cambio).unwrap();
             create_dir_all(destino.parent().unwrap()).unwrap();
-            std::fs::copy(dir.join(&cambio.antes.copia), destino).unwrap();
+            std::fs::copy(dir.join(cambio.antes.copia.as_ref().unwrap()), destino).unwrap();
         }
         id
     }
@@ -822,6 +969,11 @@ mod tests {
         assert!(ruta_segura(raiz, "Interface/AddOns/x.lua").is_none());
         assert!(ruta_segura(raiz, "C:/Windows/x").is_none());
         assert!(ruta_segura(raiz, "/WTF/Account/x").is_none());
+        assert!(ruta_segura(raiz, "WTF/Account/1#1/.. /x").is_none());
+        assert!(ruta_segura(raiz, "WTF/Account/1#1/x./y").is_none());
+        assert!(ruta_segura(raiz, "WTF/Account/1#1/nul.txt").is_none());
+        assert!(ruta_segura(raiz, "WTF/Account/1#1/COM3").is_none());
+        assert!(ruta_segura(raiz, "WTF/Account/1#1/COMMON/Console.lua").is_some());
     }
 
     #[test]

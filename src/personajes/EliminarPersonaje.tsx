@@ -12,6 +12,7 @@ import {
 } from "../nucleo";
 import { mensajeDeError } from "../textos/errores";
 import { tamanoLegible } from "../textos/formato";
+import estiloDialogo from "../estilo/Dialogo.module.css";
 import css from "./EliminarPersonaje.module.css";
 
 type Props = Readonly<{
@@ -75,37 +76,37 @@ export default function EliminarPersonaje({ pedido, nombre, donde, alTerminar }:
         {t("eliminar.boton")}
       </button>
       {paso.tipo === "error" && !paso.enDialogo && (
-        <p role="alert" className={css.alerta}>
+        <p role="alert" className={estiloDialogo.alerta}>
           {mensajeDeError(t, paso.error)}
         </p>
       )}
       <dialog
         ref={dialogo}
-        className={css.dialogo}
+        className={estiloDialogo.dialogo}
         aria-labelledby={idTitulo}
         aria-describedby={resumen === null ? undefined : idAviso}
         onClose={alCerrar}
         // Mientras se elimina no se cierra: Esc dejaría la ventana sin saber cómo acabó.
         onCancel={(evento) => eliminando && evento.preventDefault()}
       >
-        <h2 id={idTitulo} className={css.titulo}>
+        <h2 id={idTitulo} className={estiloDialogo.titulo}>
           {t("eliminar.titulo", { nombre })}
         </h2>
-        <p className={css.donde}>{donde.join(" · ")}</p>
+        <p className={estiloDialogo.donde}>{donde.join(" · ")}</p>
         <Contenido paso={paso} idAviso={idAviso} />
-        <div className={css.acciones}>
+        <div className={estiloDialogo.acciones}>
           {resumen !== null && (
             <>
-              <button type="button" className={css.secundario} onClick={cerrar} disabled={eliminando}>
+              <button type="button" className={estiloDialogo.secundario} onClick={cerrar} disabled={eliminando}>
                 {t("eliminar.cancelar")}
               </button>
-              <button type="button" className={css.peligro} onClick={() => confirmar(resumen)} disabled={eliminando}>
+              <button type="button" className={estiloDialogo.peligro} onClick={() => confirmar(resumen)} disabled={eliminando}>
                 {eliminando ? t("eliminar.eliminando") : t("eliminar.confirmar")}
               </button>
             </>
           )}
           {terminado && (
-            <button type="button" className={css.secundario} onClick={cerrar}>
+            <button type="button" className={estiloDialogo.secundario} onClick={cerrar}>
               {t("eliminar.cerrar")}
             </button>
           )}
@@ -122,14 +123,14 @@ function Contenido({ paso, idAviso }: Readonly<{ paso: Paso; idAviso: string }>)
     case "eliminando":
       return (
         <>
-          <p className={css.ruta}>{paso.resumen.ruta}</p>
+          <p className={estiloDialogo.ruta}>{paso.resumen.ruta}</p>
           <p>
             {t("eliminar.contenido", {
               count: paso.resumen.ficheros,
               tamano: tamanoLegible(paso.resumen.bytes, i18n.language),
             })}
           </p>
-          <p id={idAviso} className={css.aviso}>
+          <p id={idAviso} className={estiloDialogo.aviso}>
             <TriangleAlert aria-hidden size={16} strokeWidth={1.75} />
             {t("eliminar.aviso")}
           </p>
@@ -138,13 +139,13 @@ function Contenido({ paso, idAviso }: Readonly<{ paso: Paso; idAviso: string }>)
       );
     case "hecho":
       return (
-        <p role="status" className={css.exito}>
+        <p role="status" className={estiloDialogo.exito}>
           {t("eliminar.hecho", { id: paso.id })}
         </p>
       );
     case "error":
       return (
-        <p role="alert" className={css.alerta}>
+        <p role="alert" className={estiloDialogo.alerta}>
           {mensajeDeError(t, paso.error)}
         </p>
       );
