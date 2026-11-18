@@ -12,7 +12,7 @@ use crate::operaciones::{Operaciones, PaqueteImportado, es_enlace, sha256};
 use crate::paquetes::{
     Ambito, Categoria, EntradaLeida, ManifiestoLeido, PaqueteLeido, Tipo, leer_fichero,
 };
-use crate::piezas::{Filtro, Fuente, fuente_de_destino};
+use crate::piezas::{Filtro, Fuente, Quitadas, fuente_de_destino};
 pub use aplicar::ResultadoPersonaje;
 pub use elementos::Elemento;
 use serde::{Deserialize, Serialize};
@@ -136,8 +136,8 @@ pub struct FicheroPlan {
     pub accion: Accion,
     /// Macros, teclas, opciones y addons: qué cambia dentro. El resto: vacío (se sustituye el fichero).
     pub elementos: Vec<Elemento>,
-    /// Opciones del paquete que no se importan (lista negra) o addons activados que el destino no tiene.
-    pub apartadas: Vec<String>,
+    /// Opciones del paquete que no se importan (lista negra) o addons activados que el destino no tiene, por motivo.
+    pub apartadas: Vec<Quitadas>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bytes_antes: Option<u64>,
     pub bytes_despues: u64,
@@ -445,7 +445,7 @@ fn planificar_fichero(destino: &Destino, importable: &Importable<'_>, pieza: &[u
     }
 }
 
-fn partes(fusion: fusion::Fusion) -> (Vec<u8>, Vec<Elemento>, Vec<String>) {
+fn partes(fusion: fusion::Fusion) -> (Vec<u8>, Vec<Elemento>, Vec<Quitadas>) {
     (fusion.contenido, fusion.cambios, fusion.apartadas)
 }
 
@@ -714,7 +714,10 @@ mod tests {
             (Grupo::Modificado, Accion::Fusionar)
         );
         assert_eq!(opciones.contenido, b"SET a \"2\"\r\nSET b \"3\"\r\n");
-        assert_eq!(opciones.apartadas, ["AllowDangerousScripts"]);
+        assert_eq!(
+            crate::piezas::todas_las_claves(&opciones.apartadas),
+            ["AllowDangerousScripts"]
+        );
         let incompatibles: Vec<_> = plan
             .incompatibles
             .iter()

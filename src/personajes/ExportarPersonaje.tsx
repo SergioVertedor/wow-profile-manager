@@ -7,6 +7,7 @@ import { PackageOpen, TriangleAlert } from "lucide-react";
 import {
   exportarPersonaje,
   pedirPropuestaExportacion,
+  totalQuitadas,
   type PersonajePedido,
   type PropuestaExportacion,
 } from "../nucleo";
@@ -197,8 +198,11 @@ function Formulario({
               <span className={css.categoria}>
                 {t(`exportar.categorias.${pieza.categoria}`)}
                 {pieza.ambito === "cuenta" && <span className={css.detalle}> · {t("exportar.deLaCuenta")}</span>}
-                {pieza.quitadas > 0 && (
-                  <span className={css.detalle}> · {t("exportar.quitadas", { count: pieza.quitadas })}</span>
+                {pieza.quitadas.length > 0 && (
+                  <span className={css.detalle}>
+                    {" "}
+                    · {t("exportar.quitadas", { count: totalQuitadas(pieza.quitadas) })}
+                  </span>
                 )}
               </span>
               <span className={css.tamano}>{tamanoLegible(pieza.bytes, i18n.language)}</span>

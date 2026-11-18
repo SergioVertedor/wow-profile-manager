@@ -32,9 +32,9 @@ const PEDIDO: PersonajePedido = {
 
 const PROPUESTA: PropuestaExportacion = {
   piezas: [
-    { id: "macros", categoria: "macros", ambito: "personaje", bytes: 2_000, quitadas: 0 },
-    { id: "teclas", categoria: "teclas", ambito: "cuenta", bytes: 1_600, quitadas: 0 },
-    { id: "addons-activos", categoria: "addons-activos", ambito: "personaje", bytes: 400, quitadas: 12 },
+    { id: "macros", categoria: "macros", ambito: "personaje", bytes: 2_000, quitadas: [] },
+    { id: "teclas", categoria: "teclas", ambito: "cuenta", bytes: 1_600, quitadas: [] },
+    { id: "addons-activos", categoria: "addons-activos", ambito: "personaje", bytes: 400, quitadas: [{ motivo: "addonNoInstalado", claves: Array.from({ length: 12 }, (_, i) => `Addon${i}`) }] },
   ],
   apartadas: [],
   juegoAbierto: false,

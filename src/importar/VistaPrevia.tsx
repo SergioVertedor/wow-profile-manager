@@ -217,7 +217,7 @@ function Fichero({ fichero, escritaPor }: Readonly<{ fichero: FicheroPlan; escri
       {fichero.apartadas.length > 0 && (
         <p className={css.secundarioTexto}>
           {t(fichero.categoria === "opciones" ? "importar.opcionesApartadas" : "importar.addonsQueFaltan", {
-            lista: fichero.apartadas.join(", "),
+            lista: fichero.apartadas.flatMap((grupo) => grupo.claves).join(", "),
           })}
         </p>
       )}

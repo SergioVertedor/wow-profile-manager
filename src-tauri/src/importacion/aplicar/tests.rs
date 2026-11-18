@@ -30,7 +30,7 @@ fn pieza(id: &'static str, ambito: Ambito, destino: &'static str, contenido: &[u
         ambito,
         destino,
         contenido: contenido.to_vec(),
-        claves_quitadas: Vec::new(),
+        quitadas: Vec::new(),
     }
 }
 

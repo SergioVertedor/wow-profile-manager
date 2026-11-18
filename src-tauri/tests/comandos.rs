@@ -325,8 +325,11 @@ fn propuesta_exportacion_lista_las_piezas_del_personaje() {
     assert_eq!(propuesta["piezas"][0]["id"], "addons-activos");
     assert_eq!(propuesta["piezas"][0]["categoria"], "addons-activos");
     assert_eq!(propuesta["piezas"][0]["ambito"], "personaje");
-    // Prat-3.0 no está instalado en el árbol de prueba: su línea se quita.
-    assert_eq!(propuesta["piezas"][0]["quitadas"], 1);
+    // Prat-3.0 no está instalado en el árbol de prueba: su línea se quita, con su motivo.
+    assert_eq!(
+        propuesta["piezas"][0]["quitadas"],
+        serde_json::json!([{ "motivo": "addonNoInstalado", "claves": ["Prat-3.0"] }])
+    );
     assert_eq!(propuesta["apartadas"], serde_json::json!([]));
     assert!(propuesta["juegoAbierto"].is_boolean());
 }

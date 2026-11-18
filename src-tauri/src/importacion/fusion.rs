@@ -3,7 +3,8 @@
 
 use super::elementos::{Cambio, Elemento};
 use crate::piezas::{
-    ACTIVADO, DESACTIVADO, PREFIJO_BLIZZARD, addon_de_linea, clave_de_opcion, opcion_que_no_viaja,
+    ACTIVADO, DESACTIVADO, Motivo, PREFIJO_BLIZZARD, Quitadas, addon_de_linea, agrupar,
+    clave_de_opcion, motivo_de_opcion,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -16,8 +17,9 @@ const BOM: &[u8] = b"\xef\xbb\xbf";
 pub struct Fusion {
     pub contenido: Vec<u8>,
     pub cambios: Vec<Elemento>,
-    /// Opciones: claves del paquete que no se importan (lista negra). Addons: carpetas que no están en el destino.
-    pub apartadas: Vec<String>,
+    /// Opciones: claves del paquete que no se importan (lista negra), por motivo. Addons: carpetas que se activan y no
+    /// están instaladas en el destino.
+    pub apartadas: Vec<Quitadas>,
 }
 
 /// Una línea del paquete que sustituye o se añade: su clave para comparar (en minúsculas), su nombre tal como lo
@@ -36,8 +38,8 @@ pub fn fusionar_opciones(destino: &[u8], paquete: &[u8]) -> Fusion {
     let lineas: Vec<Linea> = texto_lineas(paquete)
         .filter_map(|texto| {
             let clave = clave_de_opcion(&texto)?;
-            if opcion_que_no_viaja(&clave) {
-                descartadas.push(clave);
+            if let Some(motivo) = motivo_de_opcion(&clave) {
+                descartadas.push((motivo, clave));
                 return None;
             }
             Some(Linea {
@@ -54,7 +56,7 @@ pub fn fusionar_opciones(destino: &[u8], paquete: &[u8]) -> Fusion {
         |texto| clave_de_opcion(texto).map(|c| (c.to_lowercase(), valor_de_opcion(texto))),
         |_, nueva| nueva.texto.clone(),
     );
-    fusion.apartadas = descartadas;
+    fusion.apartadas = agrupar(descartadas);
     fusion
 }
 
@@ -76,15 +78,16 @@ pub fn fusionar_addons(destino: &[u8], paquete: &[u8], instalados: &HashSet<Stri
             })
         })
         .collect();
-    let faltan = lineas
-        .iter()
-        .filter(|l| {
-            !l.clave.starts_with(PREFIJO_BLIZZARD)
-                && !instalados.contains(&l.clave)
-                && l.valor.eq_ignore_ascii_case(ACTIVADO)
-        })
-        .map(|l| l.nombre.clone())
-        .collect();
+    let faltan = agrupar(
+        lineas
+            .iter()
+            .filter(|l| {
+                !l.clave.starts_with(PREFIJO_BLIZZARD)
+                    && !instalados.contains(&l.clave)
+                    && l.valor.eq_ignore_ascii_case(ACTIVADO)
+            })
+            .map(|l| (Motivo::AddonNoInstalado, l.nombre.clone())),
+    );
     let mut fusion = fusionar(
         destino,
         &lineas,
@@ -206,6 +209,7 @@ fn salto_preferido(destino: &[u8]) -> &'static [u8] {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::piezas::todas_las_claves;
 
     fn resumen(fusion: &Fusion) -> Vec<(Cambio, &str, Option<&str>, Option<&str>)> {
         fusion
@@ -255,7 +259,11 @@ mod tests {
             fusion.contenido,
             b"SET AllowDangerousScripts \"0\"\r\nSET a \"1\"\r\n"
         );
-        assert_eq!(fusion.apartadas, ["AllowDangerousScripts", "trackedQuests"]);
+        assert_eq!(
+            todas_las_claves(&fusion.apartadas),
+            ["AllowDangerousScripts", "trackedQuests"]
+        );
+        assert_eq!(fusion.apartadas[1].motivo, Motivo::Estado);
     }
 
     #[test]
@@ -308,10 +316,11 @@ mod tests {
             "la carpeta se escribe como la tiene el destino"
         );
         assert_eq!(
-            fusion.apartadas,
+            todas_las_claves(&fusion.apartadas),
             ["WeakAuras"],
             "solo las activadas que no están instaladas"
         );
+        assert_eq!(fusion.apartadas[0].motivo, Motivo::AddonNoInstalado);
         assert_eq!(
             resumen(&fusion)[0],
             (

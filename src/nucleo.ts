@@ -188,6 +188,20 @@ export type Categoria =
   | "marcos-banda"
   | "addons-activos";
 
+/** Por qué no viaja una línea (`Motivo` en `src-tauri/src/piezas.rs`). */
+export type Motivo = "seguridad" | "estado" | "addonNoInstalado";
+
+/** Las claves que se quitan por un mismo motivo (`Quitadas` en `src-tauri/src/piezas.rs`). */
+export interface Quitadas {
+  motivo: Motivo;
+  claves: string[];
+}
+
+/** Cuántas líneas hay en todos los grupos. */
+export function totalQuitadas(grupos: Quitadas[]): number {
+  return grupos.reduce((total, grupo) => total + grupo.claves.length, 0);
+}
+
 /** Una pieza que se puede exportar (`PiezaPropuesta` en `src-tauri/src/exportacion.rs`). */
 export interface PiezaPropuesta {
   id: string;
@@ -195,8 +209,8 @@ export interface PiezaPropuesta {
   /** Dónde estaba en el origen. */
   ambito: "personaje" | "cuenta";
   bytes: number;
-  /** Líneas que se quitan al filtrar (estado, addons no instalados). */
-  quitadas: number;
+  /** Líneas que se quitan al filtrar, por motivo. */
+  quitadas: Quitadas[];
 }
 
 /** Lo que se puede exportar del personaje ahora mismo. */
@@ -298,8 +312,8 @@ export interface FicheroPlan {
   grupo: Grupo;
   accion: "crear" | "sobrescribir" | "fusionar";
   elementos: Elemento[];
-  /** Opciones que no se importan, o addons activados que no están instalados en el destino. */
-  apartadas: string[];
+  /** Opciones que no se importan, o addons activados que no están instalados en el destino, por motivo. */
+  apartadas: Quitadas[];
   bytesAntes?: number;
   bytesDespues: number;
   /** Lo de cuenta que ya escribe otro personaje de la misma cuenta (su carpeta). */

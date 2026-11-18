@@ -8,6 +8,7 @@ pub use lectura::{EntradaLeida, ManifiestoLeido, PaqueteLeido, leer_fichero};
 use crate::error::ErrorNucleo;
 use crate::escritura::escribir_atomico;
 use crate::operaciones::sha256;
+use crate::piezas::{Quitadas, todas_las_claves};
 use serde::{Deserialize, Serialize};
 use std::io::{Cursor, Write};
 use std::path::Path;
@@ -64,8 +65,8 @@ pub struct Pieza {
     /// Ruta lógica (`personaje/<fichero>` o `cuenta/<fichero>`), nunca una ruta de disco.
     pub destino: &'static str,
     pub contenido: Vec<u8>,
-    /// Solo en `fichero-filtrado`: lo que se quitó (claves de opciones o carpetas de addons).
-    pub claves_quitadas: Vec<String>,
+    /// Solo en `fichero-filtrado`: lo que se quitó (claves de opciones o carpetas de addons), por motivo.
+    pub quitadas: Vec<Quitadas>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -242,7 +243,7 @@ impl Paquete {
 
 fn entrada_de(pieza: Pieza) -> (Entrada, Vec<u8>) {
     let claves_quitadas = (pieza.tipo == Tipo::FicheroFiltrado).then(|| {
-        let mut claves = pieza.claves_quitadas;
+        let mut claves = todas_las_claves(&pieza.quitadas);
         claves.truncate(MAX_CLAVES_QUITADAS);
         claves
     });
@@ -272,7 +273,7 @@ pub(crate) mod tests {
             ambito: Ambito::Personaje,
             destino: "personaje/macros-cache.txt",
             contenido: contenido.to_vec(),
-            claves_quitadas: Vec::new(),
+            quitadas: Vec::new(),
         }
     }
 
