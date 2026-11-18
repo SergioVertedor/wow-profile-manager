@@ -30,7 +30,15 @@ export type ErrorNucleo =
   | { codigo: "juegoAbierto"; datos: Record<string, never> }
   | { codigo: "personajeNoEncontrado"; datos: Record<string, never> }
   | { codigo: "enlaceNoAdmitido"; datos: { ruta: string } }
-  | { codigo: "operacionFallida"; datos: { id: string; restaurada: boolean; detalle: string } };
+  | { codigo: "operacionFallida"; datos: { id: string; restaurada: boolean; detalle: string } }
+  | { codigo: "operacionNoEncontrada"; datos: Record<string, never> }
+  | { codigo: "noDeshacible"; datos: Record<string, never> }
+  | { codigo: "operacionPosterior"; datos: { id: string } }
+  | { codigo: "juegoDistinto"; datos: { raiz: string } }
+  | { codigo: "planCaducado"; datos: Record<string, never> }
+  | { codigo: "operacionEnCurso"; datos: Record<string, never> }
+  | { codigo: "restauracionManualSinConfirmar"; datos: Record<string, never> }
+  | { codigo: "carpetaNoAbierta"; datos: { ruta: string; detalle: string } };
 
 export function esErrorNucleo(valor: unknown): valor is ErrorNucleo {
   return typeof valor === "object" && valor !== null && "codigo" in valor && "datos" in valor;
@@ -158,6 +166,89 @@ export interface Recuperacion {
 
 export function recuperarOperaciones(): Promise<Recuperacion> {
   return invoke<Recuperacion>("recuperar_operaciones");
+}
+
+/** Tipos y estados de `operacion.json` (`docs/operacion.schema.json`). */
+export type TipoOperacion = "importacion" | "deshacer" | "eliminacion";
+export type EstadoOperacion =
+  | "preparando"
+  | "copiada"
+  | "escribiendo"
+  | "completa"
+  | "deshecha"
+  | "cancelada"
+  | "fallida-restaurada"
+  | "fallida-sin-restaurar";
+
+/** Dónde escribió una operación. Las rutas no salen del equipo. */
+export interface DestinoOperacion {
+  raizVersion: string;
+  producto: string;
+  cuenta: string;
+  carpetaReino: string;
+  carpetaPersonaje: string;
+  nombreEnDatos?: string;
+}
+
+/** Una operación del historial (`Resumen` en `src-tauri/src/operaciones/historial.rs`). */
+export interface Operacion {
+  id: string;
+  tipo: TipoOperacion;
+  creada: string;
+  terminada: string | null;
+  estado: EstadoOperacion;
+  error: string | null;
+  destino: DestinoOperacion;
+  deshace: string | null;
+  deshechaPor: string | null;
+  /** Un `deshacer` cuya original ya se borró. */
+  deshaceBorrada: boolean;
+  ficheros: number;
+  bytes: number;
+  deshacible: boolean;
+  /** En una `fallida-sin-restaurar`: lo que hoy no está como antes y dónde está su copia (`null`: no existía). */
+  sinDevolver: { ruta: string; copia: string | null }[];
+}
+
+export interface Historial {
+  /** De la más nueva a la más antigua. */
+  operaciones: Operacion[];
+  bytes: number;
+  /** Carpetas cuyo diario no se entiende: no se tocan. */
+  ilegibles: { id: string; bytes: number }[];
+}
+
+export function pedirHistorial(): Promise<Historial> {
+  return invoke<Historial>("listar_operaciones");
+}
+
+/** Qué haría deshacer una operación. `huella` se devuelve tal cual al deshacer. */
+export interface PlanDeshacer {
+  /** Ficheros que vuelven desde la copia. */
+  vuelven: number;
+  /** Ficheros que hay ahora y antes no estaban: se quitan. */
+  sobran: number;
+  /** Ficheros que existen ahora y se pisan o se quitan. */
+  cambian: string[];
+  huella: string;
+}
+
+export function pedirPlanDeshacer(id: string): Promise<PlanDeshacer> {
+  return invoke<PlanDeshacer>("plan_deshacer", { id });
+}
+
+/** Deshace si el disco sigue como en el plan. Devuelve el id de la operación de deshacer. */
+export function deshacerOperacion(id: string, huella: string): Promise<string> {
+  return invoke<string>("deshacer_operacion", { id, huella });
+}
+
+/** `restauradaAMano`: el usuario confirma que ya devolvió a mano lo que faltaba (solo cuenta en una sin restaurar). */
+export function borrarOperacion(id: string, restauradaAMano: boolean): Promise<void> {
+  return invoke("borrar_operacion", { id, restauradaAMano });
+}
+
+export function abrirCarpetaOperacion(id: string): Promise<void> {
+  return invoke("abrir_carpeta_operacion", { id });
 }
 
 /** Enlaces que sabe abrir el núcleo (`src-tauri/src/enlaces.rs`). La interfaz nunca le pasa una URL. */

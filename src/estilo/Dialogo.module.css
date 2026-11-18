@@ -1,0 +1,150 @@
+/* Diálogo modal de confirmación que comparten eliminar, deshacer y borrar: título, dónde, avisos y acciones. */
+.dialogo {
+  width: min(34rem, calc(100vw - 2 * var(--espacio-6)));
+  padding: var(--espacio-6);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-l);
+  background: var(--color-superficie-alta);
+  box-shadow: 0 24px 60px var(--sombra);
+  color: var(--color-texto);
+  text-align: left;
+}
+
+.dialogo::backdrop {
+  background: var(--sombra);
+}
+
+.dialogo p + p {
+  margin-top: var(--espacio-3);
+}
+
+.titulo {
+  color: var(--color-nombre);
+  font-size: var(--texto-m);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.donde {
+  margin-top: var(--espacio-1);
+  color: var(--color-texto-2);
+  font-size: var(--texto-control);
+}
+
+.ruta {
+  margin-top: var(--espacio-4);
+  padding: var(--espacio-2) var(--espacio-3);
+  border-radius: var(--radio-s);
+  background: var(--color-hundido);
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+  overflow-wrap: anywhere;
+}
+
+.aviso,
+.exito {
+  display: flex;
+  gap: var(--espacio-3);
+  align-items: flex-start;
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio-m);
+  font-size: var(--texto-control);
+}
+
+.aviso {
+  border: 1px solid var(--aviso-borde);
+  background: var(--aviso-velo);
+}
+
+.aviso svg {
+  flex: none;
+  margin-top: 0.15em;
+  color: var(--color-aviso);
+}
+
+.exito {
+  margin-top: var(--espacio-4);
+  border: 1px solid var(--oro-borde);
+  background: var(--oro-velo);
+}
+
+.alerta {
+  margin-top: var(--espacio-3);
+  color: var(--color-alerta);
+  font-size: var(--texto-control);
+}
+
+.acciones {
+  display: flex;
+  gap: var(--espacio-3);
+  justify-content: flex-end;
+  margin-top: var(--espacio-6);
+}
+
+.secundario,
+.peligro,
+.principal {
+  padding: var(--espacio-2) var(--espacio-4);
+  border-radius: var(--radio-s);
+  font-size: var(--texto-control);
+  cursor: pointer;
+}
+
+.secundario {
+  border: 1px solid var(--color-linea-control);
+  background: none;
+  color: var(--color-texto);
+}
+
+.peligro {
+  border: 1px solid var(--color-alerta);
+  background: none;
+  color: var(--color-alerta);
+  font-weight: 600;
+}
+
+.peligro:hover:not(:disabled) {
+  background: var(--color-alerta);
+  color: var(--color-sobre-oro);
+}
+
+.secundario:disabled,
+.peligro:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.principal {
+  border: 1px solid var(--color-oro-hondo);
+  background: linear-gradient(180deg, var(--color-oro-claro), var(--color-oro));
+  color: var(--color-sobre-oro);
+  font-weight: 650;
+}
+
+.principal:hover:not(:disabled) {
+  background: var(--color-oro-claro);
+}
+
+.principal:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+/* Lista de ficheros dentro de un aviso: rutas largas, con su propio desplazamiento si son muchas. */
+.ficheros {
+  max-height: 10rem;
+  margin: var(--espacio-2) 0 0;
+  padding-left: var(--espacio-5);
+  overflow-y: auto;
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+  overflow-wrap: anywhere;
+}
+
+.casilla {
+  display: flex;
+  gap: var(--espacio-2);
+  align-items: flex-start;
+  margin-top: var(--espacio-4);
+  font-size: var(--texto-control);
+}

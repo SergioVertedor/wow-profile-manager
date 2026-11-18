@@ -6,7 +6,8 @@
     "etiqueta": "Vistas",
     "personajes": "Personajes",
     "acercaDe": "Acerca de",
-    "instalaciones": "Instalaciones"
+    "instalaciones": "Instalaciones",
+    "historial": "Historial"
   },
   "personajes": {
     "titulo": "Personajes",
@@ -71,7 +72,15 @@
     "personajeNoEncontrado": "Ese personaje ya no está en disco. Vuelve a cargar la lista.",
     "operacionFallida": "No se pudo terminar ni dejarlo todo como estaba. Las copias siguen en la operación {{id}}, en la carpeta de datos de la app: {{detalle}}",
     "operacionFallidaRestaurada": "No se pudo terminar y se ha dejado todo como estaba (operación {{id}}): {{detalle}}",
-    "enlaceNoAdmitido": "Hay un enlace o una unión de carpetas en {{ruta}}. No se sigue: podría borrar ficheros fuera de WTF. Quítalo a mano si quieres eliminar la carpeta."
+    "enlaceNoAdmitido": "Hay un enlace o una unión de carpetas en {{ruta}}. No se sigue: podría borrar ficheros fuera de WTF. Quítalo a mano si quieres eliminar la carpeta.",
+    "operacionNoEncontrada": "Esa operación ya no está en el historial. Vuelve a cargarlo.",
+    "noDeshacible": "Esta operación ya no se puede deshacer: solo se deshace una eliminación terminada que no esté deshecha.",
+    "operacionPosterior": "Antes hay que deshacer la operación {{id}}: es más reciente y tocó los mismos ficheros.",
+    "juegoDistinto": "En {{raiz}} ya no está la misma versión del juego (se movió, se borró o se reinstaló). No se ha escrito nada y la copia sigue en la operación.",
+    "planCaducado": "Algún fichero ha cambiado desde que se mostró qué iba a pasar. No se ha escrito nada: vuelve a intentarlo para verlo de nuevo.",
+    "operacionEnCurso": "La operación está a medias: no se puede borrar hasta que termine.",
+    "restauracionManualSinConfirmar": "Confirma que ya has restaurado a mano lo que faltaba.",
+    "carpetaNoAbierta": "No se pudo abrir {{ruta}}: {{detalle}}"
   },
   "versionApp": "Versión {{version}}",
   "instalaciones": {
@@ -125,5 +134,65 @@
     "pendientes_other": "Hay {{count}} operaciones a medias, pero WoW está abierto. Cierra el juego y vuelve a abrir la app para terminarlas.",
     "ilegibles_one": "Hay una operación cuyo diario no se entiende. No se ha tocado.",
     "ilegibles_other": "Hay {{count}} operaciones cuyo diario no se entiende. No se han tocado."
+  },
+  "historial": {
+    "titulo": "Historial",
+    "explicacion": "Lo que la app ha cambiado en las carpetas del juego, cada cosa con una copia de cómo estaba. Nada se borra solo: tú decides cuándo liberar espacio.",
+    "cargando": "Leyendo el historial…",
+    "vacio": "Aún no hay operaciones.",
+    "total": "Ocupa {{tamano}} en total",
+    "tipo": {
+      "eliminacion": "Carpeta eliminada",
+      "deshacer": "Deshacer",
+      "importacion": "Importación"
+    },
+    "estado": {
+      "preparando": "A medias",
+      "copiada": "A medias",
+      "escribiendo": "A medias",
+      "completa": "Hecha",
+      "deshecha": "Deshecha",
+      "cancelada": "Cancelada",
+      "fallida-restaurada": "Falló; todo quedó como estaba",
+      "fallida-sin-restaurar": "Falló sin poder restaurar"
+    },
+    "ficheros_one": "{{count}} fichero",
+    "ficheros_other": "{{count}} ficheros",
+    "deshace": "Deshace la operación {{id}}.",
+    "deshaceBorrada": "Deshizo una operación que ya se ha borrado.",
+    "deshechaPor": "Deshecha por la operación {{id}}.",
+    "sinDevolver": "Estos ficheros no están como antes de la operación. Para devolverlos a mano, copia cada copia a su sitio (o quita el que sobra):",
+    "copiaDe": "{{ruta}} ← {{copia}}",
+    "sobra": "{{ruta}} (antes no existía: sobra)",
+    "ilegibles_one": "Hay una operación cuyo diario no se entiende. No se toca; puedes abrir su carpeta.",
+    "ilegibles_other": "Hay {{count}} operaciones cuyo diario no se entiende. No se tocan; puedes abrir sus carpetas.",
+    "abrir": "Abrir carpeta",
+    "deshacer": "Deshacer",
+    "borrar": "Borrar"
+  },
+  "deshacer": {
+    "titulo": "¿Deshacer la eliminación de {{nombre}}?",
+    "contenido_one": "Vuelve {{count}} fichero a la carpeta del personaje.",
+    "contenido_other": "Vuelven {{count}} ficheros a la carpeta del personaje.",
+    "nada": "La carpeta ya está como antes de eliminarla: no se escribe nada, solo se marca como deshecha.",
+    "aviso": "El juego ya ha vuelto a crear la carpeta. Estos ficheros se sustituyen o se quitan, y lo que el juego guardó en ellos desde entonces se pierde:",
+    "copia": "Antes de escribir se guarda una copia de lo que hay ahora, en una operación nueva del historial.",
+    "cancelar": "Cancelar",
+    "confirmar": "Deshacer",
+    "deshaciendo": "Deshaciendo…",
+    "cerrar": "Cerrar",
+    "hecho": "Hecho: la carpeta vuelve a estar como antes de eliminarla (operación {{id}}).",
+    "sobran_one": "Se quita {{count}} fichero que antes no estaba.",
+    "sobran_other": "Se quitan {{count}} ficheros que antes no estaban."
+  },
+  "borrar": {
+    "titulo": "¿Borrar la operación {{id}}?",
+    "explicacion": "Libera {{tamano}}. Su copia desaparece y ya no se podrá deshacer.",
+    "sinRestaurar": "Esta operación no se pudo restaurar del todo: su copia puede ser lo único que queda de cómo estaban esos ficheros.",
+    "confirmarManual": "Ya he restaurado a mano lo que faltaba",
+    "cancelar": "Cancelar",
+    "confirmar": "Borrar",
+    "borrando": "Borrando…",
+    "deshacer": "Es un deshacer: su copia es lo que el juego había guardado en la carpeta después de eliminarla."
   }
 }

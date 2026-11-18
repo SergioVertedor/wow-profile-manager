@@ -26,6 +26,22 @@ pub enum ErrorNucleo {
         restaurada: bool,
         detalle: String,
     },
+    /// No hay una operación con ese id en la carpeta de operaciones (o su diario no se entiende).
+    OperacionNoEncontrada {},
+    /// La operación no se puede deshacer: no es una eliminación `completa`.
+    NoDeshacible {},
+    /// Una operación posterior `completa` (`id`) tocó alguno de los mismos ficheros: hay que deshacerla antes.
+    OperacionPosterior { id: String },
+    /// La raíz de la versión ya no existe o su producto no es el de la operación. No se escribe nada.
+    JuegoDistinto { raiz: String },
+    /// Algún fichero cambió desde que se enseñó qué iba a pasar. No se escribe nada: hay que volver a mirarlo.
+    PlanCaducado {},
+    /// La operación no ha terminado (está a medias): no se puede borrar.
+    OperacionEnCurso {},
+    /// La operación no se pudo restaurar del todo: solo se borra si el usuario confirma que ya restauró a mano.
+    RestauracionManualSinConfirmar {},
+    /// El sistema no pudo abrir una carpeta en el explorador.
+    CarpetaNoAbierta { ruta: String, detalle: String },
     /// `preferencias.json` existe pero no se entiende. No se sobrescribe: arreglarlo o borrarlo es del usuario.
     PreferenciasIlegibles { ruta: String },
     /// Un nombre propio demasiado largo o con caracteres de control.

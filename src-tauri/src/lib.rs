@@ -162,6 +162,52 @@ async fn recuperar_operaciones(
     Ok(operaciones.recuperar(sistema::juego_en_marcha))
 }
 
+/// Las operaciones de la app, de la más nueva a la más antigua, con lo que ocupan (spec 022). Solo lee.
+#[tauri::command]
+async fn listar_operaciones(
+    operaciones: State<'_, Operaciones>,
+) -> Result<operaciones::Historial, error::ErrorNucleo> {
+    Ok(operaciones.listar())
+}
+
+/// Qué haría deshacer una operación, para confirmarlo. Solo lee.
+#[tauri::command]
+async fn plan_deshacer(
+    id: String,
+    operaciones: State<'_, Operaciones>,
+) -> Result<operaciones::PlanDeshacer, error::ErrorNucleo> {
+    operaciones.plan_deshacer(&id)
+}
+
+/// Deshace una operación si el disco sigue como en su plan (`huella`). Devuelve el id del deshacer.
+#[tauri::command]
+async fn deshacer_operacion(
+    id: String,
+    huella: String,
+    operaciones: State<'_, Operaciones>,
+) -> Result<String, error::ErrorNucleo> {
+    operaciones.deshacer(&id, &huella, sistema::juego_en_marcha)
+}
+
+/// Borra una operación terminada. `restaurada_a_mano`: el usuario confirma que ya devolvió a mano lo que faltaba.
+#[tauri::command]
+async fn borrar_operacion(
+    id: String,
+    restaurada_a_mano: bool,
+    operaciones: State<'_, Operaciones>,
+) -> Result<(), error::ErrorNucleo> {
+    operaciones.borrar(&id, restaurada_a_mano)
+}
+
+/// Abre en el explorador la carpeta de una operación. La interfaz manda el id, nunca una ruta.
+#[tauri::command]
+async fn abrir_carpeta_operacion(
+    id: String,
+    operaciones: State<'_, Operaciones>,
+) -> Result<(), error::ErrorNucleo> {
+    sistema::abrir_carpeta(&operaciones.carpeta_de(&id)?)
+}
+
 /// Abre en el navegador uno de los enlaces conocidos. La interfaz no puede pasar una URL: solo el nombre del enlace.
 #[tauri::command]
 fn abrir_enlace(enlace: enlaces::Enlace) -> Result<(), error::ErrorNucleo> {
@@ -184,6 +230,11 @@ pub fn con_comandos<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Bui
         resumen_eliminacion,
         eliminar_personaje,
         recuperar_operaciones,
+        listar_operaciones,
+        plan_deshacer,
+        deshacer_operacion,
+        borrar_operacion,
+        abrir_carpeta_operacion,
         abrir_enlace
     ])
 }

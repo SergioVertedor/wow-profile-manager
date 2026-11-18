@@ -43,6 +43,14 @@ fn salida_de_tasklist() -> Option<String> {
     None
 }
 
+/// Abre `carpeta` en el explorador, sin esperar a que se cierre.
+pub fn abrir_carpeta(carpeta: &std::path::Path) -> Result<(), crate::error::ErrorNucleo> {
+    open::that_detached(carpeta).map_err(|e| crate::error::ErrorNucleo::CarpetaNoAbierta {
+        ruta: carpeta.display().to_string(),
+        detalle: e.to_string(),
+    })
+}
+
 /// En CSV, cada proceso es una línea que empieza por su nombre entre comillas. Sin procesos, `tasklist` escribe un
 /// aviso en el idioma de Windows, que no empieza por comillas.
 fn hay_ejecutable(csv: &str) -> bool {
