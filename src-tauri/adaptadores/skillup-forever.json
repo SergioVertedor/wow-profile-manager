@@ -1,0 +1,7 @@
+{
+  "id": "skillup-forever",
+  "version": 1,
+  "addon": "SkillUpForever",
+  "medido": "Recetas aprendidas y vistas por personaje, con clave 'Nombre-Reino' sin apellido: estado.",
+  "noExportar": true
+}

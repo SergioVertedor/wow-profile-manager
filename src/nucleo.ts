@@ -177,8 +177,8 @@ export function eliminarPersonaje(personaje: PersonajePedido): Promise<string> {
   return invoke<string>("eliminar_personaje", { personaje });
 }
 
-/** Categorías de un `.wowprofile` que exporta la entrega 1 (`docs/formato-wowprofile.md`). */
-export type Categoria =
+/** Categorías de fichero de un `.wowprofile`: las que la app exporta e importa (`docs/formato-wowprofile.md`). */
+export type CategoriaFichero =
   | "macros"
   | "teclas"
   | "teclas-clic"
@@ -188,8 +188,50 @@ export type Categoria =
   | "marcos-banda"
   | "addons-activos";
 
+/** Todas las que exporta la app. `config-addon` aún no se importa (#72). */
+export type Categoria = CategoriaFichero | "config-addon";
+
+/** Cómo se extrajo una pieza (`Tipo` en `src-tauri/src/paquetes.rs`). */
+export type TipoPieza = "fichero" | "fichero-filtrado" | "perfil-acedb" | "adaptador";
+
 /** Por qué no viaja una línea (`Motivo` en `src-tauri/src/piezas.rs`). */
-export type Motivo = "seguridad" | "estado" | "addonNoInstalado";
+export type Motivo = "seguridad" | "estado" | "addonNoInstalado" | "viajaComoPerfil";
+
+/** Las reglas genéricas de `docs/adaptadores.md`: sus piezas salen desmarcadas y con aviso. */
+export type ReglaGenerica = "genericoCuenta" | "genericoPersonaje" | "genericoCuentaConPersonajes";
+
+/** Qué regla sacó una pieza de addon (`Regla` en `src-tauri/src/config_addons.rs`). */
+export type ReglaAddon = "adaptador" | "perfilAcedb" | ReglaGenerica;
+
+export const REGLAS_GENERICAS: readonly ReglaGenerica[] = [
+  "genericoCuenta",
+  "genericoPersonaje",
+  "genericoCuentaConPersonajes",
+];
+
+export function esReglaGenerica(regla: ReglaAddon | null): regla is ReglaGenerica {
+  return (REGLAS_GENERICAS as readonly (ReglaAddon | null)[]).includes(regla);
+}
+
+/** Lo que se reconoce de otros jugadores en una pieza genérica (`Pista`). */
+export type Pista = "guid" | "nombreReino";
+
+/** Por qué algo de un addon no se puede exportar (`MotivoNoExportable`). */
+export type MotivoNoExportable =
+  | "noSeLee"
+  | "sinNombre"
+  | "sinPerfil"
+  | "perfilNoValido"
+  | "demasiadoGrande"
+  | "traeMarcador"
+  | "carpetaNoAdmitida";
+
+export interface NoExportable {
+  addon: string;
+  ambito: "personaje" | "cuenta";
+  variable: string | null;
+  motivo: MotivoNoExportable;
+}
 
 /** Las claves que se quitan por un mismo motivo (`Quitadas` en `src-tauri/src/piezas.rs`). */
 export interface Quitadas {
@@ -206,11 +248,23 @@ export function totalQuitadas(grupos: Quitadas[]): number {
 export interface PiezaPropuesta {
   id: string;
   categoria: Categoria;
+  tipo: TipoPieza;
   /** Dónde estaba en el origen. */
   ambito: "personaje" | "cuenta";
   bytes: number;
   /** Líneas que se quitan al filtrar, por motivo. */
   quitadas: Quitadas[];
+  /** Si sale marcada al abrir el diálogo. */
+  marcada: boolean;
+  /** Solo en `config-addon`: la carpeta del addon. */
+  addon: string | null;
+  variable: string | null;
+  /** Nombre del perfil AceDB. */
+  perfil: string | null;
+  regla: ReglaAddon | null;
+  /** El adaptador se midió con otra versión del addon. */
+  versionNoMedida: boolean;
+  pistas: Pista[];
 }
 
 /** Lo que se puede exportar del personaje ahora mismo. */
@@ -218,6 +272,8 @@ export interface PropuestaExportacion {
   piezas: PiezaPropuesta[];
   /** Ids de las piezas que ya traen el texto reservado `@@WOWPROFILE:`: no viajan. */
   apartadas: string[];
+  /** Lo que no se puede exportar de cada addon, con su motivo. */
+  noExportables: NoExportable[];
   juegoAbierto: boolean;
 }
 

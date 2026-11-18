@@ -24,13 +24,14 @@ struct Mundo {
 
 fn pieza(id: &'static str, ambito: Ambito, destino: &'static str, contenido: &[u8]) -> Pieza {
     Pieza {
-        id,
+        id: id.to_owned(),
         categoria: Categoria::Macros,
         tipo: Tipo::Fichero,
         ambito,
-        destino,
+        destino: destino.to_owned(),
         contenido: contenido.to_vec(),
         quitadas: Vec::new(),
+        addon: None,
     }
 }
 

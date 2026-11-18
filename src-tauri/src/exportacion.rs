@@ -1,11 +1,16 @@
-//! Exportación (`docs/arquitectura.md`): arma las piezas de un personaje para un `.wowprofile` (spec 023, entrega 1 de
-//! #56: los ficheros que se copian sin leer Lua). Solo lee; el paquete lo escribe Paquetes.
+//! Exportación (`docs/arquitectura.md`): arma las piezas de un personaje para un `.wowprofile`: los ficheros que se
+//! copian sin leer Lua (spec 023) y la configuración de addons (spec 027). Solo lee; el paquete lo escribe Paquetes.
 
 use crate::addons::Addon;
+use crate::claves_personaje::claves_de_personaje;
+use crate::config_addons::{self, ConfigAddons, NoExportable, Pista, Regla};
+use crate::descubrimiento::{CARPETA_SAVED_VARIABLES as CARPETA_SV, nombres_de_carpetas};
 use crate::deteccion::{self, PersonajeUbicado};
 use crate::error::ErrorNucleo;
 use crate::operaciones::{ahora_rfc3339, segmento_literal};
-use crate::paquetes::{AddonPaquete, Ambito, Categoria, Origen, Paquete, Perfil, Pieza, Tipo};
+use crate::paquetes::{
+    AddonPaquete, Ambito, Categoria, MARCADOR, Origen, Paquete, Perfil, Pieza, Tipo,
+};
 use crate::piezas::{
     ACTIVADO, FUENTES, Filtro, Fuente, Quitadas, filtrar_addons, filtrar_opciones, lineas_addons,
 };
@@ -13,8 +18,6 @@ use serde::Serialize;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-/// Texto que el formato reserva para sus marcadores: una pieza que ya lo trae no viaja.
-const MARCADOR: &[u8] = b"@@WOWPROFILE:";
 const MAX_NOMBRE: usize = 80;
 const MAX_DESCRIPCION: usize = 500;
 pub const EXTENSION: &str = "wowprofile";
@@ -27,18 +30,39 @@ pub struct Propuesta {
     pub piezas: Vec<PiezaPropuesta>,
     /// Ids de las piezas que ya traen `@@WOWPROFILE:` y no viajan.
     pub apartadas: Vec<String>,
+    /// Lo que no se puede exportar de cada addon, con su motivo.
+    pub no_exportables: Vec<NoExportable>,
     pub juego_abierto: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PiezaPropuesta {
-    pub id: &'static str,
+    pub id: String,
     pub categoria: Categoria,
+    pub tipo: Tipo,
     pub ambito: Ambito,
     pub bytes: u64,
     /// Líneas que se quitan al filtrar, por motivo.
     pub quitadas: Vec<Quitadas>,
+    /// Si sale marcada en el diálogo (`docs/flujos.md`, «Exportar», paso 3).
+    pub marcada: bool,
+    /// Solo en `config-addon`.
+    pub addon: Option<String>,
+    pub variable: Option<String>,
+    /// Nombre del perfil AceDB tal como lo ve quien exporta.
+    pub perfil: Option<String>,
+    pub regla: Option<Regla>,
+    pub version_no_medida: bool,
+    pub pistas: Vec<Pista>,
+}
+
+/// Todo lo que se puede llevar del personaje ahora mismo.
+struct Disponible {
+    /// Ficheros de la entrega 1, sin las apartadas.
+    ficheros: Vec<Pieza>,
+    apartadas: Vec<String>,
+    config: ConfigAddons,
 }
 
 /// Lo que el jugador pide exportar.
@@ -54,8 +78,10 @@ pub fn propuesta_de(
     juego_abierto: bool,
 ) -> Result<Propuesta, ErrorNucleo> {
     let addons = deteccion::addons_de(&personaje.raiz_version, personaje.producto)?;
-    let (piezas, apartadas) = piezas(personaje, &addons.addons)?;
-    Ok(propuesta(&piezas, apartadas, juego_abierto))
+    Ok(propuesta(
+        disponible(personaje, &addons.addons)?,
+        juego_abierto,
+    ))
 }
 
 /// El paquete con lo pedido, leído del disco en este momento (lo que se guarda es lo que hay al guardar).
@@ -66,7 +92,12 @@ pub fn paquete(personaje: &PersonajeUbicado, pedido: &Pedido) -> Result<Paquete,
         return Err(ErrorNucleo::ExportacionSinVersion {});
     };
     let addons = deteccion::addons_de(&personaje.raiz_version, personaje.producto)?;
-    let (todas, _) = piezas(personaje, &addons.addons)?;
+    let disponible = disponible(personaje, &addons.addons)?;
+    let todas = disponible
+        .ficheros
+        .into_iter()
+        .chain(disponible.config.piezas.into_iter().map(|p| p.pieza))
+        .collect();
     let (elegidas, perfil) = elegir(todas, pedido, ahora_rfc3339())?;
     let origen = Origen {
         producto: personaje.producto.codigo(),
@@ -110,6 +141,24 @@ pub fn con_extension(ruta: PathBuf) -> PathBuf {
     PathBuf::from(texto)
 }
 
+fn disponible(personaje: &PersonajeUbicado, addons: &[Addon]) -> Result<Disponible, ErrorNucleo> {
+    let (ficheros, apartadas) = piezas(personaje, addons)?;
+    let config = config_addons::de_personaje(personaje, addons, &claves_de_cuenta(personaje)?);
+    Ok(Disponible {
+        ficheros,
+        apartadas,
+        config,
+    })
+}
+
+/// Cómo se llaman en los datos los personajes de su cuenta: los de `profileKeys` y los de las carpetas.
+fn claves_de_cuenta(personaje: &PersonajeUbicado) -> Result<HashSet<String>, ErrorNucleo> {
+    let cuenta = personaje.carpeta_cuenta();
+    let mut claves = claves_de_personaje(&cuenta.join(CARPETA_SV))?;
+    claves.extend(nombres_de_carpetas(&cuenta, personaje.producto)?);
+    Ok(claves)
+}
+
 /// Las piezas que tiene ahora en disco el personaje, sin las apartadas por el marcador (que van aparte).
 fn piezas(
     personaje: &PersonajeUbicado,
@@ -123,7 +172,7 @@ fn piezas(
             continue;
         };
         if contiene(&pieza.contenido, MARCADOR) {
-            apartadas.push(pieza.id.to_owned());
+            apartadas.push(pieza.id.clone());
         } else {
             piezas.push(pieza);
         }
@@ -131,20 +180,47 @@ fn piezas(
     Ok((piezas, apartadas))
 }
 
-fn propuesta(piezas: &[Pieza], apartadas: Vec<String>, juego_abierto: bool) -> Propuesta {
+fn propuesta(disponible: Disponible, juego_abierto: bool) -> Propuesta {
+    let ficheros = disponible.ficheros.iter().map(|p| PiezaPropuesta {
+        marcada: true,
+        ..propuesta_de_pieza(p)
+    });
+    let config = disponible.config.piezas.iter().map(|p| {
+        let de_addon = p.pieza.addon.as_ref();
+        PiezaPropuesta {
+            marcada: p.marcada,
+            addon: de_addon.map(|d| d.addon.clone()),
+            variable: de_addon.and_then(|d| d.variable.clone()),
+            perfil: p.perfil.clone(),
+            regla: Some(p.regla),
+            version_no_medida: p.version_no_medida,
+            pistas: p.pistas.clone(),
+            ..propuesta_de_pieza(&p.pieza)
+        }
+    });
     Propuesta {
-        piezas: piezas
-            .iter()
-            .map(|p| PiezaPropuesta {
-                id: p.id,
-                categoria: p.categoria,
-                ambito: p.ambito,
-                bytes: p.contenido.len() as u64,
-                quitadas: p.quitadas.clone(),
-            })
-            .collect(),
-        apartadas,
+        piezas: ficheros.chain(config).collect(),
+        apartadas: disponible.apartadas,
+        no_exportables: disponible.config.no_exportables,
         juego_abierto,
+    }
+}
+
+fn propuesta_de_pieza(pieza: &Pieza) -> PiezaPropuesta {
+    PiezaPropuesta {
+        id: pieza.id.clone(),
+        categoria: pieza.categoria,
+        tipo: pieza.tipo,
+        ambito: pieza.ambito,
+        bytes: pieza.contenido.len() as u64,
+        quitadas: pieza.quitadas.clone(),
+        marcada: false,
+        addon: None,
+        variable: None,
+        perfil: None,
+        regla: None,
+        version_no_medida: false,
+        pistas: Vec::new(),
     }
 }
 
@@ -162,7 +238,7 @@ fn elegir(
     }
     let elegidas: Vec<_> = piezas
         .into_iter()
-        .filter(|p| pedido.seleccion.iter().any(|s| s == p.id))
+        .filter(|p| pedido.seleccion.contains(&p.id))
         .collect();
     if elegidas.is_empty() {
         return Err(ErrorNucleo::SeleccionVacia {});
@@ -175,19 +251,25 @@ fn elegir(
     Ok((elegidas, perfil))
 }
 
-/// Los addons instalados que el `AddOns.txt` del paquete deja activados (sin los del cliente): quien importa ve qué
-/// le falta y dónde conseguirlo.
+/// Los addons instalados que el `AddOns.txt` del paquete deja activados (sin los del cliente) y los de las piezas
+/// `config-addon`: quien importa ve qué le falta y dónde conseguirlo.
 fn addons_del_paquete(piezas: &[Pieza], addons: &[Addon]) -> Vec<AddonPaquete> {
-    let Some(lista) = piezas
+    let mut activos: HashSet<String> = piezas
         .iter()
-        .find(|p| p.categoria == Categoria::AddonsActivos)
-    else {
-        return Vec::new();
-    };
-    let activos: HashSet<String> = lineas_addons(&lista.contenido)
-        .filter(|(_, valor)| valor.eq_ignore_ascii_case(ACTIVADO))
-        .map(|(carpeta, _)| carpeta.to_lowercase())
+        .filter(|p| p.categoria == Categoria::AddonsActivos)
+        .flat_map(|lista| {
+            lineas_addons(&lista.contenido)
+                .filter(|(_, valor)| valor.eq_ignore_ascii_case(ACTIVADO))
+                .map(|(carpeta, _)| carpeta.to_lowercase())
+                .collect::<Vec<_>>()
+        })
         .collect();
+    activos.extend(
+        piezas
+            .iter()
+            .filter_map(|p| p.addon.as_ref())
+            .map(|d| d.addon.to_lowercase()),
+    );
     addons
         .iter()
         .filter(|a| activos.contains(&a.carpeta.to_lowercase()))
@@ -220,13 +302,14 @@ fn leer_pieza(
             Filtro::Addons => con_tipo(filtrar_addons(&bytes, instalados)),
         };
         return Ok(Some(Pieza {
-            id: fuente.id,
+            id: fuente.id.to_owned(),
             categoria: fuente.categoria,
             tipo,
             ambito,
-            destino: fuente.destino,
+            destino: fuente.destino.to_owned(),
             contenido,
             quitadas,
+            addon: None,
         }));
     }
     Ok(None)
@@ -284,7 +367,7 @@ mod tests {
     }
 
     fn ids(piezas: &[Pieza]) -> Vec<&str> {
-        piezas.iter().map(|p| p.id).collect()
+        piezas.iter().map(|p| p.id.as_str()).collect()
     }
 
     #[test]
@@ -322,7 +405,7 @@ mod tests {
         assert!(apartadas.is_empty());
         let teclas = &piezas[2];
         assert_eq!(
-            (teclas.ambito, teclas.destino),
+            (teclas.ambito, teclas.destino.as_str()),
             (Ambito::Cuenta, "personaje/bindings-cache.wtf")
         );
         assert_eq!(piezas[3].contenido, b"SET a \"1\"\r\n");
@@ -411,14 +494,15 @@ mod tests {
     #[test]
     fn el_paquete_describe_los_addons_instalados_que_deja_activados() {
         let lista = Pieza {
-            id: "addons-activos",
+            id: "addons-activos".into(),
             categoria: Categoria::AddonsActivos,
             tipo: Tipo::FicheroFiltrado,
             ambito: Ambito::Personaje,
-            destino: "personaje/AddOns.txt",
+            destino: "personaje/AddOns.txt".into(),
             contenido: b"Dominos: enabled\r\nDetails: disabled\r\nBlizzard_CombatText: enabled\r\n"
                 .to_vec(),
             quitadas: Vec::new(),
+            addon: None,
         };
         let addons = addons_del_paquete(&[lista], &[addon("Dominos"), addon("Details")]);
         assert_eq!(addons.len(), 1);

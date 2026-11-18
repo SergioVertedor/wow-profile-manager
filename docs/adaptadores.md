@@ -29,7 +29,9 @@ DominosDB = {
 }
 ```
 
-Exportar = copiar el perfil que usa el personaje (`profiles["Default"]`). Importar = añadirlo al fichero del
+Exportar = copiar el perfil que usa el personaje (`profiles["Default"]`) y, si el addon tiene módulos
+(`namespaces`, medido en Prat, Dominos y Bazooka), el perfil de ese mismo nombre de cada módulo. Al lado de los
+`profiles` de un módulo puede haber `char` o `realm` con estado y nombres de otros jugadores: eso no viaja. Importar = añadirlo al fichero del
 destino y apuntar **solo** el `profileKeys` del personaje destino a ese perfil. Los demás personajes del destino
 no se enteran [V: probado en el juego].
 
@@ -56,7 +58,7 @@ reglas genéricas se equivocarían, por ejemplo porque llevan progreso o datos d
 Para cada addon con datos, se usa lo primero que aplique:
 
 Se decide **por pieza**: cada variable de cuenta y cada fichero por personaje. Un mismo addon puede tener piezas
-que caen en reglas distintas.
+que caen en reglas distintas. Solo se miran los addons **instalados**; las variables salen del fichero, no del `.toc`.
 
 1. **Adaptador escrito** para ese `addon`.
 2. **AceDB detectado**: la variable de cuenta tiene `profileKeys` y `profiles`. Viaja el perfil que usa el
@@ -81,8 +83,9 @@ aparecía ningún personaje de la cuenta con su formato habitual, 3 sí guardaba
 claves `Nombre-Reino` sin apellido).
 
 **Pistas.** Al exportar, la app busca en los ficheros de las reglas genéricas lo que sí se puede reconocer: GUID de
-jugador (`Player-<servidor>-<id>`) y claves con forma de personaje en cualquier formato (`Nombre Apellido`,
-`Nombre-Reino`, `Nombre - Reino`). Si encuentra alguna, el aviso lo dice («parece contener otros jugadores»).
+jugador (`Player-<servidor>-<8 cifras hexadecimales>`) y claves con forma `Nombre-Reino` o `Nombre - Reino` (nombre de
+una palabra con mayúscula y de 2 a 12 letras). La forma `Nombre Apellido` no es pista: es la de muchos textos que no son
+personajes. Si encuentra alguna, el aviso lo dice («parece contener otros jugadores»).
 Las pistas **nunca marcan una entrada**: que no haya pistas no demuestra nada.
 
 Para no obligar a ir addon a addon, la selección tiene una acción «marcar todos» por cada tipo de regla genérica.
@@ -141,195 +144,78 @@ No marca las piezas con pistas: esas se marcan una a una, viendo su aviso.
 
 ## Adaptadores escritos (excepciones medidas)
 
+Cada adaptador es un fichero JSON en [`src-tauri/adaptadores/`](../src-tauri/adaptadores/), que va dentro del
+ejecutable: esa es la única copia. Aquí se explica cada uno.
+
 Addons en los que las reglas genéricas se equivocarían, medidos el 2026-11-17 en Forever 1.60.1. La lista
 crece con cada addon que se mida (los populares, en la Fase 5) y con los que proponga cualquiera por PR. La clasificación de cada clave como preferencia o estado es **[I]**
 salvo que se diga otra cosa: se lee el nombre y el contenido, no el código del addon.
 
 ### ForeverDungeonJournal
 
-```json
-{
-  "id": "forever-dungeon-journal",
-  "version": 1,
-  "addon": "ForeverDungeonJournal",
-  "medido": "ForeverDungeonJournalCharacterDB (por personaje) tiene 16 claves: journalMode, favouriteItems, trackerSlots, trackedDungeons y hiddenDungeons son preferencias; rpgTrash, rpgBosses, rpgKills, rpgMaps, rpgQuests, runTracker, runLog, flightPoints, flightPointsVersion, hearthSpot y arrowChains son progreso.",
-  "reglas": [
-    {
-      "ambito": "personaje",
-      "variable": "ForeverDungeonJournalCharacterDB",
-      "incluir": ["journalMode", "favouriteItems", "trackerSlots", "trackedDungeons", "hiddenDungeons"]
-    }
-  ]
-}
-```
+Fichero: [`forever-dungeon-journal.json`](../src-tauri/adaptadores/forever-dungeon-journal.json).
 
 `journalMode` es la elección Gamer/RPG que el addon vuelve a pedir si falta [V].
 
 ### LFGForever
 
-```json
-{
-  "id": "lfg-forever",
-  "version": 1,
-  "addon": "LFGForever",
-  "medido": "LFGForeverCharDB (por personaje): inviteMessage y askToJoinMessage son textos del usuario; recentPartyMembers guarda nombre, GUID, clase y nivel de otros jugadores.",
-  "reglas": [
-    { "ambito": "personaje", "variable": "LFGForeverCharDB", "incluir": ["inviteMessage", "askToJoinMessage"] }
-  ]
-}
-```
+Fichero: [`lfg-forever.json`](../src-tauri/adaptadores/lfg-forever.json).
+
+Viajan los dos mensajes del usuario (`inviteMessage`, `askToJoinMessage`); `recentPartyMembers` guarda otros jugadores y no
+viaja.
 
 ### WIM
 
-```json
-{
-  "id": "wim",
-  "version": 2,
-  "addon": "WIM",
-  "versionesAddon": ["3.19.7"],
-  "medido": "WIM 3.19.7. Cuenta: WIM3_Data (42 claves de opciones: ventanas, colores, sonidos, reglas), WIM3_Filters y WIM3_ChatFilters son configuración; WIM3_History, WIM3_HistoryArchive y WIM3_Cache guardan conversaciones y otros jugadores. Por personaje: WIM3_DebugLog y WIM3_Snapshots.",
-  "reglas": [
-    { "ambito": "cuenta", "variable": "WIM3_Data", "entera": true },
-    { "ambito": "cuenta", "variable": "WIM3_Filters", "entera": true },
-    { "ambito": "cuenta", "variable": "WIM3_ChatFilters", "entera": true }
-  ]
-}
-```
+Fichero: [`wim.json`](../src-tauri/adaptadores/wim.json).
+
+Viajan las opciones y los filtros (`WIM3_Data`, `WIM3_Filters`, `WIM3_ChatFilters`), enteros, solo con la versión
+medida. Las conversaciones y la caché de jugadores no viajan.
 
 ### Auctionator
 
-```json
-{
-  "id": "auctionator",
-  "version": 1,
-  "addon": "Auctionator",
-  "versionesAddon": ["347"],
-  "medido": "Cuenta: AUCTIONATOR_CONFIG (68 opciones), AUCTIONATOR_SHOPPING_LISTS y AUCTIONATOR_SELLING_GROUPS son configuración; AUCTIONATOR_PRICE_DATABASE (precios por reino), AUCTIONATOR_POSTING_HISTORY, AUCTIONATOR_VENDOR_PRICE_CACHE, AUCTIONATOR_RECENT_SEARCHES y AUCTIONATOR_SAVEDVARS (marcas de escaneo) son estado. Por personaje: AUCTIONATOR_CHARACTER_CONFIG.",
-  "reglas": [
-    { "ambito": "cuenta", "variable": "AUCTIONATOR_CONFIG", "entera": true },
-    { "ambito": "cuenta", "variable": "AUCTIONATOR_SHOPPING_LISTS", "entera": true },
-    { "ambito": "cuenta", "variable": "AUCTIONATOR_SELLING_GROUPS", "entera": true },
-    { "ambito": "personaje", "variable": "AUCTIONATOR_CHARACTER_CONFIG", "entera": true }
-  ]
-}
-```
+Fichero: [`auctionator.json`](../src-tauri/adaptadores/auctionator.json).
+
+Viajan la configuración, las listas de la compra y los grupos de venta, enteros, solo con la versión medida. Precios,
+historial y búsquedas recientes no viajan. Medido el 2026-11-18: el nombre de una lista lo pone el usuario (o un addon,
+como `SkillUp: <personaje>: Cocina`) y viaja tal cual, como el texto de una macro.
 
 ### Pawn
 
-```json
-{
-  "id": "pawn",
-  "version": 2,
-  "addon": "Pawn",
-  "medido": "Pawn 2.14.3. Cuenta: PawnCommon tiene 21 claves; 19 son opciones (Scales incluida) y LastVersion y ShownGettingStarted son estado. Dentro de cada escala, PerCharacterOptions indexado por \"Nombre Apellido\". Por personaje: PawnOptions con AutoSelectScales (preferencia) y LastVersion, LastPlayerFullName, ItemLevels y LastKeybindingsSet (estado).",
-  "reglas": [
-    {
-      "ambito": "cuenta",
-      "variable": "PawnCommon",
-      "incluir": [
-        "AlignNumbersRight", "ButtonPosition", "ColorTooltipBorder", "Debug", "Digits", "IgnoreGemsWhileLeveling",
-        "Scales", "ShowBagUpgradeAdvisor", "ShowEnchanted", "ShowItemID", "ShowItemLevelUpgrades",
-        "ShowLootUpgradeAdvisor", "ShowQuestUpgradeAdvisor", "ShowRelicUpgrades", "ShowSocketingAdvisor",
-        "ShowSpecIcons", "ShowTooltipIcons", "ShowUpgradesOnTooltips", "ShowValuesForUpgradesOnly"
-      ],
-      "soloPersonaje": ["Scales/*/PerCharacterOptions/$PJ"]
-    },
-    { "ambito": "personaje", "variable": "PawnOptions", "incluir": ["AutoSelectScales"] }
-  ]
-}
-```
+Fichero: [`pawn.json`](../src-tauri/adaptadores/pawn.json).
 
 En `PawnCommon`, `soloPersonaje` hace que de cada `PerCharacterOptions` viaje solo la entrada del personaje de
 origen; las de los demás personajes de la cuenta se quedan fuera.
 
 ### EllesmereUI
 
-```json
-{
-  "id": "ellesmereui",
-  "version": 2,
-  "addon": "EllesmereUI",
-  "medido": "EllesmereUI 9.8.8. Cuenta: EllesmereUIDB, 58 claves. Tiene perfiles propios (profiles, activeProfile, profileOrder, specProfiles) que no son AceDB. 27 claves son configuración. Estado (31): chars (oro, clase, raza y nivel de cada personaje), goldLedger, _migrations, lastLoginVersion, patchDotPending, dismissedConflicts, _tbbLinkOwner y las marcas de 'ya visto' (_capturedOnce_*, *Seeded, *Seen, firstInstallPopupShown, kickTrackerIntroShown, charSheetCardStyleAdopted).",
-  "reglas": [
-    {
-      "ambito": "cuenta",
-      "variable": "EllesmereUIDB",
-      "incluir": [
-        "activeProfile", "autoLogging", "bagsUserChosen", "clickCast", "customColors", "fonts", "lastNonSpecProfile",
-        "panelScale", "ppUIScale", "ppUIScaleAuto", "profileKeybinds", "profileOrder", "profiles", "reskinBagBar",
-        "reskinFlagCarriers", "reskinMicroMenu", "restoreOnUninstall", "specProfiles", "spellAssignments",
-        "threatMeter", "unlockAnchors", "unlockGridMode", "unlockHeightMatch", "unlockSnapEnabled", "unlockWidthMatch",
-        "windowLookPerProfile", "windowSkinStyleSlots"
-      ]
-    }
-  ]
-}
-```
+Fichero: [`ellesmereui.json`](../src-tauri/adaptadores/ellesmereui.json).
 
-Afecta a toda la cuenta: pide confirmación.
+Afecta a toda la cuenta: pide confirmación. Versión 3 (2026-11-18): `restoreOnUninstall` sale de la lista; es una copia
+de toda la base del addon, con `chars` y GUID de personajes, para restaurarla al desinstalar.
 
 ### TalentsForeverBook
 
-```json
-{
-  "id": "talents-forever-book",
-  "version": 1,
-  "addon": "TalentsForeverBook",
-  "medido": "Cuenta: TalentsForeverBookDB con settings y builds (configuración) y prices, chars, sent, diag, version y addon (estado). chars usa la clave 'Nombre-Reino interno' sin apellido: no distingue personajes con el mismo nombre, así que los planes por personaje no viajan.",
-  "reglas": [
-    { "ambito": "cuenta", "variable": "TalentsForeverBookDB", "incluir": ["settings", "builds"] }
-  ]
-}
-```
+Fichero: [`talents-forever-book.json`](../src-tauri/adaptadores/talents-forever-book.json).
+
+Viajan `settings` y `builds`. Los planes por personaje no, porque su clave no distingue personajes con el mismo nombre.
 
 ### Spy
 
-```json
-{
-  "id": "spy",
-  "version": 1,
-  "addon": "Spy",
-  "medido": "Cuenta: SpyDB es AceDB. Por personaje: SpyPerCharDB con KOSData, PlayerData, IgnoreData y Encounters, todo datos de otros jugadores.",
-  "reglas": [
-    { "ambito": "cuenta", "variable": "SpyDB", "perfilAcedb": true }
-  ]
-}
-```
+Fichero: [`spy.json`](../src-tauri/adaptadores/spy.json).
 
 Sin este adaptador, la regla AceDB cubriría `SpyDB`, pero el genérico por personaje ofrecería `SpyPerCharDB`.
 El adaptador lo cierra: como `SpyPerCharDB` no está en las reglas, no viaja.
 
 ### Addons que no se exportan
 
-```json
-{
-  "id": "skillup-forever",
-  "version": 1,
-  "addon": "SkillUpForever",
-  "medido": "Recetas aprendidas y vistas por personaje, con clave 'Nombre-Reino' sin apellido: estado.",
-  "noExportar": true
-}
-```
+SkillUpForever (recetas por personaje), LayerSwap (datos de sesión) y !BugGrabber (errores capturados) solo guardan
+estado: nunca se ofrecen.
 
-```json
-{
-  "id": "layerswap",
-  "version": 1,
-  "addon": "LayerSwap",
-  "medido": "Datos de sesión (session, previous, hostLockWho) con nombres de personajes: estado.",
-  "noExportar": true
-}
-```
+Fichero: [`skillup-forever.json`](../src-tauri/adaptadores/skillup-forever.json).
 
-```json
-{
-  "id": "buggrabber",
-  "version": 1,
-  "addon": "!BugGrabber",
-  "medido": "Registro de errores de Lua capturados: estado.",
-  "noExportar": true
-}
-```
+Fichero: [`layerswap.json`](../src-tauri/adaptadores/layerswap.json).
+
+Fichero: [`buggrabber.json`](../src-tauri/adaptadores/buggrabber.json).
 
 ## Adaptadores internos
 

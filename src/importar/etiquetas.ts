@@ -1,9 +1,9 @@
 // Nombres que se enseñan al importar. Una categoría que esta versión no conoce (de una 1.x más nueva) se enseña tal cual
 // viene: nunca se inventa un nombre.
 import type { TFunction } from "i18next";
-import type { Categoria } from "../nucleo";
+import type { CategoriaFichero } from "../nucleo";
 
-const CATEGORIAS: readonly Categoria[] = [
+const CATEGORIAS: readonly CategoriaFichero[] = [
   "macros",
   "teclas",
   "teclas-clic",
@@ -18,7 +18,7 @@ const CATEGORIAS: readonly Categoria[] = [
 const OTRAS: readonly string[] = ["config-addon", "modo-edicion"];
 type Otra = "config-addon" | "modo-edicion";
 
-export function esCategoria(texto: string): texto is Categoria {
+export function esCategoria(texto: string): texto is CategoriaFichero {
   return (CATEGORIAS as readonly string[]).includes(texto);
 }
 

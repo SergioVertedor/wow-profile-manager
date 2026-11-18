@@ -1,0 +1,31 @@
+{
+  "id": "auctionator",
+  "version": 1,
+  "addon": "Auctionator",
+  "versionesAddon": [
+    "347"
+  ],
+  "medido": "Cuenta: AUCTIONATOR_CONFIG (68 opciones), AUCTIONATOR_SHOPPING_LISTS y AUCTIONATOR_SELLING_GROUPS son configuración; AUCTIONATOR_PRICE_DATABASE (precios por reino), AUCTIONATOR_POSTING_HISTORY, AUCTIONATOR_VENDOR_PRICE_CACHE, AUCTIONATOR_RECENT_SEARCHES y AUCTIONATOR_SAVEDVARS (marcas de escaneo) son estado. Por personaje: AUCTIONATOR_CHARACTER_CONFIG.",
+  "reglas": [
+    {
+      "ambito": "cuenta",
+      "variable": "AUCTIONATOR_CONFIG",
+      "entera": true
+    },
+    {
+      "ambito": "cuenta",
+      "variable": "AUCTIONATOR_SHOPPING_LISTS",
+      "entera": true
+    },
+    {
+      "ambito": "cuenta",
+      "variable": "AUCTIONATOR_SELLING_GROUPS",
+      "entera": true
+    },
+    {
+      "ambito": "personaje",
+      "variable": "AUCTIONATOR_CHARACTER_CONFIG",
+      "entera": true
+    }
+  ]
+}

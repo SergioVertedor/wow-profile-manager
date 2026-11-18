@@ -1,0 +1,16 @@
+{
+  "id": "lfg-forever",
+  "version": 1,
+  "addon": "LFGForever",
+  "medido": "LFGForeverCharDB (por personaje): inviteMessage y askToJoinMessage son textos del usuario; recentPartyMembers guarda nombre, GUID, clase y nivel de otros jugadores.",
+  "reglas": [
+    {
+      "ambito": "personaje",
+      "variable": "LFGForeverCharDB",
+      "incluir": [
+        "inviteMessage",
+        "askToJoinMessage"
+      ]
+    }
+  ]
+}

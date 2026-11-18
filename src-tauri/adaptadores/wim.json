@@ -1,0 +1,26 @@
+{
+  "id": "wim",
+  "version": 2,
+  "addon": "WIM",
+  "versionesAddon": [
+    "3.19.7"
+  ],
+  "medido": "WIM 3.19.7. Cuenta: WIM3_Data (42 claves de opciones: ventanas, colores, sonidos, reglas), WIM3_Filters y WIM3_ChatFilters son configuración; WIM3_History, WIM3_HistoryArchive y WIM3_Cache guardan conversaciones y otros jugadores. Por personaje: WIM3_DebugLog y WIM3_Snapshots.",
+  "reglas": [
+    {
+      "ambito": "cuenta",
+      "variable": "WIM3_Data",
+      "entera": true
+    },
+    {
+      "ambito": "cuenta",
+      "variable": "WIM3_Filters",
+      "entera": true
+    },
+    {
+      "ambito": "cuenta",
+      "variable": "WIM3_ChatFilters",
+      "entera": true
+    }
+  ]
+}

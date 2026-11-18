@@ -1,10 +1,12 @@
 //! Núcleo de WoW Profile Manager. Los módulos siguen `docs/arquitectura.md`; los comandos de Tauri son la única
 //! puerta de entrada desde la interfaz y no contienen lógica: delegan en módulos que se prueban sin Tauri.
 
+mod adaptadores;
 mod addons;
 mod agente_battlenet;
 mod bpsv;
 mod claves_personaje;
+mod config_addons;
 mod descubrimiento;
 mod deteccion;
 mod disco;
@@ -15,6 +17,7 @@ mod exportacion;
 mod idioma;
 mod importacion;
 mod info;
+mod lua;
 mod operaciones;
 mod paquetes;
 mod piezas;

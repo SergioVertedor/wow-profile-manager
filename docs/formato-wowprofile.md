@@ -92,7 +92,7 @@ en ningún fichero, lo guarda el servidor.
 | `opciones` | `fichero-filtrado` | `personaje/config-cache.wtf` o `cuenta/config-cache.wtf` |
 | `chat` | `fichero` | `personaje/chat-cache.txt` |
 | `ventanas` | `fichero` | `personaje/layout-local.txt` |
-| `modo-edicion` | dos entradas: `fichero` (qué diseño usa) y `adaptador` `modo-edicion` (el diseño) | `personaje/edit-mode-cache-character.txt` y `cuenta/edit-mode-cache-account.txt` |
+| `modo-edicion` | dos entradas: `fichero` (qué diseño usa) y `adaptador` `modo-edicion` (el diseño). La app aún no lo exporta: hay que medir su formato (#71) | `personaje/edit-mode-cache-character.txt` y `cuenta/edit-mode-cache-account.txt` |
 | `addons-activos` | `fichero-filtrado` | `personaje/AddOns.txt` |
 | `config-addon` | `perfil-acedb`, `fichero` o `adaptador` | `cuenta/SavedVariables/<addon>.lua` o `personaje/SavedVariables/<addon>.lua`, con `<addon>` = la carpeta del addon (el juego guarda así sus variables) |
 | `marcos-banda` | `fichero` | `personaje/CUFProfiles.txt` |
@@ -115,6 +115,16 @@ Reglas de las categorías de fichero:
   de claves de opciones que no viajan se vuelve a aplicar: un paquete hecho a mano podría traerlas. El resto de
   categorías de fichero sustituyen el fichero entero ([`flujos.md`](flujos.md#cómo-se-escribe-cada-categoría)).
 
+Reglas de `config-addon` (el orden de decisión está en [`adaptadores.md`](adaptadores.md#orden-de-decisión)):
+
+- Solo de addons **instalados** en el origen. Los `.lua` de addons desinstalados y los `Blizzard_*.lua` del cliente no
+  viajan.
+- Las variables salen de lo que hay en el fichero (`Nombre = <valor>`), no del `.toc`.
+- Fichero de cuenta de un addon sin adaptador: cada variable AceDB es una entrada `perfil-acedb`. Lo que queda es **una**
+  entrada genérica: `fichero` si no se ha quitado nada, o `fichero-filtrado` con las variables AceDB en
+  `claves_quitadas` (viajan aparte, como su perfil). Si no queda nada, no hay entrada genérica.
+- Fichero del personaje de un addon sin adaptador: `fichero`, entero.
+
 No viajan en la `1.0`: `flagged-cache-*` (tutoriales vistos), `character-list-order.txt` (orden de la pantalla de
 selección), `tts-cache-*` y `cooldownmanager.txt` (sin medir), `cache.md5` y las copias `.old` y `.bak` del juego.
 
@@ -124,14 +134,35 @@ selección), `tts-cache-*` y `cooldownmanager.txt` (sin medir), `cache.md5` y la
 |---|---|---|---|
 | `fichero` | el fichero entero | — | `macros-cache.txt` del personaje |
 | `fichero-filtrado` | el fichero sin las claves de estado o las líneas que no deben viajar | `claves_quitadas` | `config-cache.wtf` sin `hardTrackedQuests`; `AddOns.txt` sin los addons que no estaban instalados |
-| `perfil-acedb` | solo la tabla del perfil, en texto Lua | `addon`, `variable`, `perfil` | el perfil `Default` de `DominosDB` |
-| `adaptador` | lo que defina el adaptador de ese addon | `adaptador.id`, `adaptador.version`, `addon` si es de un addon | preferencias de un addon que mezcla progreso |
+| `perfil-acedb` | el perfil del personaje y el de cada módulo (namespace), en texto Lua (ver abajo) | `addon`, `variable`, `perfil` | el perfil `Default` de `DominosDB` |
+| `adaptador` | `<variable> = <tabla>` en texto Lua, solo con lo que deja pasar la regla del adaptador | `adaptador.id`, `adaptador.version`, `addon` si es de un addon, `variable` | preferencias de un addon que mezcla progreso |
+
+Pieza `perfil-acedb`. Muchos addons AceDB guardan parte de su configuración en módulos (`namespaces`), cada uno con sus
+propios perfiles; por eso la pieza lleva el perfil y el de cada módulo con el mismo nombre:
+
+```lua
+{
+["profile"] = { --[[ <variable>.profiles["<perfil>"] ]] },
+["namespaces"] = {
+["<módulo>"] = { --[[ <variable>.namespaces["<módulo>"].profiles["<perfil>"] ]] },
+},
+}
+```
+
+`["namespaces"]` solo está si algún módulo tiene ese perfil. Nunca lleva `profileKeys`, `char`, `realm`, `global` ni
+otros perfiles: ahí están el estado y los nombres de otros personajes. Cada tabla son los bytes del origen tal cual.
+Si el perfil se llama como el personaje de origen, `perfil` es `@@WOWPROFILE:PERSONAJE@@` y la entrada lleva
+`marcadores: ["PERSONAJE"]`.
+
+Pieza `adaptador`. Lo que viaja se copia byte a byte del origen; solo se escriben de nuevo las llaves de las tablas que
+se recortan. Una clave de personaje de `soloPersonaje` se escribe `["@@WOWPROFILE:PERSONAJE@@"]`.
 
 Cómo se aplica cada tipo al importar:
 - `fichero` y `fichero-filtrado`: se escribe en el `destino`, con WoW cerrado, sin tocar el `cache.md5` del
   destino.
-- `perfil-acedb`: se añade a `<variable>.profiles["<perfil>"]` del fichero de cuenta del destino, y se apunta
-  **solo** el `profileKeys` del personaje destino a ese perfil. Si ya existe un perfil con ese nombre, la app
+- `perfil-acedb`: se añade a `<variable>.profiles["<perfil>"]` del fichero de cuenta del destino (y cada módulo a
+  `<variable>.namespaces["<módulo>"].profiles["<perfil>"]`), y se apunta **solo** el `profileKeys` del personaje destino
+  a ese perfil. Si ya existe un perfil con ese nombre, la app
   pregunta (renombrar o sobrescribir).
 - `adaptador`: lo aplica el adaptador con ese `id`. Si la app no lo conoce, o conoce una versión anterior, la
   entrada se ofrece desactivada y con aviso.

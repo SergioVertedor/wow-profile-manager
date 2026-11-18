@@ -233,7 +233,8 @@
       "chat": "Chat",
       "ventanas": "Ventanas",
       "marcos-banda": "Marcos de banda",
-      "addons-activos": "Addons activos"
+      "addons-activos": "Addons activos",
+      "config-addon": "Configuración de addons"
     },
     "nada": "Este personaje no tiene nada que exportar todavía.",
     "barras": "El contenido de los botones de las barras de acción no viaja: lo guarda el servidor. Sí viajan las teclas, las macros y la lista de addons activos.",
@@ -245,7 +246,46 @@
     "confirmar": "Guardar…",
     "exportando": "Guardando…",
     "cerrar": "Cerrar",
-    "hecho": "Guardado como {{fichero}}."
+    "hecho": "Guardado como {{fichero}}.",
+    "addons": {
+      "titulo": "Configuración de addons",
+      "explicacion": "Va marcado lo que se reconoce como configuración. Los ficheros enteros van desmarcados: pueden llevar progreso, estado o datos de otros jugadores.",
+      "pieza": {
+        "perfilAcedb": "Perfil «{{perfil}}»",
+        "adaptador": "Ajustes: {{variable}}",
+        "genericoCuenta": "Fichero de la cuenta",
+        "genericoPersonaje": "Fichero del personaje",
+        "genericoCuentaConPersonajes": "Fichero de la cuenta"
+      },
+      "avisos": {
+        "generico": "Fichero entero: puede llevar progreso, estado o datos de otros jugadores.",
+        "conPersonajes": "Menciona a personajes de esta cuenta.",
+        "versionNoMedida": "Esta versión del addon no se ha comprobado: podría llevar algo más que su configuración.",
+        "guid": "Parece contener otros jugadores: identificadores de jugador.",
+        "nombreReino": "Parece contener otros jugadores: nombres con reino."
+      },
+      "marcarTodos": {
+        "genericoCuenta": "Marcar los ficheros de la cuenta",
+        "genericoPersonaje": "Marcar los ficheros del personaje",
+        "genericoCuentaConPersonajes": "Marcar los que mencionan personajes"
+      },
+      "marcarTodosNota": "No marca los que parecen contener otros jugadores: esos, uno a uno.",
+      "noExportables_one": "{{count}} cosa no se puede exportar",
+      "noExportables_other": "{{count}} cosas no se pueden exportar",
+      "noExportable": {
+        "noSeLee": "No se puede leer.",
+        "sinNombre": "No se sabe cómo se llama el personaje en los datos.",
+        "sinPerfil": "Este personaje no tiene perfil asignado en este addon.",
+        "demasiadoGrande": "Ocupa más de lo que admite el formato.",
+        "traeMarcador": "Ya contiene el texto reservado «@@WOWPROFILE:».",
+        "perfilNoValido": "El nombre del perfil no se puede llevar (texto raro o demasiado largo).",
+        "carpetaNoAdmitida": "El nombre de la carpeta del addon no lo admite el formato."
+      },
+      "ambito": {
+        "cuenta": "de la cuenta",
+        "personaje": "del personaje"
+      }
+    }
   },
   "motivosPaquete": {
     "noEsZip": "no se puede abrir como .wowprofile.",
@@ -372,6 +412,7 @@
   "motivos": {
     "seguridad": "Por seguridad: quitaría a quien lo importe el aviso del juego antes de ejecutar scripts.",
     "estado": "Son estado de la partida, no configuración: lo que sigues, lo que ya has visto o lo que tienes plegado.",
-    "addonNoInstalado": "Addons que no están instalados en este equipo."
+    "addonNoInstalado": "Addons que no están instalados en este equipo.",
+    "viajaComoPerfil": "Van aparte, como su perfil: así solo viaja el de este personaje."
   }
 }
