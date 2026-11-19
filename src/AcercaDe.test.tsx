@@ -17,6 +17,7 @@ const INFO: InfoApp = {
   autor: "Sergio Vertedor",
   repositorio: "https://github.com/SergioVertedor/wow-profile-manager",
   koFi: "https://ko-fi.com/tonotabidev",
+  web: "https://tonotabi.dev",
   licencia: "https://www.gnu.org/licenses/gpl-3.0.html",
 };
 
@@ -47,6 +48,7 @@ describe("AcercaDe", () => {
     );
     expect(screen.getByRole("link", { name: INFO.repositorio })).toHaveProperty("href", `${INFO.repositorio}`);
     expect(screen.getByRole("link", { name: INFO.koFi })).toBeDefined();
+    expect(screen.getByRole("link", { name: "tonotabi.dev" })).toHaveProperty("href", "https://tonotabi.dev/");
     expect(screen.getByRole("link", { name: "Leer la licencia" })).toBeDefined();
     expect(screen.getByText(/no está hecho, respaldado ni apoyado por Blizzard Entertainment/)).toBeDefined();
   });
@@ -54,6 +56,7 @@ describe("AcercaDe", () => {
   it.each([
     [INFO.repositorio, "repositorio"],
     [INFO.koFi, "koFi"],
+    ["tonotabi.dev", "web"],
     ["Read the license", "licencia"],
   ])("al pulsar «%s» pide al núcleo el enlace por su nombre, nunca la URL", async (texto, enlace) => {
     const pedidos = pintar("en");

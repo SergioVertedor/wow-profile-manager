@@ -48,6 +48,7 @@
     "autoria": "{{nombre}}, de {{autor}} — ",
     "licencia": "Software libre bajo la GNU General Public License v3.0. Se distribuye SIN NINGUNA GARANTÍA.",
     "verLicencia": "Leer la licencia",
+    "web": "Más sobre el autor en",
     "koFi": "Si la app te resulta útil, puedes apoyarla en Ko-fi.",
     "marca": "{{nombre}} no está hecho, respaldado ni apoyado por Blizzard Entertainment. World of Warcraft es una marca de Blizzard Entertainment, Inc."
   },

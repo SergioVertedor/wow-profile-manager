@@ -48,6 +48,7 @@
     "autoria": "{{nombre}}, by {{autor}} — ",
     "licencia": "Free software under the GNU General Public License v3.0. It comes with NO WARRANTY.",
     "verLicencia": "Read the license",
+    "web": "More about the author at",
     "koFi": "If the app is useful to you, you can support it on Ko-fi.",
     "marca": "{{nombre}} is not made, endorsed or supported by Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment, Inc."
   },

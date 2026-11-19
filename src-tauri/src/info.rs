@@ -1,6 +1,6 @@
 //! Datos de la propia aplicación. Lógica pura: no depende de Tauri y se prueba sin abrir ninguna ventana.
 
-use crate::enlaces::{URL_KO_FI, URL_LICENCIA, URL_REPOSITORIO};
+use crate::enlaces::{URL_KO_FI, URL_LICENCIA, URL_REPOSITORIO, URL_WEB};
 use serde::Serialize;
 
 /// Nombre visible de la aplicación.
@@ -16,6 +16,7 @@ pub struct InfoApp {
     /// URL que la pantalla «Acerca de» enseña. Para abrirlas, la interfaz pide el `Enlace` por su nombre.
     pub repositorio: &'static str,
     pub ko_fi: &'static str,
+    pub web: &'static str,
     pub licencia: &'static str,
 }
 
@@ -28,6 +29,7 @@ pub fn info_app() -> InfoApp {
         autor: env!("CARGO_PKG_AUTHORS"),
         repositorio: URL_REPOSITORIO,
         ko_fi: URL_KO_FI,
+        web: URL_WEB,
         licencia: URL_LICENCIA,
     }
 }
@@ -53,6 +55,7 @@ mod tests {
         assert_eq!(json["version"], env!("CARGO_PKG_VERSION"));
         assert_eq!(json["autor"], "Sergio Vertedor");
         assert_eq!(json["koFi"], "https://ko-fi.com/tonotabidev");
+        assert_eq!(json["web"], "https://tonotabi.dev");
         assert_eq!(
             json["repositorio"],
             "https://github.com/SergioVertedor/wow-profile-manager"

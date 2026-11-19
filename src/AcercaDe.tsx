@@ -26,6 +26,9 @@ export default function AcercaDe({ info }: Readonly<{ info: InfoApp }>) {
           <EnlaceExterno url={info.repositorio} enlace="repositorio" abrir={abrir} />
         </p>
         <p>
+          {t("acercaDe.web")} <EnlaceExterno url={info.web} enlace="web" abrir={abrir} texto="tonotabi.dev" />
+        </p>
+        <p>
           {t("acercaDe.licencia")}{" "}
           <EnlaceExterno url={info.licencia} enlace="licencia" abrir={abrir} texto={t("acercaDe.verLicencia")} />
         </p>

@@ -57,6 +57,10 @@ If you find it useful, you can buy me a coffee on Ko-fi.
 
 <a href="https://ko-fi.com/tonotabidev"><img src="https://storage.ko-fi.com/cdn/kofi2.png?v=3" height="36" alt="Support me on Ko-fi"></a>
 
+## Author
+
+Sergio Vertedor — [tonotabi.dev](https://tonotabi.dev)
+
 ## License
 
 [GNU GPL v3](LICENSE), with an additional attribution term (section 7(b)): modified versions that are distributed
