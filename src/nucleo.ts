@@ -13,6 +13,7 @@ export interface InfoApp {
   autor: string;
   repositorio: string;
   koFi: string;
+  web: string;
   licencia: string;
 }
 
@@ -603,7 +604,7 @@ export function abrirCarpetaPersonaje(personaje: PersonajePedido): Promise<void>
 }
 
 /** Enlaces que sabe abrir el núcleo (`src-tauri/src/enlaces.rs`). La interfaz nunca le pasa una URL. */
-export type Enlace = "repositorio" | "koFi" | "licencia";
+export type Enlace = "repositorio" | "koFi" | "web" | "licencia";
 
 export function abrirEnlace(enlace: Enlace): Promise<void> {
   return invoke("abrir_enlace", { enlace });

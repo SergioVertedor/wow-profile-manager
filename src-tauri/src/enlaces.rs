@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 pub const URL_REPOSITORIO: &str = env!("CARGO_PKG_REPOSITORY");
 /// Ko-fi del proyecto (`.github/FUNDING.yml`: `ko_fi: tonotabidev`).
 pub const URL_KO_FI: &str = "https://ko-fi.com/tonotabidev";
+/// Web del autor.
+pub const URL_WEB: &str = "https://tonotabi.dev";
 /// Texto oficial de la GPL-3.0. `LICENSE` no está en `main` hasta la primera release.
 pub const URL_LICENCIA: &str = "https://www.gnu.org/licenses/gpl-3.0.html";
 
@@ -17,6 +19,7 @@ pub const URL_LICENCIA: &str = "https://www.gnu.org/licenses/gpl-3.0.html";
 pub enum Enlace {
     Repositorio,
     KoFi,
+    Web,
     Licencia,
 }
 
@@ -25,6 +28,7 @@ impl Enlace {
         match self {
             Self::Repositorio => URL_REPOSITORIO,
             Self::KoFi => URL_KO_FI,
+            Self::Web => URL_WEB,
             Self::Licencia => URL_LICENCIA,
         }
     }
@@ -49,6 +53,7 @@ mod tests {
             "https://github.com/SergioVertedor/wow-profile-manager"
         );
         assert_eq!(Enlace::KoFi.url(), "https://ko-fi.com/tonotabidev");
+        assert_eq!(Enlace::Web.url(), "https://tonotabi.dev");
         assert_eq!(
             Enlace::Licencia.url(),
             "https://www.gnu.org/licenses/gpl-3.0.html"
@@ -60,6 +65,7 @@ mod tests {
         for (enlace, nombre) in [
             (Enlace::Repositorio, "repositorio"),
             (Enlace::KoFi, "koFi"),
+            (Enlace::Web, "web"),
             (Enlace::Licencia, "licencia"),
         ] {
             assert_eq!(serde_json::to_value(enlace).unwrap(), nombre);

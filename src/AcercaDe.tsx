@@ -2,8 +2,8 @@
 // <repositorio>»); el «Basado en» lo añade quien distribuya una versión derivada.
 import { useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Coffee } from "lucide-react";
 import css from "./AcercaDe.module.css";
+import tazaKoFi from "./assets/kofi-taza.png";
 import { abrirEnlace, type Enlace, type InfoApp } from "./nucleo";
 import { mensajeDeError } from "./textos/errores";
 
@@ -26,11 +26,14 @@ export default function AcercaDe({ info }: Readonly<{ info: InfoApp }>) {
           <EnlaceExterno url={info.repositorio} enlace="repositorio" abrir={abrir} />
         </p>
         <p>
+          {t("acercaDe.web")} <EnlaceExterno url={info.web} enlace="web" abrir={abrir} texto="tonotabi.dev" />
+        </p>
+        <p>
           {t("acercaDe.licencia")}{" "}
           <EnlaceExterno url={info.licencia} enlace="licencia" abrir={abrir} texto={t("acercaDe.verLicencia")} />
         </p>
         <p className={css.koFi}>
-          <Coffee aria-hidden size={18} strokeWidth={1.75} />
+          <img src={tazaKoFi} alt="" className={css.tazaKoFi} />
           <span>
             {t("acercaDe.koFi")} <EnlaceExterno url={info.koFi} enlace="koFi" abrir={abrir} />
           </span>

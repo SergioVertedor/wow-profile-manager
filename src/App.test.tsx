@@ -81,6 +81,7 @@ describe("App", () => {
             autor: "Sergio Vertedor",
             repositorio: "https://github.com/SergioVertedor/wow-profile-manager",
             koFi: "https://ko-fi.com/tonotabidev",
+            web: "https://tonotabi.dev",
             licencia: "https://www.gnu.org/licenses/gpl-3.0.html",
           }
         : SIN_NADA,

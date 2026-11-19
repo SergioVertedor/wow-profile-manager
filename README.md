@@ -1,25 +1,24 @@
 # WoW Profile Manager
 
-Gestor de perfiles de configuración para **WoW Forever**, en Windows. Sirve para
-exportar la configuración de un personaje (addons, su configuración, macros,
-teclas y disposición de las barras) a un único fichero `.wowprofile`. Lo que hay
-dentro de cada botón no viaja: lo guarda el servidor del juego, y cada jugador
-coloca sus habilidades. Otro jugador, en otro
-ordenador, elige qué importar y a qué personaje suyo aplicarlo. Antes de
-escribir, la app hace backup y muestra la vista previa de los cambios; después
-permite deshacer.
+Configuration profile manager for **WoW Forever**, on Windows. It exports a character's setup (addons, their
+settings, macros, key bindings and action bar layout) to a single `.wowprofile` file. What sits inside each button
+does not travel: the game server stores it, and each player places their own abilities. Another player, on another
+computer, chooses what to import and which of their own characters to apply it to. Before writing anything, the app
+makes a backup and shows a preview of the changes; afterwards, it lets you undo them.
 
-> **Estado: Fase 2 (diseño técnico).** Aún no hay código de la aplicación.
-> Stack decidido: Tauri 2 + Rust, con `full_moon` para leer y escribir las
-> `SavedVariables`. Lo medido en la Fase 1 está en
-> [`docs/compatibilidad-wow-forever.md`](docs/compatibilidad-wow-forever.md), y el
-> formato de los paquetes en [`docs/formato-wowprofile.md`](docs/formato-wowprofile.md) y el
-> modelo de datos en [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md). Los adaptadores de
-> addons, en [`docs/adaptadores.md`](docs/adaptadores.md), y los flujos de exportación e
-> importación, con los backups, en [`docs/flujos.md`](docs/flujos.md). La arquitectura, en
-> [`docs/arquitectura.md`](docs/arquitectura.md).
+> **Status: Phase 3 (MVP), not released yet.** The app already detects installations, accounts, realms and
+> characters; exports and imports macros, key bindings and addon settings; and backs up, previews and undoes every
+> change. Stack: Tauri 2 + Rust, with `full_moon` to read and write the `SavedVariables`, and React for the
+> interface. The interface is available in English and Spanish.
+>
+> The technical documentation in [`docs/`](docs/) is in Spanish: what was measured on WoW Forever in
+> [`docs/compatibilidad-wow-forever.md`](docs/compatibilidad-wow-forever.md), the package format in
+> [`docs/formato-wowprofile.md`](docs/formato-wowprofile.md), the data model in
+> [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md), the addon adapters in
+> [`docs/adaptadores.md`](docs/adaptadores.md), the export and import flows, with backups, in
+> [`docs/flujos.md`](docs/flujos.md), and the architecture in [`docs/arquitectura.md`](docs/arquitectura.md).
 
-## Desarrollo
+## Development
 
 ```powershell
 git clone https://github.com/SergioVertedor/wow-profile-manager.git
@@ -28,37 +27,41 @@ git switch develop
 npm ci
 ```
 
-Requisitos (Windows): [Node.js](https://nodejs.org/) 24, [Rust](https://rustup.rs/) estable y las
-[herramientas de compilación de C++ de Visual Studio](https://tauri.app/start/prerequisites/). WebView2 ya viene
-con Windows 11.
+Requirements (Windows): [Node.js](https://nodejs.org/) 24, stable [Rust](https://rustup.rs/) and the
+[Visual Studio C++ build tools](https://tauri.app/start/prerequisites/). WebView2 already ships with Windows 11.
 
-| qué | comando |
+| what | command |
 |---|---|
-| Arrancar en modo desarrollo | `npm run tauri dev` |
-| Interfaz: tipos, linter y tests | `npm run typecheck`, `npm run lint`, `npm test` |
-| Núcleo: formato, linter y tests (en `src-tauri/`) | `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test` |
+| Run in development mode | `npm run tauri dev` |
+| Interface: types, linter and tests | `npm run typecheck`, `npm run lint`, `npm test` |
+| Core: formatting, linter and tests (in `src-tauri/`) | `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test` |
 
-La CI corre todo eso en Windows en cada PR.
+CI runs all of the above on Windows for every PR.
 
-## Flujo
+## Workflow
 
-1. Issue en GitHub.
-2. Rama `feature/<issue>-<slug>` desde `develop`.
-3. Implementar, con tests.
-4. PR a `develop`.
+1. Issue on GitHub.
+2. Branch `feature/<issue>-<slug>` from `develop`.
+3. Implement, with tests.
+4. PR to `develop`.
 5. Releases: `release/x.y.z` → `main` + tag.
 
-## Cómo se hace
+## How it is made
 
-Este proyecto se desarrolla con ayuda de herramientas de IA. Las decisiones y las pruebas en el juego las hace
-una persona, y todo lo que dice el proyecto sobre WoW Forever está medido en una
-instalación real, no supuesto.
+This project is developed with the help of AI tools. A person makes the decisions and does the in-game testing, and
+everything the project says about WoW Forever has been measured on a real installation, not assumed.
 
-## Apoyar el proyecto
+## Support the project
 
-Si te resulta útil, puedes invitarme a un café en [Ko-fi](https://ko-fi.com/tonotabidev).
+If you find it useful, you can buy me a coffee on Ko-fi.
 
-## Licencia
+<a href="https://ko-fi.com/tonotabidev"><img src="https://storage.ko-fi.com/cdn/kofi2.png?v=3" height="36" alt="Support me on Ko-fi"></a>
 
-[GNU GPL v3](LICENSE), con un término adicional de atribución (sección 7(b)): las versiones modificadas que se
-distribuyan deben mostrar en su interfaz el crédito al proyecto original. Detalles en [`NOTICE.md`](NOTICE.md).
+## Author
+
+Sergio Vertedor — [tonotabi.dev](https://tonotabi.dev)
+
+## License
+
+[GNU GPL v3](LICENSE), with an additional attribution term (section 7(b)): modified versions that are distributed
+must show credit to the original project in their interface. Details in [`NOTICE.md`](NOTICE.md).
