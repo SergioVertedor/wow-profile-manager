@@ -47,6 +47,12 @@ pub enum ErrorNucleo {
     RestauracionManualSinConfirmar {},
     /// El sistema no pudo abrir una carpeta en el explorador.
     CarpetaNoAbierta { ruta: String, detalle: String },
+    /// No se pudo consultar o descargar una actualización (red, GitHub). `detalle`, para el diagnóstico.
+    ActualizacionNoDescargada { detalle: String },
+    /// La actualización descargada no trae una firma válida de la app: no se instala (spec 035).
+    ActualizacionSinFirmaValida {},
+    /// Se pidió instalar y ya no hay una versión más nueva publicada.
+    ActualizacionNoDisponible {},
     /// `preferencias.json` existe pero no se entiende. No se sobrescribe: arreglarlo o borrarlo es del usuario.
     PreferenciasIlegibles { ruta: String },
     /// No se sabe la versión del cliente o su número de interfaz (`.build.info`, `Config.wtf`): el paquete los exige.

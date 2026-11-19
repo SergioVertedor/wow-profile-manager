@@ -47,7 +47,10 @@ export type ErrorNucleo =
   | { codigo: "paqueteInvalido"; datos: { motivo: MotivoPaquete; detalle: string } }
   | { codigo: "versionPaquete"; datos: { version: string } }
   | { codigo: "paqueteNoAbierto"; datos: Record<string, never> }
-  | { codigo: "destinosNoValidos"; datos: Record<string, never> };
+  | { codigo: "destinosNoValidos"; datos: Record<string, never> }
+  | { codigo: "actualizacionNoDescargada"; datos: { detalle: string } }
+  | { codigo: "actualizacionSinFirmaValida"; datos: Record<string, never> }
+  | { codigo: "actualizacionNoDisponible"; datos: Record<string, never> };
 
 /** Qué paso de «Leer un paquete de forma segura» falló (`MotivoPaquete` en `src-tauri/src/error.rs`). */
 export type MotivoPaquete =
@@ -659,4 +662,29 @@ export function abrirCarpetaRegistros(): Promise<void> {
 /** Cierra la ventana aunque haya una operación en marcha: el usuario ya lo ha confirmado. */
 export function cerrarVentana(): Promise<void> {
   return invoke("cerrar_ventana");
+}
+
+/** Una versión publicada más nueva que esta (`Disponible` en `src-tauri/src/actualizacion.rs`). */
+export interface ActualizacionDisponible {
+  version: string;
+  notas: string;
+}
+
+/** Si hay una versión nueva. Con el interruptor apagado (o en desarrollo) el núcleo no sale a la red y responde `null`. */
+export function buscarActualizacion(): Promise<ActualizacionDisponible | null> {
+  return invoke<ActualizacionDisponible | null>("buscar_actualizacion");
+}
+
+/** Descarga, comprueba la firma, sustituye el ejecutable y reinicia. Si sale bien, no vuelve. */
+export function instalarActualizacion(): Promise<void> {
+  return invoke("instalar_actualizacion");
+}
+
+/** El interruptor «Buscar actualizaciones al arrancar». */
+export function estadoActualizaciones(): Promise<boolean> {
+  return invoke<boolean>("estado_actualizaciones");
+}
+
+export function cambiarActualizaciones(encendidas: boolean): Promise<void> {
+  return invoke("cambiar_actualizaciones", { encendidas });
 }

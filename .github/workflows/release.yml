@@ -1,0 +1,63 @@
+name: Release
+
+# Publica una versión (spec 035): construye el `.exe` portable, lo firma y crea la release con los dos ficheros que
+# busca la autoactualización. Solo se dispara al subir un tag `vX.Y.Z`, que solo puede subir quien mantiene el repo:
+# nunca con pull_request ni pull_request_target, así que un PR de un fork no llega al secreto.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Construir, firmar y publicar
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: El tag coincide con la versión de la app
+        shell: pwsh
+        run: |
+          $version = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          if ("v$version" -ne $env:GITHUB_REF_NAME) {
+            throw "El tag $env:GITHUB_REF_NAME no coincide con la versión $version de tauri.conf.json"
+          }
+
+      - run: npm ci
+      - name: Construir el ejecutable
+        run: npx tauri build
+
+      - name: Preparar los ficheros
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force publicar | Out-Null
+          Copy-Item src-tauri/target/release/wow-profile-manager.exe publicar/
+
+      # El único paso que recibe la clave privada. `tauri signer` la lee del entorno y no la imprime.
+      - name: Firmar
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        run: npx tauri signer sign publicar/wow-profile-manager.exe
+
+      - name: Crear la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create ${{ github.ref_name }}
+          publicar/wow-profile-manager.exe publicar/wow-profile-manager.exe.sig
+          --title ${{ github.ref_name }} --generate-notes --verify-tag

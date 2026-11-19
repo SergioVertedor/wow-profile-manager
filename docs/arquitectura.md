@@ -63,6 +63,7 @@ flowchart LR
 | Operaciones | ejecuta un plan o una eliminación: diario, copias, escritura segura, restauración, historial | **única que escribe en `WTF`** |
 | Sistema | si hay un `Wow.exe` en marcha (con `tasklist.exe`: el núcleo prohíbe `unsafe`); idioma de Windows | consulta procesos |
 | Preferencias | carpetas añadidas a mano, nombres propios de instalaciones y cuentas, e interruptor del registro | lee y escribe solo `preferencias.json` en la carpeta de datos de la app |
+| Actualización | busca la última release de GitHub, comprueba la firma minisign con la clave pública que lleva la app y sustituye el `.exe` (spec 035) | la **única que sale a la red**, y solo con el interruptor encendido; escribe el `.exe` nuevo en la carpeta de datos y lo borra |
 | Diagnóstico | único logger de la fachada `log`: líneas de la sesión en memoria, a la interfaz y, si se enciende, a un `.txt` acotado (spec 029) | escribe solo en `registros/` de la carpeta de datos de la app, y solo encendido |
 
 La **carpeta de datos de la app** es `wow-profile-manager-datos/`, junto al `.exe` (`portable.rs`, #3): preferencias,
@@ -71,6 +72,8 @@ de Windows. Si no se puede escribir en ella, la app lo dice con un mensaje nativ
 
 Criterios de diseño (míos):
 - El catálogo de adaptadores va **dentro del ejecutable**: importar no necesita red.
+- Red: solo Actualización, por HTTPS con el TLS de Windows, y nunca con «Buscar actualizaciones al arrancar» apagado
+  ni en desarrollo. Solo se instala un `.exe` con la firma de la app; la clave privada no está en el repo.
 - Detección y Descubrimiento no escriben nada nunca, ni cachés, dentro de la instalación.
 - El selector de carpetas lo abre el núcleo (`tauri-plugin-dialog` desde Rust): la interfaz pide «añadir carpeta» y no tiene permiso para abrir diálogos ni para elegir rutas.
 - `preferencias.json` se escribe de forma atómica (temporal y renombrar) y bajo un cerrojo. Si no se entiende, la app sigue sin él y no lo sobrescribe.

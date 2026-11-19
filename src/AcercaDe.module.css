@@ -52,3 +52,21 @@
   color: var(--color-texto-3);
   font-size: var(--texto-pequeno);
 }
+
+.actualizaciones {
+  padding-top: var(--espacio-3);
+  border-top: 1px solid var(--color-linea-control);
+}
+
+.interruptor {
+  display: inline-flex;
+  gap: var(--espacio-2);
+  align-items: center;
+  cursor: pointer;
+}
+
+.ayuda {
+  margin-top: var(--espacio-1);
+  color: var(--color-texto-2);
+  font-size: var(--texto-control);
+}

@@ -63,7 +63,11 @@ describe("AcercaDe", () => {
 
     fireEvent.click(screen.getByRole("link", { name: texto }));
 
-    await waitFor(() => expect(pedidos).toEqual([{ comando: "abrir_enlace", argumentos: { enlace } }]));
+    await waitFor(() =>
+      expect(pedidos.filter((p) => p.comando === "abrir_enlace")).toEqual([
+        { comando: "abrir_enlace", argumentos: { enlace } },
+      ]),
+    );
   });
 
   it("el clic con la rueda tampoco navega la ventana: también lo abre el núcleo", async () => {
@@ -73,7 +77,11 @@ describe("AcercaDe", () => {
     const navegaria = fireEvent(enlace, new MouseEvent("auxclick", { bubbles: true, cancelable: true, button: 1 }));
 
     expect(navegaria).toBe(false);
-    await waitFor(() => expect(pedidos).toEqual([{ comando: "abrir_enlace", argumentos: { enlace: "koFi" } }]));
+    await waitFor(() =>
+      expect(pedidos.filter((p) => p.comando === "abrir_enlace")).toEqual([
+        { comando: "abrir_enlace", argumentos: { enlace: "koFi" } },
+      ]),
+    );
   });
 
   it("si el núcleo no puede abrir el enlace, lo dice traducido", async () => {
@@ -86,5 +94,31 @@ describe("AcercaDe", () => {
     expect((await screen.findByRole("alert")).textContent).toBe(
       "Could not open https://ko-fi.com/tonotabidev: no browser",
     );
+  });
+
+  it("el interruptor de actualizaciones enseña lo guardado y manda el cambio", async () => {
+    const pedidos: Pedido[] = [];
+    mockIPC((comando, argumentos) => {
+      pedidos.push({ comando, argumentos });
+      return comando === "estado_actualizaciones" ? true : null;
+    });
+    render(
+      <I18nextProvider i18n={crearTextos("es")}>
+        <AcercaDe info={INFO} />
+      </I18nextProvider>,
+    );
+
+    const interruptor = await screen.findByRole("switch", { name: "Buscar actualizaciones al arrancar" });
+    await waitFor(() => expect((interruptor as HTMLInputElement).checked).toBe(true));
+    expect(screen.getByText(/no se conecta a internet al arrancar/)).toBeDefined();
+
+    fireEvent.click(interruptor);
+
+    await waitFor(() =>
+      expect(pedidos.filter((p) => p.comando === "cambiar_actualizaciones")).toEqual([
+        { comando: "cambiar_actualizaciones", argumentos: { encendidas: false } },
+      ]),
+    );
+    expect((interruptor as HTMLInputElement).checked).toBe(false);
   });
 });

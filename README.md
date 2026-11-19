@@ -41,6 +41,8 @@ abilities.
 - **Never writes while the game is running**, and reads every package with strict checks: a profile is data, never
   code.
 - **Portable**: a single `.exe` with its data folder next to it. Nothing in `%APPDATA%` or the Windows registry.
+- **Signed updates**: on startup it can check GitHub for a new version and asks before installing it; only a build
+  signed with the project's key is installed. It can be turned off, and then the app never goes online.
 - **English and Spanish** interface, following the Windows language.
 
 ## Screenshots
@@ -69,9 +71,9 @@ abilities.
 
 ## Status
 
-**Phase 3 (MVP), not released yet.** Detection, export, import, preview, backups and undo work today. Before the first
-release: the portable build with signed, optional auto-update. The
-roadmap lives in the [issues](https://github.com/SergioVertedor/wow-profile-manager/issues).
+**Phase 3 (MVP), not released yet.** Detection, export, import, preview, backups, undo, the portable build and signed
+updates work today; the first release is next. The roadmap lives in the
+[issues](https://github.com/SergioVertedor/wow-profile-manager/issues).
 
 ## Documentation
 
@@ -116,7 +118,9 @@ Windows for every pull request.
 2. Branch `feature/<issue>-<slug>` from `develop`.
 3. Implement, with tests.
 4. Pull request to `develop`.
-5. Releases: `release/x.y.z` → `main` + tag.
+5. Releases: `release/x.y.z` → `main`, then a tag `vX.Y.Z` (the same version as in `package.json`,
+   `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`). The tag triggers the release workflow: it builds the
+   portable `.exe`, signs it and publishes both files, which the app's updater looks for.
 
 ## How it is made
 

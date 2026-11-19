@@ -1,6 +1,7 @@
 //! Núcleo de WoW Profile Manager. Los módulos siguen `docs/arquitectura.md`; los comandos de Tauri son la única
 //! puerta de entrada desde la interfaz y no contienen lógica: delegan en módulos que se prueban sin Tauri.
 
+mod actualizacion;
 mod adaptadores;
 mod addons;
 mod agente_battlenet;
@@ -531,6 +532,77 @@ async fn abrir_carpeta_registros(
     )
 }
 
+/// El interruptor «Buscar actualizaciones al arrancar». Si las preferencias no se pueden leer, apagado: sin saber lo
+/// que eligió el usuario no se sale a la red.
+fn actualizaciones_encendidas(almacen: &Almacen) -> bool {
+    almacen.leer().is_ok_and(|p| !p.actualizaciones_apagadas)
+}
+
+#[tauri::command]
+fn estado_actualizaciones(almacen: State<'_, Almacen>) -> bool {
+    actualizaciones_encendidas(&almacen)
+}
+
+#[tauri::command]
+async fn cambiar_actualizaciones(
+    encendidas: bool,
+    almacen: State<'_, Almacen>,
+) -> Result<(), error::ErrorNucleo> {
+    log::info!("buscar actualizaciones al arrancar: {encendidas}");
+    con_error_registrado(
+        "cambiar_actualizaciones",
+        almacen.cambiar(|p| {
+            p.actualizaciones_apagadas = !encendidas;
+            Ok(())
+        }),
+    )
+}
+
+/// La versión publicada más nueva que esta, si la hay. La interfaz lo pide al arrancar; con el interruptor apagado o
+/// en desarrollo (`tauri dev`) no se sale a la red. Sin conexión no es un error que enseñar: solo se registra.
+#[tauri::command]
+async fn buscar_actualizacion(
+    almacen: State<'_, Almacen>,
+) -> Result<Option<actualizacion::Disponible>, error::ErrorNucleo> {
+    if cfg!(debug_assertions) || !actualizaciones_encendidas(&almacen) {
+        return Ok(None);
+    }
+    match actualizacion::buscar(version_actual()) {
+        Ok(disponible) => {
+            if let Some(d) = &disponible {
+                log::info!("versión nueva publicada: {}", d.version);
+            }
+            Ok(disponible)
+        }
+        Err(error) => {
+            log::warn!("no se pudo buscar una actualización: {error:?}");
+            Ok(None)
+        }
+    }
+}
+
+/// Descarga la versión nueva, comprueba su firma, sustituye el `.exe` y reinicia. La release se vuelve a pedir aquí:
+/// la interfaz no manda ninguna URL.
+#[tauri::command]
+async fn instalar_actualizacion<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    almacen: State<'_, Almacen>,
+) -> Result<(), error::ErrorNucleo> {
+    let resultado = actualizacion::buscar(version_actual()).and_then(|disponible| {
+        let disponible = disponible.ok_or(error::ErrorNucleo::ActualizacionNoDisponible {})?;
+        actualizacion::instalar(&disponible, almacen.carpeta())?;
+        log::info!("actualizado a {}: se reinicia", disponible.version);
+        Ok(())
+    });
+    con_error_registrado("instalar_actualizacion", resultado)?;
+    app.restart()
+}
+
+fn version_actual() -> actualizacion::Version {
+    actualizacion::Version::leer(env!("CARGO_PKG_VERSION"))
+        .unwrap_or(actualizacion::Version::MINIMA)
+}
+
 /// Cierra la ventana aunque haya una operación en marcha: el usuario lo ha confirmado. Lo cortado se termina al
 /// volver a arrancar, como si se hubiera ido la luz (`docs/flujos.md`).
 #[tauri::command]
@@ -654,6 +726,10 @@ pub fn con_comandos<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Bui
         estado_diagnostico,
         cambiar_registro,
         abrir_carpeta_registros,
+        estado_actualizaciones,
+        cambiar_actualizaciones,
+        buscar_actualizacion,
+        instalar_actualizacion,
         cerrar_ventana
     ])
 }
