@@ -36,10 +36,12 @@
   align-items: baseline;
 }
 
-.koFi svg {
+.tazaKoFi {
+  /* Taza oficial de Ko-fi (285×229), a la altura de la línea de texto. */
   flex: none;
   align-self: center;
-  color: var(--color-oro);
+  width: 1.375rem;
+  height: auto;
 }
 
 .alerta {
