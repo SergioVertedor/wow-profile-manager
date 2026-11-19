@@ -35,8 +35,10 @@ pub fn contenido(categoria: Categoria, pieza: &[u8]) -> Option<Contenido> {
         Categoria::Teclas => teclas(pieza),
         Categoria::Chat => ventanas_de_chat(pieza),
         Categoria::AddonsActivos => return addons(pieza),
+        // El Modo Edición trae un diseño: su nombre ya va en la entrada (`perfil`).
         Categoria::TeclasClic
         | Categoria::Ventanas
+        | Categoria::ModoEdicion
         | Categoria::MarcosBanda
         | Categoria::ConfigAddon => return None,
     };

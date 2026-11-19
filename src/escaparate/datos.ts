@@ -154,6 +154,7 @@ export const PROPUESTA: PropuestaExportacion = {
     }),
     pieza("chat", "chat", "personaje", 2_048),
     pieza("ventanas", "ventanas", "personaje", 1_536),
+    pieza("modo-edicion", "modo-edicion", "cuenta", 2_703, { tipo: "adaptador", perfil: "Healer" }),
     pieza("addons-activos", "addons-activos", "personaje", 742),
     configAddon("Bartender4", "Bartender4DB", 24_310),
     configAddon("Plater", "PlaterDB", 41_872),

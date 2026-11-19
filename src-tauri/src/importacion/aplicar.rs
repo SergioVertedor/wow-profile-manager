@@ -153,3 +153,5 @@ fn escritura(fichero: &FicheroPlan) -> Escritura {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_modo_edicion;

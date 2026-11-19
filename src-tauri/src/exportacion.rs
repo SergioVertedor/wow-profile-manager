@@ -7,9 +7,11 @@ use crate::config_addons::{self, ConfigAddons, NoExportable, Pista, Regla};
 use crate::descubrimiento::{CARPETA_SAVED_VARIABLES as CARPETA_SV, nombres_de_carpetas};
 use crate::deteccion::{self, PersonajeUbicado};
 use crate::error::ErrorNucleo;
+use crate::modo_edicion;
 use crate::operaciones::{ahora_rfc3339, segmento_literal};
 use crate::paquetes::{
-    AddonPaquete, Ambito, Categoria, MARCADOR, Origen, Paquete, Perfil, Pieza, Tipo,
+    AddonPaquete, Ambito, Categoria, DeAddon, MARCADOR, Origen, Paquete, Perfil, Pieza,
+    RefAdaptador, Tipo,
 };
 use crate::piezas::{
     ACTIVADO, FUENTES, Filtro, Fuente, Quitadas, filtrar_addons, filtrar_opciones, lineas_addons,
@@ -217,7 +219,8 @@ fn propuesta_de_pieza(pieza: &Pieza) -> PiezaPropuesta {
         marcada: false,
         addon: None,
         variable: None,
-        perfil: None,
+        // El Modo Edición lleva aquí el nombre del diseño.
+        perfil: pieza.addon.as_ref().and_then(|d| d.perfil.clone()),
         regla: None,
         version_no_medida: false,
         pistas: Vec::new(),
@@ -300,6 +303,7 @@ fn leer_pieza(
             Filtro::Ninguno => (bytes, Vec::new(), Tipo::Fichero),
             Filtro::Opciones => con_tipo(filtrar_opciones(&bytes)),
             Filtro::Addons => con_tipo(filtrar_addons(&bytes, instalados)),
+            Filtro::ModoEdicion => return pieza_modo_edicion(personaje, fuente, ambito, &bytes),
         };
         return Ok(Some(Pieza {
             id: fuente.id.to_owned(),
@@ -313,6 +317,46 @@ fn leer_pieza(
         }));
     }
     Ok(None)
+}
+
+/// El diseño del Modo Edición que usa el personaje, si es uno propio. Si los ficheros no se entienden no se exporta
+/// (queda en el registro de diagnóstico): mejor no llevarlo que llevar algo roto.
+fn pieza_modo_edicion(
+    personaje: &PersonajeUbicado,
+    fuente: &Fuente,
+    ambito: Ambito,
+    cuenta: &[u8],
+) -> Result<Option<Pieza>, ErrorNucleo> {
+    let ruta = personaje.carpeta().join(modo_edicion::FICHERO_PERSONAJE);
+    if !ruta.is_file() {
+        return Ok(None);
+    }
+    let del_personaje = std::fs::read(&ruta).map_err(|e| ErrorNucleo::lectura(&ruta, &e))?;
+    let (nombre, contenido) = match modo_edicion::exportar(cuenta, &del_personaje) {
+        Ok(Some(diseno)) => diseno,
+        Ok(None) => return Ok(None),
+        Err(motivo) => {
+            log::warn!("Modo Edición de {} no exportado: {motivo}", ruta.display());
+            return Ok(None);
+        }
+    };
+    Ok(Some(Pieza {
+        id: fuente.id.to_owned(),
+        categoria: fuente.categoria,
+        tipo: Tipo::Adaptador,
+        ambito,
+        destino: fuente.destino.to_owned(),
+        contenido,
+        quitadas: Vec::new(),
+        addon: Some(DeAddon {
+            perfil: Some(nombre),
+            adaptador: Some(RefAdaptador {
+                id: modo_edicion::ADAPTADOR.to_owned(),
+                version: modo_edicion::VERSION_ADAPTADOR,
+            }),
+            ..DeAddon::default()
+        }),
+    }))
 }
 
 fn con_tipo((contenido, quitadas): (Vec<u8>, Vec<Quitadas>)) -> (Vec<u8>, Vec<Quitadas>, Tipo) {
@@ -418,6 +462,67 @@ mod tests {
             }]
         );
         assert_eq!(piezas[0].tipo, Tipo::Fichero);
+    }
+
+    /// Cuenta con dos diseños del Modo Edición (`default` y `Sanador`), con la forma medida.
+    const DISENOS: &str = "5 1 0 7 default 0 1 0 0 1 7 7 UIParent 0.0 -4.0 -1 ## 7 Sanador 0 1 0 0 1 7 7 UIParent 1.0 2.0 -1 #$\0";
+
+    #[test]
+    fn del_modo_edicion_viaja_solo_el_diseno_que_usa_el_personaje() {
+        let tmp = tempfile::tempdir().unwrap();
+        let pj = personaje(tmp.path());
+        write(
+            pj.carpeta_cuenta().join("edit-mode-cache-account.txt"),
+            DISENOS,
+        )
+        .unwrap();
+        write(
+            pj.carpeta().join("edit-mode-cache-character.txt"),
+            "5 4 3 3 3 3 -1 -1 -1 -1 -1\0",
+        )
+        .unwrap();
+
+        let (piezas, _) = piezas(&pj, &[]).unwrap();
+
+        let pieza = piezas.iter().find(|p| p.id == "modo-edicion").unwrap();
+        assert_eq!(
+            (pieza.tipo, pieza.ambito, pieza.destino.as_str()),
+            (
+                Tipo::Adaptador,
+                Ambito::Cuenta,
+                "cuenta/edit-mode-cache-account.txt"
+            )
+        );
+        assert_eq!(
+            pieza.contenido,
+            b"5 1 0 7 Sanador 0 1 0 0 1 7 7 UIParent 1.0 2.0 -1 #$\0"
+        );
+        let de_addon = pieza.addon.as_ref().unwrap();
+        assert_eq!(de_addon.perfil.as_deref(), Some("Sanador"));
+        assert_eq!(de_addon.adaptador.as_ref().unwrap().id, "modo-edicion");
+        assert_eq!(propuesta_de_pieza(pieza).perfil.as_deref(), Some("Sanador"));
+    }
+
+    #[test]
+    fn con_un_diseno_de_blizzard_o_ficheros_raros_no_hay_modo_edicion() {
+        for del_personaje in ["5 0 3 3 3 3 -1 -1 -1 -1 -1\0", "roto"] {
+            let tmp = tempfile::tempdir().unwrap();
+            let pj = personaje(tmp.path());
+            write(
+                pj.carpeta_cuenta().join("edit-mode-cache-account.txt"),
+                DISENOS,
+            )
+            .unwrap();
+            write(
+                pj.carpeta().join("edit-mode-cache-character.txt"),
+                del_personaje,
+            )
+            .unwrap();
+
+            let (piezas, _) = piezas(&pj, &[]).unwrap();
+
+            assert!(!ids(&piezas).contains(&"modo-edicion"), "{del_personaje}");
+        }
     }
 
     #[test]

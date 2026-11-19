@@ -216,6 +216,7 @@
     "titulo": "Export {{nombre}}",
     "piezas": "What goes in",
     "deLaCuenta": "from the account",
+    "diseno": "layout “{{nombre}}”",
     "quitadas_one": "without {{count}} line that does not travel",
     "quitadas_other": "without {{count}} lines that do not travel",
     "categorias": {
@@ -225,6 +226,7 @@
       "opciones": "Options",
       "chat": "Chat",
       "ventanas": "Windows",
+      "modo-edicion": "Edit Mode",
       "marcos-banda": "Raid frames",
       "addons-activos": "Enabled add-ons",
       "config-addon": "Addon settings"
@@ -350,8 +352,7 @@
       "quitado": "Removed"
     },
     "otrasCategorias": {
-      "config-addon": "Add-on settings",
-      "modo-edicion": "Edit Mode"
+      "config-addon": "Add-on settings"
     },
     "aplicarImportacion": "Apply…",
     "noSePuedeAplicar": {
@@ -388,6 +389,7 @@
       "opciones": "Game options: interface, camera, combat and more.",
       "chat": "Chat tabs, which messages each one shows and their channels. It does not include messages.",
       "ventanas": "Where you placed the interface windows that can be moved.",
+      "modo-edicion": "The Edit Mode layout “{{nombre}}”. It is added to the account's layouts and the character starts using it; other layouts and characters do not change.",
       "marcos-banda": "Raid frame profiles: size, colors and what they show.",
       "addons-activos": "Which addons are left enabled and which disabled.",
       "activados_one": "{{count}} enabled",
@@ -425,7 +427,9 @@
     },
     "elemento": {
       "perfil": "Profile “{{nombre}}”",
-      "perfilDe": "{{nombre}}'s profile"
+      "perfilDe": "{{nombre}}'s profile",
+      "diseno": "Edit Mode layout “{{nombre}}”",
+      "disenoActivo": "Starts using layout “{{nombre}}”"
     }
   },
   "restaurar": {

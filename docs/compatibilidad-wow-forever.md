@@ -43,9 +43,23 @@ Ninguna documentación oficial de Blizzard describe estos ficheros: lo que hay a
 - `AddOns.txt`, `CUFProfiles.txt` y `SavedVariables/` no tienen ranura: no se sincronizan.
 - **Regla de importación medida**: con WoW cerrado, se copia el fichero al personaje destino **sin tocar su
   `cache.md5`**. Al entrar, el cliente adopta el fichero local y actualiza la ranura. Probado con la ranura
-  vacía, con la ranura ocupada por otro contenido y en las ranuras 0, 1, 2, 4 y 8.
+  vacía, con la ranura ocupada por otro contenido y en las ranuras 0, 1, 2, 4 y 8, y en la 5 de la cuenta (un diseño
+  del Modo Edición añadido a mano sigue activo tras salir y entrar, 2026-11-19).
 - En 1.60.1 **gana el fichero local** aunque la ranura tenga otro MD5. Otras herramientas, medidas en la beta,
   describen lo contrario.
+
+## Modo Edición [V]
+
+Medido en 1.60.1 el 2026-11-19 (#71), creando, activando, renombrando y borrando diseños en el juego.
+
+- Los dos ficheros son **una línea** de valores separados por espacios que termina en un **byte nulo**.
+- `edit-mode-cache-account.txt`: cabecera `5 <n>` y `n` números (no cambia con los diseños); después, los diseños
+  propios uno detrás de otro, cada uno completo: `<largo> <nombre> <tipo> <nº de marcos>` y 10 valores por marco. El
+  largo va **en bytes UTF-8** (`Diseño ñ` → `10`) y el juego corta el nombre por él.
+- `edit-mode-cache-character.txt`: `5` y diez valores; el primero es el diseño activo. 0–2 son los de Blizzard
+  (Moderno y Clásico entre ellos) y los propios empiezan en 3, en el orden del fichero de cuenta. Renombrar no cambia
+  el índice; borrar el diseño activo lo deja en `0`.
+- Sin doble especialización no se ha podido medir qué ranura usa cada especialización.
 
 ## Configuración de addons [V]
 
@@ -75,8 +89,8 @@ Ninguna documentación oficial de Blizzard describe estos ficheros: lo que hay a
 | Opciones de cuenta | `config-cache.wtf` | C | 0 | afecta a toda la cuenta: aviso y confirmación | [H] |
 | Chat | `chat-cache.txt` | P | 4 | copiar | **[V]** |
 | Disposición de ventanas | `layout-local.txt` | P | 3 | copiar | [H] |
-| Modo Edición: diseño que usa | `edit-mode-cache-character.txt` | P | 8 | copiar | **[V]** misma cuenta |
-| Modo Edición: diseños | `edit-mode-cache-account.txt` | C | 5 | añadir el diseño y reescribir el índice | [H] entre cuentas |
+| Modo Edición: diseño que usa | `edit-mode-cache-character.txt` | P | 8 | apuntar al diseño añadido | **[V]** |
+| Modo Edición: diseños | `edit-mode-cache-account.txt` | C | 5 | añadir el diseño al final | **[V]** misma cuenta |
 | Addons activos | `AddOns.txt` | P | — | copiar solo los addons instalados | **[V]** |
 | Configuración AceDB | `SavedVariables/*.lua` | C | — | solo perfiles (`profiles` y `profileKeys`) | **[V]** |
 | Configuración por personaje | `SavedVariables/*.lua` | P | — | copiar con la clave del destino | **[V]** |
@@ -107,7 +121,7 @@ app no mezcla versiones: un perfil solo se importa en la versión de la que sali
 
 - Importar en **otra máquina** y en **otra cuenta**: todas las pruebas se hicieron entre dos personajes de la
   misma cuenta.
-- Los diseños del Modo Edición entre cuentas.
+- Los diseños del Modo Edición entre cuentas y con doble especialización.
 - `layout-local.txt`, `click-bindings-cache.txt`, `CUFProfiles.txt` y `cooldownmanager.txt` por separado.
 - Adaptadores para los addons sin AceDB y para addons populares no medidos (WeakAuras, Plater, Details!,
   Baganator, Questie, Bartender4, TradeSkillMaster…).

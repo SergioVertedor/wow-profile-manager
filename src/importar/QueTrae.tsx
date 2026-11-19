@@ -22,7 +22,7 @@ export default function QueTrae({ entrada }: Props) {
         categoria: etiquetaDeCategoria(t, entrada.categoria, entrada.deCuenta),
       })}
     >
-      <p>{t(`importar.queTrae.${entrada.categoria}`)}</p>
+      <p>{t(`importar.queTrae.${entrada.categoria}`, { nombre: entrada.perfil ?? "" })}</p>
       {entrada.contenido !== undefined && <ListaContenido contenido={entrada.contenido} />}
     </Desplegable>
   );

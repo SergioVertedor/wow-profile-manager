@@ -11,6 +11,7 @@ mod plan_addons;
 
 use crate::deteccion::{self, PersonajeUbicado};
 use crate::error::{ErrorNucleo, MotivoPaquete};
+use crate::modo_edicion;
 use crate::operaciones::{Operaciones, PaqueteImportado, sha256};
 use crate::paquetes::{
     Ambito, Categoria, EntradaLeida, ManifiestoLeido, PaqueteLeido, Tipo, leer_fichero,
@@ -18,9 +19,10 @@ use crate::paquetes::{
 use crate::piezas::{Filtro, Fuente, Quitadas, fuente_de_destino};
 pub use aplicar::ResultadoPersonaje;
 pub use config_addon::{AccionPerfil, ConflictoPerfil, NoAplicable};
-use config_addon::{EntradaAddon, Forma};
+use config_addon::{EntradaAddon, Forma, MotivoNoAplicable};
 pub use contenido::Contenido;
 pub use elementos::Elemento;
+use elementos::{Cambio, Clase};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -68,8 +70,7 @@ pub struct EntradaResumen {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum MotivoIncompatible {
-    /// Categoría o tipo que esta versión aún no importa (configuración de addons, Modo Edición, uno de una 1.x más
-    /// nueva).
+    /// Categoría o tipo que esta versión no importa (uno de una 1.x más nueva).
     NoSeImporta,
     /// El `destino` no es el fichero de su categoría (spec 024, decisión 7).
     DestinoAjeno,
@@ -276,7 +277,15 @@ fn clasificar<'a>(
             .ok_or(MotivoIncompatible::PiezaNoValida)?;
         return config_addon::clasificar(entrada, tipo, pieza).map(Clasificada::Addon);
     }
-    if !matches!(tipo, Tipo::Fichero | Tipo::FicheroFiltrado) {
+    let admitida = match (categoria, tipo) {
+        (Categoria::ModoEdicion, Tipo::Adaptador) => {
+            adaptador_modo_edicion(entrada)?;
+            true
+        }
+        (Categoria::ModoEdicion, _) => false,
+        (_, tipo) => matches!(tipo, Tipo::Fichero | Tipo::FicheroFiltrado),
+    };
+    if !admitida {
         return Err(MotivoIncompatible::NoSeImporta);
     }
     let fuente =
@@ -288,8 +297,26 @@ fn clasificar<'a>(
     }))
 }
 
+/// El Modo Edición viaja con el adaptador interno de esta versión, o de una anterior.
+fn adaptador_modo_edicion(entrada: &EntradaLeida) -> Result<(), MotivoIncompatible> {
+    match &entrada.adaptador {
+        Some(a)
+            if a.id == modo_edicion::ADAPTADOR && a.version <= modo_edicion::VERSION_ADAPTADOR =>
+        {
+            Ok(())
+        }
+        _ => Err(MotivoIncompatible::AdaptadorDesconocido),
+    }
+}
+
 fn es_de_cuenta(destino: &str) -> bool {
     destino.starts_with(PREFIJO_CUENTA)
+}
+
+/// Lo de cuenta que pisa algo de todos los personajes: hay que decidirlo en cada cuenta. El Modo Edición está en la
+/// cuenta, pero solo añade un diseño: no cambia el de nadie más.
+fn afecta_a_toda_la_cuenta(fuente: &Fuente) -> bool {
+    es_de_cuenta(fuente.destino) && fuente.filtro != Filtro::ModoEdicion
 }
 
 pub fn resumen(paquete: &PaqueteLeido) -> Resumen {
@@ -310,7 +337,7 @@ fn entrada_resumen(entrada: &EntradaLeida, paquete: &PaqueteLeido) -> EntradaRes
     let clasificada = clasificar(entrada, paquete);
     let (de_cuenta, marcada, generica, que_trae) = match &clasificada {
         Ok(Clasificada::Fichero(importable)) => (
-            es_de_cuenta(&entrada.destino),
+            afecta_a_toda_la_cuenta(importable.fuente),
             true,
             false,
             paquete
@@ -379,6 +406,16 @@ pub fn leer_destino(
     {
         let ruta = ruta_de(&personaje, clasificada.en_cuenta(), clasificada.fichero());
         actuales.insert(clasificada.destino().to_owned(), leer_si_existe(&ruta)?);
+        // El Modo Edición escribe también el fichero del personaje: el diseño que usa.
+        if let Clasificada::Fichero(importable) = &clasificada
+            && importable.fuente.filtro == Filtro::ModoEdicion
+        {
+            let ruta = ruta_de(&personaje, false, modo_edicion::FICHERO_PERSONAJE);
+            actuales.insert(
+                modo_edicion::DESTINO_PERSONAJE.to_owned(),
+                leer_si_existe(&ruta)?,
+            );
+        }
     }
     let versiones: HashMap<String, Option<String>> =
         deteccion::addons_de(&personaje.raiz_version, personaje.producto)?
@@ -464,11 +501,10 @@ pub fn planificar(
             }),
         }
     }
-    // Cuenta → carpeta del primer personaje que la escribe.
-    let mut cuentas_escritas: HashMap<&str, &str> = HashMap::new();
+    let mut escritas = Escritas::default();
     let mut personajes: Vec<PlanPersonaje> = destinos
         .iter()
-        .map(|destino| planificar_personaje(destino, &importables, pedido, &mut cuentas_escritas))
+        .map(|destino| planificar_personaje(destino, &importables, pedido, &mut escritas))
         .collect();
     for (plan, addons) in personajes
         .iter_mut()
@@ -477,7 +513,7 @@ pub fn planificar(
         plan.ficheros.extend(addons.ficheros);
         plan.conflictos.extend(addons.conflictos);
         plan.conflictos_perfil = addons.conflictos_perfil;
-        plan.no_aplicables = addons.no_aplicables;
+        plan.no_aplicables.extend(addons.no_aplicables);
     }
     Ok(Plan {
         personajes,
@@ -485,18 +521,39 @@ pub fn planificar(
     })
 }
 
+/// Cuenta → carpeta del primer personaje del plan que escribe en ella: los siguientes no la vuelven a escribir (sus
+/// copias ya no coincidirían con el fichero).
+#[derive(Default)]
+struct Escritas<'a> {
+    /// Las entradas que afectan a toda la cuenta.
+    cuentas: HashMap<&'a str, &'a str>,
+    /// El diseño del Modo Edición añadido a la cuenta.
+    modo_edicion: HashMap<&'a str, &'a str>,
+}
+
 fn planificar_personaje<'a>(
     destino: &'a Destino,
     importables: &[(Importable<'_>, &[u8])],
     pedido: &Pedido,
-    cuentas_escritas: &mut HashMap<&'a str, &'a str>,
+    escritas: &mut Escritas<'a>,
 ) -> PlanPersonaje {
     let personaje = &destino.personaje;
     let mut ficheros = Vec::new();
     let mut conflictos = Vec::new();
+    let mut no_aplicables = Vec::new();
     let mut escribe_cuenta = false;
     for (importable, pieza) in importables {
-        let de_cuenta = es_de_cuenta(importable.fuente.destino);
+        if importable.fuente.filtro == Filtro::ModoEdicion {
+            match planificar_modo_edicion(destino, importable, pieza, &mut escritas.modo_edicion) {
+                Ok(planes) => ficheros.extend(planes),
+                Err(motivo) => no_aplicables.push(NoAplicable {
+                    entrada: importable.entrada.id.clone(),
+                    motivo,
+                }),
+            }
+            continue;
+        }
+        let de_cuenta = afecta_a_toda_la_cuenta(importable.fuente);
         let mut escrita_en = None;
         if de_cuenta {
             match decision(pedido, &personaje.cuenta, &importable.entrada.id) {
@@ -507,7 +564,8 @@ fn planificar_personaje<'a>(
                 Some(false) => continue,
                 Some(true) => {}
             }
-            escrita_en = cuentas_escritas
+            escrita_en = escritas
+                .cuentas
                 .get(personaje.cuenta.as_str())
                 .map(|carpeta| (*carpeta).to_owned());
             escribe_cuenta |= escrita_en.is_none();
@@ -520,7 +578,9 @@ fn planificar_personaje<'a>(
         ficheros.push(fichero);
     }
     if escribe_cuenta {
-        cuentas_escritas.insert(&personaje.cuenta, &personaje.personaje);
+        escritas
+            .cuentas
+            .insert(&personaje.cuenta, &personaje.personaje);
     }
     PlanPersonaje {
         cuenta: personaje.cuenta.clone(),
@@ -529,7 +589,7 @@ fn planificar_personaje<'a>(
         ficheros,
         conflictos,
         conflictos_perfil: Vec::new(),
-        no_aplicables: Vec::new(),
+        no_aplicables,
     }
 }
 
@@ -544,50 +604,155 @@ fn decision(pedido: &Pedido, cuenta: &str, entrada: &str) -> Option<bool> {
 /// Qué queda en un fichero: con fusión (opciones, addons) o sustituido por la pieza (el resto).
 fn planificar_fichero(destino: &Destino, importable: &Importable<'_>, pieza: &[u8]) -> FicheroPlan {
     let fuente = importable.fuente;
-    let antes = destino.actuales.get(fuente.destino).cloned().flatten();
-    let actual = antes.as_deref().unwrap_or_default();
+    let actual = actual_de(destino, fuente.destino).unwrap_or_default();
     let (contenido, elementos, apartadas) = match fuente.filtro {
-        Filtro::Opciones => partes(fusion::fusionar_opciones(actual, pieza)),
-        Filtro::Addons => partes(fusion::fusionar_addons(actual, pieza, &destino.instalados)),
-        Filtro::Ninguno => {
+        Filtro::Opciones => partes(fusion::fusionar_opciones(&actual, pieza)),
+        Filtro::Addons => partes(fusion::fusionar_addons(&actual, pieza, &destino.instalados)),
+        // El Modo Edición no pasa por aquí: lo planifica `planificar_modo_edicion`, que escribe dos ficheros.
+        Filtro::Ninguno | Filtro::ModoEdicion => {
             let elementos = match importable.categoria {
-                Categoria::Macros => elementos::diferencias_macros(actual, pieza),
-                Categoria::Teclas => elementos::diferencias_teclas(actual, pieza),
+                Categoria::Macros => elementos::diferencias_macros(&actual, pieza),
+                Categoria::Teclas => elementos::diferencias_teclas(&actual, pieza),
                 _ => Vec::new(),
             };
             (pieza.to_vec(), elementos, Vec::new())
         }
     };
+    plan_de(
+        destino,
+        importable,
+        Escritura {
+            destino: fuente.destino,
+            fichero: fuente.fichero,
+            de_cuenta: afecta_a_toda_la_cuenta(fuente),
+            sustituye: fuente.filtro == Filtro::Ninguno,
+            contenido,
+            elementos,
+            apartadas,
+        },
+    )
+}
+
+/// El diseño del paquete se añade a la cuenta (o se reutiliza uno idéntico) y el personaje pasa a usarlo: dos ficheros.
+/// Si otro personaje del plan ya añade el diseño en esta cuenta, aquí solo cambia el del personaje.
+fn planificar_modo_edicion<'a>(
+    destino: &'a Destino,
+    importable: &Importable<'_>,
+    pieza: &[u8],
+    escritas: &mut HashMap<&'a str, &'a str>,
+) -> Result<Vec<FicheroPlan>, MotivoNoAplicable> {
+    modo_edicion::importar(None, None, pieza).map_err(|_| MotivoNoAplicable::NoEncaja)?;
+    let cuenta = actual_de(destino, importable.fuente.destino);
+    let personaje = actual_de(destino, modo_edicion::DESTINO_PERSONAJE);
+    let importado = modo_edicion::importar(cuenta.as_deref(), personaje.as_deref(), pieza)
+        .map_err(|motivo| {
+            log::warn!("Modo Edición del destino sin tocar: {motivo}");
+            MotivoNoAplicable::DestinoIlegible
+        })?;
+    let elemento = |clase, cambio| Elemento {
+        nombre: importado.nombre.clone(),
+        cambio,
+        antes: None,
+        despues: None,
+        clase: Some(clase),
+    };
+    let anade = importado
+        .nuevo
+        .then(|| elemento(Clase::Diseno, Cambio::Anadido));
+    let mut de_cuenta = plan_de(
+        destino,
+        importable,
+        Escritura {
+            destino: importable.fuente.destino,
+            fichero: importable.fuente.fichero,
+            de_cuenta: false,
+            sustituye: false,
+            contenido: importado.cuenta.clone(),
+            elementos: anade.into_iter().collect(),
+            apartadas: Vec::new(),
+        },
+    );
+    let cuenta_destino = destino.personaje.cuenta.as_str();
+    if let Some(primero) = escritas.get(cuenta_destino) {
+        de_cuenta.grupo = Grupo::SinCambios;
+        de_cuenta.escrita_en = Some((*primero).to_owned());
+        // Lo enseña ya el primero: aquí no se escribe ni se cuenta otra vez.
+        de_cuenta.elementos.clear();
+    } else if de_cuenta.grupo != Grupo::SinCambios {
+        escritas.insert(cuenta_destino, &destino.personaje.personaje);
+    }
+    let cambia = personaje.as_deref() != Some(importado.personaje.as_slice());
+    let pasa_a_usarlo = cambia.then(|| elemento(Clase::DisenoActivo, Cambio::Cambiado));
+    let del_personaje = plan_de(
+        destino,
+        importable,
+        Escritura {
+            destino: modo_edicion::DESTINO_PERSONAJE,
+            fichero: modo_edicion::FICHERO_PERSONAJE,
+            de_cuenta: false,
+            sustituye: false,
+            contenido: importado.personaje,
+            elementos: pasa_a_usarlo.into_iter().collect(),
+            apartadas: Vec::new(),
+        },
+    );
+    Ok(vec![de_cuenta, del_personaje])
+}
+
+/// Lo que se va a escribir en un fichero y lo que se enseña de ello.
+struct Escritura<'f> {
+    /// Ruta lógica (`personaje/…` o `cuenta/…`).
+    destino: &'f str,
+    /// Relativo a la carpeta del personaje o de su cuenta.
+    fichero: &'f str,
+    de_cuenta: bool,
+    /// Sustituye el fichero entero; si no, se fusiona con lo que hay.
+    sustituye: bool,
+    contenido: Vec<u8>,
+    elementos: Vec<Elemento>,
+    apartadas: Vec<Quitadas>,
+}
+
+fn actual_de(destino: &Destino, ruta_logica: &str) -> Option<Vec<u8>> {
+    destino.actuales.get(ruta_logica).cloned().flatten()
+}
+
+fn plan_de(
+    destino: &Destino,
+    importable: &Importable<'_>,
+    escritura: Escritura<'_>,
+) -> FicheroPlan {
+    let antes = actual_de(destino, escritura.destino);
     let grupo = match &antes {
         None => Grupo::Nuevo,
-        Some(a) if *a == contenido => Grupo::SinCambios,
+        Some(a) if *a == escritura.contenido => Grupo::SinCambios,
         Some(_) => Grupo::Modificado,
     };
-    let accion = match (&antes, fuente.filtro) {
+    let accion = match (&antes, escritura.sustituye) {
         (None, _) => Accion::Crear,
-        (Some(_), Filtro::Ninguno) => Accion::Sobrescribir,
-        (Some(_), _) => Accion::Fusionar,
+        (Some(_), true) => Accion::Sobrescribir,
+        (Some(_), false) => Accion::Fusionar,
     };
-    let en_cuenta = es_de_cuenta(fuente.destino);
+    let en_cuenta = es_de_cuenta(escritura.destino);
     FicheroPlan {
         entrada: importable.entrada.id.clone(),
         entradas: vec![importable.entrada.id.clone()],
         categoria: importable.categoria,
-        destino: fuente.destino.to_owned(),
-        de_cuenta: en_cuenta,
+        destino: escritura.destino.to_owned(),
+        de_cuenta: escritura.de_cuenta,
         en_cuenta,
         grupo,
         accion,
-        elementos,
-        apartadas,
+        elementos: escritura.elementos,
+        apartadas: escritura.apartadas,
         avisos: Vec::new(),
         bytes_antes: antes.as_ref().map(|a| a.len() as u64),
-        bytes_despues: contenido.len() as u64,
+        bytes_despues: escritura.contenido.len() as u64,
         escrita_en: None,
-        ruta: ruta_de(&destino.personaje, en_cuenta, fuente.fichero),
-        fichero: fuente.fichero.to_owned(),
+        ruta: ruta_de(&destino.personaje, en_cuenta, escritura.fichero),
+        fichero: escritura.fichero.to_owned(),
         antes_sha256: antes.as_deref().map(sha256),
-        contenido,
+        contenido: escritura.contenido,
     }
 }
 
@@ -707,6 +872,8 @@ impl PaquetesAbiertos {
     }
 }
 
+#[cfg(test)]
+mod tests_modo_edicion;
 #[cfg(test)]
 mod tests {
     use super::*;

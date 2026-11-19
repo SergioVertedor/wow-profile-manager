@@ -12,6 +12,7 @@ import {
   pedirPropuestaExportacion,
   totalQuitadas,
   type PersonajePedido,
+  type PiezaPropuesta,
   type PropuestaExportacion,
 } from "../nucleo";
 import { mensajeDeError } from "../textos/errores";
@@ -216,7 +217,7 @@ function Formulario({
                 <input type="checkbox" checked={marcadas.has(pieza.id)} onChange={() => alternar(pieza.id)} />
                 <span className={css.categoria}>
                   {t(`exportar.categorias.${pieza.categoria}`)}
-                  {pieza.ambito === "cuenta" && <span className={css.detalle}> · {t("exportar.deLaCuenta")}</span>}
+                  <DetallePieza pieza={pieza} />
                 </span>
                 <span className={css.tamano}>{tamanoLegible(pieza.bytes, i18n.language)}</span>
               </label>
@@ -275,4 +276,13 @@ function Formulario({
       )}
     </>
   );
+}
+
+/** Lo que distingue a una pieza: el diseño del Modo Edición que viaja, o que viene de la cuenta. */
+function DetallePieza({ pieza }: Readonly<{ pieza: PiezaPropuesta }>) {
+  const { t } = useTranslation();
+  if (pieza.categoria === "modo-edicion") {
+    return <span className={css.detalle}> · {t("exportar.diseno", { nombre: pieza.perfil ?? "" })}</span>;
+  }
+  return pieza.ambito === "cuenta" ? <span className={css.detalle}> · {t("exportar.deLaCuenta")}</span> : null;
 }

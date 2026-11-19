@@ -92,7 +92,7 @@ en ningún fichero, lo guarda el servidor.
 | `opciones` | `fichero-filtrado` | `personaje/config-cache.wtf` o `cuenta/config-cache.wtf` |
 | `chat` | `fichero` | `personaje/chat-cache.txt` |
 | `ventanas` | `fichero` | `personaje/layout-local.txt` |
-| `modo-edicion` | dos entradas: `fichero` (qué diseño usa) y `adaptador` `modo-edicion` (el diseño). La app aún no lo exporta: hay que medir su formato (#71) | `personaje/edit-mode-cache-character.txt` y `cuenta/edit-mode-cache-account.txt` |
+| `modo-edicion` | `adaptador` `modo-edicion` (versión 1): un `edit-mode-cache-account.txt` con un solo diseño, el que usa el personaje; `perfil` lleva su nombre | `cuenta/edit-mode-cache-account.txt` |
 | `addons-activos` | `fichero-filtrado` | `personaje/AddOns.txt` |
 | `config-addon` | `perfil-acedb`, `fichero` o `adaptador` | `cuenta/SavedVariables/<addon>.lua` o `personaje/SavedVariables/<addon>.lua`, con `<addon>` = la carpeta del addon (el juego guarda así sus variables) |
 | `marcos-banda` | `fichero` | `personaje/CUFProfiles.txt` |
@@ -157,11 +157,19 @@ Si el perfil se llama como el personaje de origen, `perfil` es `@@WOWPROFILE:PER
 Pieza `adaptador`. Lo que viaja se copia byte a byte del origen; solo se escriben de nuevo las llaves de las tablas que
 se recortan. Una clave de personaje de `soloPersonaje` se escribe `["@@WOWPROFILE:PERSONAJE@@"]`.
 
+Pieza `adaptador` `modo-edicion`: la cabecera del fichero de cuenta del origen y el diseño que usa el personaje, byte a
+byte, terminado en el byte nulo como el fichero del juego. Solo viaja si el personaje usa un diseño propio (no uno de
+Blizzard). El fichero del personaje no viaja: el índice se recalcula en el destino.
+
 Cómo se aplica cada tipo al importar:
 - `fichero` y `fichero-filtrado`: se escribe en el `destino`, con WoW cerrado, sin tocar el `cache.md5` del
   destino. En `config-addon`, el del personaje sustituye al fichero; el de cuenta solo cambia sus variables y deja las
   demás del fichero (las que viajan como perfil, por ejemplo). Un genérico de cuenta no lleva ni toca una base AceDB
   (`profileKeys` y `profiles`): eso solo entra como `perfil-acedb`.
+- `adaptador` `modo-edicion`: el diseño se **añade** al final de `edit-mode-cache-account.txt` del destino sin cambiar
+  nada de lo que había (con `<nombre> 2`, `3`… si el nombre ya existe), y `edit-mode-cache-character.txt` del personaje
+  pasa a apuntar a él. Si la cuenta ya tiene un diseño idéntico, se usa ese y no se añade nada. No afecta a los demás
+  personajes de la cuenta, así que no pide decisión de cuenta. Si un fichero del destino no se entiende, no se toca.
 - `perfil-acedb`: se añade a `<variable>.profiles["<perfil>"]` del fichero de cuenta del destino (y cada módulo a
   `<variable>.namespaces["<módulo>"].profiles["<perfil>"]`), y se apunta **solo** el `profileKeys` del personaje destino
   a ese perfil. Si ya existe un perfil con ese nombre y es distinto, la app

@@ -228,7 +228,9 @@ Fichero: [`buggrabber.json`](../src-tauri/adaptadores/buggrabber.json).
 
 El **Modo Edición** de Blizzard no es un `SavedVariables`: son `edit-mode-cache-account.txt` (los diseños) y
 `edit-mode-cache-character.txt` (qué diseño usa cada especialización). Lo resuelve un adaptador interno de la
-app, `modo-edicion`, porque no se puede describir con rutas de tabla. Su formato está medido solo en parte [H].
+app, `modo-edicion` (versión 1), porque no se puede describir con rutas de tabla. Exporta solo el diseño que usa el
+personaje y, al importar, lo añade a los diseños de la cuenta y apunta el personaje a él. Formato medido en
+[`compatibilidad-wow-forever.md`](compatibilidad-wow-forever.md#modo-edición-v).
 
 ## Pendiente
 

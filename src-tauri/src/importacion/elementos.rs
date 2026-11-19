@@ -31,6 +31,10 @@ pub enum Clase {
     Variable,
     /// Una clave de primer nivel de una variable (`nombre` = `variable.clave`).
     Clave,
+    /// Un diseño del Modo Edición (`nombre` = el diseño).
+    Diseno,
+    /// El diseño del Modo Edición que usa el personaje (`nombre` = el diseño).
+    DisenoActivo,
 }
 
 /// Un elemento que cambia: una macro, una tecla, una opción o un addon. `antes` y `despues` son lo que se enseña de
