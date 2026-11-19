@@ -28,6 +28,8 @@ pub struct Preferencias {
     pub nombres_cuenta: BTreeMap<String, String>,
     /// El interruptor «Guardar registro de diagnóstico» (spec 029). Apagado si el fichero no lo trae.
     pub registro: bool,
+    /// El interruptor «Buscar actualizaciones al arrancar» (spec 035), al revés: encendido si el fichero no lo trae.
+    pub actualizaciones_apagadas: bool,
 }
 
 /// Lo que se guarda en disco: las preferencias con la versión del formato.
@@ -180,6 +182,11 @@ impl Almacen {
         }
     }
 
+    /// La carpeta de datos de la app, donde vive `preferencias.json`.
+    pub fn carpeta(&self) -> &Path {
+        &self.dir
+    }
+
     pub fn leer(&self) -> Result<Preferencias, ErrorNucleo> {
         let _turno = self.cerrojo.lock().unwrap_or_else(|e| e.into_inner());
         cargar(&self.dir)
@@ -224,6 +231,10 @@ mod tests {
         .unwrap();
         let preferencias = cargar(tmp.path()).unwrap();
         assert!(!preferencias.registro);
+        assert!(
+            !preferencias.actualizaciones_apagadas,
+            "buscar actualizaciones, por defecto"
+        );
         assert_eq!(preferencias.carpetas_manuales, [PathBuf::from("D:\\WoW")]);
     }
 

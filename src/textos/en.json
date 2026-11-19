@@ -50,13 +50,24 @@
     "verLicencia": "Read the license",
     "web": "More about the author at",
     "koFi": "If the app is useful to you, you can support it on Ko-fi.",
+    "buscarActualizaciones": "Check for updates on startup",
+    "ayudaActualizaciones": "Looks on GitHub for a new version and asks before installing it. It is only installed if it carries the app's signature. Off, the app does not connect to the internet on startup.",
     "marca": "{{nombre}} is not made, endorsed or supported by Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment, Inc."
   },
   "productos": {
     "wow": "World of Warcraft (Retail)",
     "wowf": "WoW Forever"
   },
+  "actualizacion": {
+    "disponible": "A new version of the app is available: {{version}}.",
+    "instalar": "Update and restart",
+    "instalando": "Updating…",
+    "ahoraNo": "Not now"
+  },
   "errores": {
+    "actualizacionNoDescargada": "The new version could not be downloaded. Check your connection and try again later.",
+    "actualizacionSinFirmaValida": "The downloaded version is not signed by the app and was not installed. You are still on the current version.",
+    "actualizacionNoDisponible": "There is no newer version published any more.",
     "lecturaFallida": "Could not read {{ruta}}: {{detalle}}",
     "desconocido": "Unexpected error: {{mensaje}}",
     "enlaceNoAbierto": "Could not open {{url}}: {{detalle}}",

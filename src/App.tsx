@@ -9,6 +9,7 @@ import Instalaciones from "./instalaciones/Instalaciones";
 import Historial from "./historial/Historial";
 import { useDeteccion } from "./instalaciones/useDeteccion";
 import { pedirInfoApp, type InfoApp } from "./nucleo";
+import AvisoActualizacion from "./operaciones/AvisoActualizacion";
 import AvisoCierre from "./operaciones/AvisoCierre";
 import AvisoRecuperacion from "./operaciones/AvisoRecuperacion";
 import Personajes from "./personajes/Personajes";
@@ -70,6 +71,7 @@ function App() {
       <main className={css.contenido}>
         <AvisoRecuperacion alRestaurar={deteccion.recargar} />
         <AvisoCierre />
+        <AvisoActualizacion />
         {vista === "personajes" && <Personajes {...deteccion} />}
         {vista === "importar" && <Importar {...deteccion} irAHistorial={() => setVista("historial")} />}
         {vista === "instalaciones" && <Instalaciones {...deteccion} />}
