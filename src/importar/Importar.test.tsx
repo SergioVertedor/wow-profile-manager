@@ -317,7 +317,7 @@ describe("Importar", () => {
       abrir_paquete: () => ({ resultado: "abierta", resumen: RESUMEN }),
       plan_importacion: () => lista,
       aplicar_importacion: () => [
-        { cuenta: "1#1", reino: "93", personaje: "Goldberg-Joestar", resultado: "completa", operacion: "op1", ficheros: 1 },
+        { cuenta: "1#1", reino: "93", personaje: "Goldberg-Joestar", resultado: "completa", operacion: "op1", ficheros: 1, addons: 0 },
       ],
     });
     fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
@@ -461,6 +461,60 @@ describe("Importar", () => {
 
     expect(await screen.findByText("Diseño «Sanador» del Modo Edición")).toBeTruthy();
     expect(screen.getByText("Pasa a usar el diseño «Sanador»")).toBeTruthy();
+  });
+
+  it("las carpetas de addons salen marcadas con su aviso y la vista previa dice cuáles se instalan", async () => {
+    const carpeta = (addon: string) => ({
+      id: `carpeta-${addon.toLowerCase()}`,
+      categoria: "addon",
+      tipo: "carpeta",
+      ambito: "instalacion" as const,
+      deCuenta: false,
+      bytes: 5_000,
+      marcada: true,
+      generica: false,
+      addon,
+    });
+    const resumen: ResumenPaquete = { ...RESUMEN, entradas: [carpeta("Dominos"), carpeta("Details")] };
+    const vista: VistaPrevia = {
+      ...VISTA,
+      juegoAbierto: false,
+      plan: {
+        incompatibles: [],
+        personajes: [
+          {
+            ...VISTA.plan.personajes[0],
+            conflictos: [],
+            ficheros: [],
+            addons: [
+              { entrada: "carpeta-dominos", addon: "Dominos", yaInstalado: false, bytes: 5_000 },
+              { entrada: "carpeta-details", addon: "Details", yaInstalado: true, bytes: 5_000 },
+            ],
+          },
+        ],
+      },
+    };
+    const { llamadas } = pintar({ abrir_paquete: () => ({ resultado: "abierta", resumen }), plan_importacion: () => vista });
+    fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Goldberg Joestar/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+
+    const addons = screen.getByRole("region", { name: "Addons" });
+    const dominos = within(addons).getByRole("checkbox", { name: /Dominos/ });
+    expect((dominos as HTMLInputElement).checked).toBe(true);
+    const aviso = document.getElementById(dominos.getAttribute("aria-describedby") ?? "")?.textContent;
+    expect(aviso).toMatch(/código que el juego ejecuta/);
+    fireEvent.click(within(addons).getByRole("button", { name: "Desmarcar todos" }));
+    expect((dominos as HTMLInputElement).checked).toBe(false);
+    fireEvent.click(within(addons).getByRole("button", { name: "Marcar todos" }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+
+    expect(await screen.findByText("— se instala")).toBeTruthy();
+    expect(screen.getByText("— ya lo tienes: no se toca")).toBeTruthy();
+    const pedido = llamadas.find((l) => l.comando === "plan_importacion")?.argumentos as {
+      pedido: { seleccion: string[] };
+    };
+    expect(pedido.pedido.seleccion).toEqual(["carpeta-dominos", "carpeta-details"]);
   });
 
   it("la configuración de addons va por addon, con los genéricos desmarcados, y un perfil que existe se decide", async () => {

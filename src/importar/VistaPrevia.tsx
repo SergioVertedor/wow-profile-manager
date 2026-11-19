@@ -207,6 +207,21 @@ function Personaje({
           )
         );
       })}
+      {plan.addons.length > 0 && (
+        <div>
+          <h3 className={css.grupo}>{t("importar.grupos.addons")}</h3>
+          <ul className={css.ficheros}>
+            {plan.addons.map((a) => (
+              <li key={a.entrada}>
+                {a.addon}{" "}
+                <span className={css.secundarioTexto}>
+                  {a.yaInstalado ? t("importar.addonYaInstalado") : t("importar.addonSeInstala")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {plan.noAplicables.length > 0 && (
         <div>
           <h3 className={css.grupo}>{t("importar.grupos.noAplicables")}</h3>
@@ -220,7 +235,10 @@ function Personaje({
           </ul>
         </div>
       )}
-      {plan.ficheros.length === 0 && plan.conflictos.length === 0 && plan.conflictosPerfil.length === 0 && (
+      {plan.ficheros.length === 0 &&
+        plan.addons.length === 0 &&
+        plan.conflictos.length === 0 &&
+        plan.conflictosPerfil.length === 0 && (
         <p className={css.nota}>{t("importar.nadaQueImportar")}</p>
       )}
     </section>
