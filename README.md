@@ -1,22 +1,90 @@
+<div align="center">
+
 # WoW Profile Manager
 
-Configuration profile manager for **WoW Forever**, on Windows. It exports a character's setup (addons, their
-settings, macros, key bindings and action bar layout) to a single `.wowprofile` file. What sits inside each button
-does not travel: the game server stores it, and each player places their own abilities. Another player, on another
-computer, chooses what to import and which of their own characters to apply it to. Before writing anything, the app
-makes a backup and shows a preview of the changes; afterwards, it lets you undo them.
+**Export a WoW Forever character's setup to a single file, share it, and apply it to another character, on another
+computer, safely.**
 
-> **Status: Phase 3 (MVP), not released yet.** The app already detects installations, accounts, realms and
-> characters; exports and imports macros, key bindings and addon settings; and backs up, previews and undoes every
-> change. Stack: Tauri 2 + Rust, with `full_moon` to read and write the `SavedVariables`, and React for the
-> interface. The interface is available in English and Spanish.
->
-> The technical documentation in [`docs/`](docs/) is in Spanish: what was measured on WoW Forever in
-> [`docs/compatibilidad-wow-forever.md`](docs/compatibilidad-wow-forever.md), the package format in
-> [`docs/formato-wowprofile.md`](docs/formato-wowprofile.md), the data model in
-> [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md), the addon adapters in
-> [`docs/adaptadores.md`](docs/adaptadores.md), the export and import flows, with backups, in
-> [`docs/flujos.md`](docs/flujos.md), and the architecture in [`docs/arquitectura.md`](docs/arquitectura.md).
+[![CI](https://github.com/SergioVertedor/wow-profile-manager/actions/workflows/calidad.yml/badge.svg?branch=develop)](https://github.com/SergioVertedor/wow-profile-manager/actions/workflows/calidad.yml)
+[![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D6.svg)
+![Built with Tauri 2](https://img.shields.io/badge/built%20with-Tauri%202%20%2B%20Rust-24C8DB.svg)
+![Status: pre-release](https://img.shields.io/badge/status-pre--release-orange.svg)
+
+<img src="docs/capturas/personajes.png" alt="The Characters view: an account with five characters and the selected character's card, with its add-ons, game build and the Export button" width="860">
+
+</div>
+
+## What it does
+
+WoW Profile Manager is a Windows desktop app for **WoW Forever**. It takes a character's configuration (add-ons and
+their settings, macros, key bindings and action bar layout) and packs it into one portable `.wowprofile` file. Another
+player opens that file, picks which of their own characters to apply it to and what to bring over, sees exactly what
+will change, and applies it. Every import can be undone.
+
+What sits inside each action bar button does not travel: the game server stores it, and each player places their own
+abilities.
+
+## Features
+
+- **Finds your installations, accounts, realms and characters** on its own (Windows registry and Battle.net), or from
+  a folder you add.
+- **Exports a character** to a single `.wowprofile` file: macros, key bindings, click bindings, options, chat, windows,
+  raid frames, enabled add-ons and **add-on settings** (AceDB profiles and dedicated adapters).
+- **Leaves out what should not travel**: state, other players' data and options that only make sense on the original
+  computer.
+- **Imports into any character**, even several at once and on another computer, choosing what to bring.
+- **Shows a precise preview** before writing anything: every macro, key binding, add-on and profile that is added,
+  changed or removed.
+- **Backs up before every change** and keeps a **history with one-click undo**.
+- **Never writes while the game is running**, and reads every package with strict checks: a profile is data, never
+  code.
+- **Portable**: a single `.exe` with its data folder next to it. Nothing in `%APPDATA%` or the Windows registry.
+- **English and Spanish** interface, following the Windows language.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/capturas/exportar.png" alt="Export dialog: the files and add-on profiles that go into the package, each with its size"></td>
+    <td width="50%"><img src="docs/capturas/importar.png" alt="Import preview: per character, what is new and what changes, down to each macro and add-on profile"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Export</b>: choose what goes into the package.</td>
+    <td align="center"><b>Import</b>: see exactly what will change before applying.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/capturas/historial.png" alt="History: every change the app made, with its backup and an Undo button"></td>
+    <td width="50%"><img src="docs/capturas/personajes.png" alt="Characters view"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>History</b>: every change is backed up and can be undone.</td>
+    <td align="center"><b>Characters</b>: every installation, account and character in one place.</td>
+  </tr>
+</table>
+
+<sub>Screenshots use made-up data. They are generated from the real interface with
+<code>node scripts/capturas.mjs</code>.</sub>
+
+## Status
+
+**Phase 3 (MVP), not released yet.** Detection, export, import, preview, backups and undo work today. Before the first
+release: the portable build with signed, optional auto-update, and support for Blizzard's Edit Mode layouts. The
+roadmap lives in the [issues](https://github.com/SergioVertedor/wow-profile-manager/issues).
+
+## Documentation
+
+The technical documentation is in Spanish (an English version is tracked in
+[#80](https://github.com/SergioVertedor/wow-profile-manager/issues/80)):
+
+| document | what it covers |
+|---|---|
+| [`formato-wowprofile.md`](docs/formato-wowprofile.md) | The `.wowprofile` package format, with its [JSON Schema](docs/wowprofile.schema.json). |
+| [`compatibilidad-wow-forever.md`](docs/compatibilidad-wow-forever.md) | What was measured on a real WoW Forever installation. |
+| [`adaptadores.md`](docs/adaptadores.md) | Add-on adapters: how add-on settings are read and written, with their [schema](docs/adaptador.schema.json). |
+| [`flujos.md`](docs/flujos.md) | Export and import flows, backups and history, with the [operation schema](docs/operacion.schema.json). |
+| [`modelo-de-datos.md`](docs/modelo-de-datos.md) | Data model: installations, accounts, characters and add-ons. |
+| [`arquitectura.md`](docs/arquitectura.md) | Architecture: modules, responsibilities and who writes where. |
 
 ## Development
 
@@ -35,15 +103,18 @@ Requirements (Windows): [Node.js](https://nodejs.org/) 24, stable [Rust](https:/
 | Run in development mode | `npm run tauri dev` |
 | Interface: types, linter and tests | `npm run typecheck`, `npm run lint`, `npm test` |
 | Core: formatting, linter and tests (in `src-tauri/`) | `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test` |
+| Regenerate the README screenshots (with the dev server running) | `node scripts/capturas.mjs` |
 
-CI runs all of the above on Windows for every PR.
+Stack: [Tauri 2](https://tauri.app/) and Rust for the core, with [`full_moon`](https://github.com/Kampfkarren/full-moon)
+to read and write the game's `SavedVariables`; React and TypeScript for the interface. CI runs every check above on
+Windows for every pull request.
 
-## Workflow
+### Workflow
 
 1. Issue on GitHub.
 2. Branch `feature/<issue>-<slug>` from `develop`.
 3. Implement, with tests.
-4. PR to `develop`.
+4. Pull request to `develop`.
 5. Releases: `release/x.y.z` → `main` + tag.
 
 ## How it is made
@@ -65,3 +136,6 @@ Sergio Vertedor — [tonotabi.dev](https://tonotabi.dev)
 
 [GNU GPL v3](LICENSE), with an additional attribution term (section 7(b)): modified versions that are distributed
 must show credit to the original project in their interface. Details in [`NOTICE.md`](NOTICE.md).
+
+World of Warcraft is a trademark of Blizzard Entertainment, Inc. This project is not made, endorsed or supported by
+Blizzard Entertainment.
