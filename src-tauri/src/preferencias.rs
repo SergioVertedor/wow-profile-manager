@@ -1,6 +1,6 @@
 //! Preferencias (spec 018): lo que el usuario le dice a la app y tiene que recordarse entre arranques: las carpetas
 //! de WoW añadidas a mano y los nombres propios de instalaciones y cuentas. Escribe solo `preferencias.json`, en la
-//! carpeta de datos de la app (`%APPDATA%\<identificador>`), nunca dentro de una instalación: eso es de Operaciones.
+//! carpeta de datos de la app (junto al `.exe`, `portable.rs`), nunca dentro de una instalación: eso es de Operaciones.
 
 use crate::disco::clave_de_ruta;
 use crate::error::ErrorNucleo;

@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "create": false,
         "title": "WoW Profile Manager",
         "width": 1024,
         "height": 720,

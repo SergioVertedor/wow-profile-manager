@@ -65,6 +65,10 @@ flowchart LR
 | Preferencias | carpetas añadidas a mano, nombres propios de instalaciones y cuentas, e interruptor del registro | lee y escribe solo `preferencias.json` en la carpeta de datos de la app |
 | Diagnóstico | único logger de la fachada `log`: líneas de la sesión en memoria, a la interfaz y, si se enciende, a un `.txt` acotado (spec 029) | escribe solo en `registros/` de la carpeta de datos de la app, y solo encendido |
 
+La **carpeta de datos de la app** es `wow-profile-manager-datos/`, junto al `.exe` (`portable.rs`, #3): preferencias,
+`operaciones/`, `registros/` y los datos de WebView2 (`webview/`). Nada en `%APPDATA%`, `%LOCALAPPDATA%` ni el registro
+de Windows. Si no se puede escribir en ella, la app lo dice con un mensaje nativo y no arranca.
+
 Criterios de diseño (míos):
 - El catálogo de adaptadores va **dentro del ejecutable**: importar no necesita red.
 - Detección y Descubrimiento no escriben nada nunca, ni cachés, dentro de la instalación.

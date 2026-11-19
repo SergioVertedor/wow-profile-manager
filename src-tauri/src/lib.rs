@@ -22,6 +22,7 @@ mod lua;
 mod operaciones;
 mod paquetes;
 mod piezas;
+mod portable;
 mod preferencias;
 mod sistema;
 mod toc;
@@ -580,6 +581,45 @@ fn instalar_registro<R: tauri::Runtime>(
     registro
 }
 
+/// Abre la ventana principal de `tauri.conf.json` (que lleva `"create": false`) con los datos de WebView2 dentro de la
+/// carpeta de datos portable: así WebView2 tampoco escribe en `%LOCALAPPDATA%`.
+fn abrir_ventana(app: &tauri::App, datos: &std::path::Path) -> tauri::Result<()> {
+    let config = app
+        .config()
+        .app
+        .windows
+        .first()
+        .ok_or_else(|| tauri::Error::WindowNotFound)?;
+    tauri::WebviewWindowBuilder::from_config(app, config)?
+        .data_directory(datos.join(portable::CARPETA_WEBVIEW))
+        .build()?;
+    Ok(())
+}
+
+/// Sin carpeta de datos la app no puede guardar nada: lo dice con un mensaje nativo, sin abrir la ventana, y se cierra
+/// al aceptarlo. `show` y no `blocking_show`: `setup` corre en el hilo principal.
+fn avisar_sin_carpeta_y_salir(
+    app: &tauri::AppHandle,
+    datos: &std::path::Path,
+    error: &std::io::Error,
+) {
+    use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
+    eprintln!(
+        "{NOMBRE_APP}: carpeta de datos no utilizable {}: {error}",
+        datos.display()
+    );
+    let app_al_cerrar = app.clone();
+    app.dialog()
+        .message(portable::mensaje_sin_carpeta(
+            idioma::idioma_sistema(),
+            datos,
+            error,
+        ))
+        .title(NOMBRE_APP)
+        .kind(MessageDialogKind::Error)
+        .show(move |_| app_al_cerrar.exit(1));
+}
+
 /// Registra los comandos que puede llamar la interfaz. Es genérico sobre el runtime para que los tests de
 /// `tests/comandos.rs` usen el runtime simulado de Tauri y llamen a los comandos por su nombre, igual que la
 /// interfaz. Los comandos de preferencias necesitan un `Almacen` gestionado: `run` lo pone en la carpeta de datos de
@@ -623,12 +663,17 @@ pub fn run() {
     let resultado = con_comandos(tauri::Builder::default())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            let datos = app.path().app_data_dir()?;
+            let datos = portable::carpeta_junto_a(&std::env::current_exe()?);
+            if let Err(error) = portable::preparar(&datos) {
+                avisar_sin_carpeta_y_salir(app.handle(), &datos, &error);
+                return Ok(());
+            }
             let almacen = Almacen::en(datos.clone());
             app.manage(instalar_registro(app.handle(), &datos, &almacen));
             app.manage(Operaciones::en(datos.join(CARPETA_OPERACIONES)));
             app.manage(almacen);
             app.manage(PaquetesAbiertos::default());
+            abrir_ventana(app, &datos)?;
             Ok(())
         })
         .on_window_event(al_pedir_cierre)
