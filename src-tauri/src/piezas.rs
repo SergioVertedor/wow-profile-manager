@@ -1,6 +1,7 @@
 //! Piezas: qué fichero de `WTF` es cada pieza del formato y cómo se recorta. La comparten Exportación (de dónde se lee,
 //! #56) e Importación (dónde se puede escribir, #63): una pieza solo va a **su** fichero.
 
+use crate::modo_edicion;
 use crate::paquetes::{Ambito, Categoria};
 use serde::Serialize;
 use std::collections::HashSet;
@@ -103,7 +104,7 @@ pub const FUENTES: [Fuente; 11] = [
             "modo-edicion",
             Categoria::ModoEdicion,
             CUENTA,
-            "edit-mode-cache-account.txt",
+            modo_edicion::FICHERO_CUENTA,
             "cuenta/edit-mode-cache-account.txt",
         )
     },
