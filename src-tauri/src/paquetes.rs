@@ -1,4 +1,4 @@
-//! Paquetes (`docs/arquitectura.md`): el `.wowprofile` según `docs/formato-wowprofile.md` (formato 1.0, y 1.1 si
+//! Paquetes (`docs/architecture.md`): el `.wowprofile` según `docs/wowprofile-format.md` (formato 1.0, y 1.1 si
 //! lleva addons, #73). Lo escribe (#56) y lo lee con las comprobaciones del formato (`lectura`, #63).
 //! Solo escribe el `.wowprofile`.
 

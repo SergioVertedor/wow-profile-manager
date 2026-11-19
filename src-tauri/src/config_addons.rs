@@ -1,5 +1,5 @@
 //! Configuración de addons para exportar (#56): qué viaja de cada addon instalado, decidido
-//! pieza a pieza con el orden de `docs/adaptadores.md` («Orden de decisión»). Solo lee.
+//! pieza a pieza con el orden de `docs/adapters.md` («Decision order»). Solo lee.
 
 use crate::adaptadores::{self, Adaptador, ClavePersonaje, Regla as ReglaAdaptador};
 use crate::addons::Addon;
@@ -30,7 +30,7 @@ const CIFRAS_GUID: usize = 8;
 /// Los nombres de personaje de WoW tienen de 2 a 12 letras.
 const LETRAS_NOMBRE: std::ops::RangeInclusive<usize> = 2..=12;
 
-/// Qué regla de `docs/adaptadores.md` sacó la pieza. Decide si va marcada y qué aviso lleva.
+/// Qué regla de `docs/adapters.md` sacó la pieza. Decide si va marcada y qué aviso lleva.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Regla {

@@ -3,7 +3,7 @@
 import type { TFunction } from "i18next";
 import type { CategoriaFichero, EntradaPaquete } from "../nucleo";
 
-/** El nombre del perfil cuando es el del personaje (`docs/formato-wowprofile.md`, «Marcadores»). */
+/** El nombre del perfil cuando es el del personaje (`docs/wowprofile-format.md`, «Markers»). */
 export const MARCADOR_PERSONAJE = "@@WOWPROFILE:PERSONAJE@@";
 
 const CATEGORIAS: readonly CategoriaFichero[] = [

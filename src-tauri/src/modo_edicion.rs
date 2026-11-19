@@ -1,4 +1,4 @@
-//! Modo Edición de Blizzard (#71): el adaptador interno `modo-edicion` (`docs/adaptadores.md`). Lógica pura
+//! Modo Edición de Blizzard (#71): el adaptador interno `modo-edicion` (`docs/adapters.md`). Lógica pura
 //! sobre el texto de los dos ficheros; quien lee y escribe en disco es Exportación e Importación.
 //!
 //! Medido en WoW Forever 1.60.1 (comentario en #71):
@@ -14,7 +14,7 @@
 use std::fmt;
 use std::ops::Range;
 
-/// Nombre del adaptador interno en el manifiesto (`docs/adaptadores.md`).
+/// Nombre del adaptador interno en el manifiesto (`docs/adapters.md`).
 pub const ADAPTADOR: &str = "modo-edicion";
 pub const VERSION_ADAPTADOR: u32 = 1;
 /// El fichero de la cuenta: los diseños propios.

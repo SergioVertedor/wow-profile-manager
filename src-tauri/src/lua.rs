@@ -1,4 +1,4 @@
-//! Un `.lua` de `SavedVariables` como dato (D-02, `docs/formato-wowprofile.md`: «Lua es dato»). Se parsea con
+//! Un `.lua` de `SavedVariables` como dato (#1, `docs/wowprofile-format.md`: «Lua is data»). Se parsea con
 //! `full_moon` sin ejecutar nada y todo lo que sale es **byte a byte** el original: solo se escriben de nuevo las
 //! llaves de las tablas que se recortan (#56).
 //!
@@ -14,9 +14,9 @@ use full_moon::node::Node;
 use full_moon::tokenizer::{TokenReference, TokenType};
 use full_moon::visitors::{Visit, Visitor};
 
-/// Marcador del personaje (`docs/formato-wowprofile.md`, «Marcadores»).
+/// Marcador del personaje (`docs/wowprofile-format.md`, «Markers»).
 pub const MARCADOR_PERSONAJE: &str = "@@WOWPROFILE:PERSONAJE@@";
-/// Claves de una variable AceDB (`docs/adaptadores.md`, «Qué es AceDB»).
+/// Claves de una variable AceDB (`docs/adapters.md`, «What AceDB is»).
 pub const CLAVE_PERSONAJES: &str = "profileKeys";
 pub const CLAVE_PERFILES: &str = "profiles";
 pub const CLAVE_NAMESPACES: &str = "namespaces";
@@ -221,7 +221,7 @@ impl Documento {
     }
 }
 
-/// Qué viaja de un valor (`docs/adaptadores.md`, «Cómo se escribe un adaptador»). Las rutas van separadas por `/`.
+/// Qué viaja de un valor (`docs/adapters.md`, «How to write an adapter»). Las rutas van separadas por `/`.
 pub struct Seleccion<'a> {
     /// `None` = todo.
     pub incluir: Option<&'a [String]>,

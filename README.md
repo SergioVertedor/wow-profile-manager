@@ -81,17 +81,16 @@ updates work today; the first release is next. The roadmap lives in the
 
 ## Documentation
 
-The technical documentation is in Spanish (an English version is tracked in
-[#80](https://github.com/SergioVertedor/wow-profile-manager/issues/80)):
+The technical documentation lives in [`docs/`](docs):
 
 | document | what it covers |
 |---|---|
-| [`formato-wowprofile.md`](docs/formato-wowprofile.md) | The `.wowprofile` package format, with its [JSON Schema](docs/wowprofile.schema.json). |
-| [`compatibilidad-wow-forever.md`](docs/compatibilidad-wow-forever.md) | What was measured on a real WoW Forever installation. |
-| [`adaptadores.md`](docs/adaptadores.md) | Add-on adapters: how add-on settings are read and written, with their [schema](docs/adaptador.schema.json). |
-| [`flujos.md`](docs/flujos.md) | Export and import flows, backups and history, with the [operation schema](docs/operacion.schema.json). |
-| [`modelo-de-datos.md`](docs/modelo-de-datos.md) | Data model: installations, accounts, characters and add-ons. |
-| [`arquitectura.md`](docs/arquitectura.md) | Architecture: modules, responsibilities and who writes where. |
+| [`wowprofile-format.md`](docs/wowprofile-format.md) | The `.wowprofile` package format, with its [JSON Schema](docs/wowprofile.schema.json). |
+| [`wow-forever-compatibility.md`](docs/wow-forever-compatibility.md) | What was measured on a real WoW Forever installation. |
+| [`adapters.md`](docs/adapters.md) | Add-on adapters: how add-on settings are read and written, with their [schema](docs/adaptador.schema.json). |
+| [`flows.md`](docs/flows.md) | Export and import flows, backups and history, with the [operation schema](docs/operacion.schema.json). |
+| [`data-model.md`](docs/data-model.md) | Data model: installations, accounts, characters and add-ons. |
+| [`architecture.md`](docs/architecture.md) | Architecture: modules, responsibilities and who writes where. |
 
 ## Development
 

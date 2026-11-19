@@ -1,4 +1,4 @@
-//! Exportación (`docs/arquitectura.md`): arma las piezas de un personaje para un `.wowprofile`: los ficheros que se
+//! Exportación (`docs/architecture.md`): arma las piezas de un personaje para un `.wowprofile`: los ficheros que se
 //! copian sin leer Lua y la configuración de addons (#56), y las carpetas de los addons (#73). Solo
 //! lee; el paquete lo escribe Paquetes.
 
@@ -61,7 +61,7 @@ pub struct PiezaPropuesta {
     pub bytes: u64,
     /// Líneas que se quitan al filtrar, por motivo.
     pub quitadas: Vec<Quitadas>,
-    /// Si sale marcada en el diálogo (`docs/flujos.md`, «Exportar», paso 3).
+    /// Si sale marcada en el diálogo (`docs/flows.md`, «Export», paso 3).
     pub marcada: bool,
     /// Solo en `config-addon`.
     pub addon: Option<String>,

@@ -1,4 +1,4 @@
-// Paso «Vista previa» (#63): el plan del núcleo tal cual, por personaje y en los grupos de `docs/flujos.md`. Pedirlo
+// Paso «Vista previa» (#63): el plan del núcleo tal cual, por personaje y en los grupos de `docs/flows.md`. Pedirlo
 // no escribe nada. Al pie, «Aplicar» (#63).
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";

@@ -136,7 +136,7 @@ pub fn nombre_valido(texto: &str) -> Result<Option<String>, ErrorNucleo> {
 }
 
 /// Lee las preferencias de `dir`. Sin fichero, vacías. Un fichero que no se entiende es un error: quien llama decide
-/// seguir sin preferencias, pero nadie lo sobrescribe (D-04: nada se borra solo).
+/// seguir sin preferencias, pero nadie lo sobrescribe (#18: nada se borra solo).
 pub fn cargar(dir: &Path) -> Result<Preferencias, ErrorNucleo> {
     let ruta = dir.join(FICHERO);
     let bytes = match std::fs::read(&ruta) {

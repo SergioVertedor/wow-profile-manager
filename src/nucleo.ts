@@ -183,7 +183,7 @@ export function eliminarPersonaje(personaje: PersonajePedido): Promise<string> {
   return invoke<string>("eliminar_personaje", { personaje });
 }
 
-/** Categorías de fichero de un `.wowprofile`: las que la app exporta e importa (`docs/formato-wowprofile.md`). */
+/** Categorías de fichero de un `.wowprofile`: las que la app exporta e importa (`docs/wowprofile-format.md`). */
 export type CategoriaFichero =
   | "macros"
   | "teclas"
@@ -217,7 +217,7 @@ export interface CarpetaNoExportable {
 /** Por qué no viaja una línea (`Motivo` en `src-tauri/src/piezas.rs`). */
 export type Motivo = "seguridad" | "estado" | "addonNoInstalado" | "viajaComoPerfil";
 
-/** Las reglas genéricas de `docs/adaptadores.md`: sus piezas salen desmarcadas y con aviso. */
+/** Las reglas genéricas de `docs/adapters.md`: sus piezas salen desmarcadas y con aviso. */
 export type ReglaGenerica = "genericoCuenta" | "genericoPersonaje" | "genericoCuentaConPersonajes";
 
 /** Qué regla sacó una pieza de addon (`Regla` en `src-tauri/src/config_addons.rs`). */

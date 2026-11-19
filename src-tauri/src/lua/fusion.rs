@@ -40,7 +40,7 @@ pub struct PerfilAcedb<'a> {
 
 /// El fichero del destino con el perfil en `profiles`, el de cada módulo en `namespaces.<módulo>.profiles` y
 /// `profileKeys` del personaje apuntando a él. Las demás entradas, también las de otros personajes, no cambian. `None`
-/// si la pieza no tiene la forma de `docs/formato-wowprofile.md`.
+/// si la pieza no tiene la forma de `docs/wowprofile-format.md`.
 pub fn fusionar_perfil(destino: &Documento, perfil: &PerfilAcedb<'_>) -> Option<Vec<u8>> {
     let sintetico = Documento::leer_valor(&tabla_de_perfil(perfil)?)?;
     let valor = sintetico.valor_suelto()?.valor;

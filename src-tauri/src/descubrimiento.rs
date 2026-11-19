@@ -1,5 +1,5 @@
-//! Descubrimiento (ver `docs/arquitectura.md`): cuentas y personajes de una versión del juego, según
-//! `docs/modelo-de-datos.md`. Solo lee. Lo que no encaja en las reglas no se lista, pero se cuenta, para que un
+//! Descubrimiento (ver `docs/architecture.md`): cuentas y personajes de una versión del juego, según
+//! `docs/data-model.md`. Solo lee. Lo que no encaja en las reglas no se lista, pero se cuenta, para que un
 //! error de regla se note.
 
 use crate::claves_personaje::claves_de_personaje;
@@ -128,7 +128,7 @@ pub fn nombres_de_carpetas(
     Ok(nombres)
 }
 
-/// Orden de `docs/modelo-de-datos.md`: el candidato de la carpeta, confirmado si es una clave de los datos.
+/// Orden de `docs/data-model.md`: el candidato de la carpeta, confirmado si es una clave de los datos.
 fn resolver_nombre(
     carpeta_reino: &str,
     carpeta_personaje: &str,

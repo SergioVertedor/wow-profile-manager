@@ -1,4 +1,4 @@
-//! Deshacer (`docs/flujos.md`, «Deshacer»): devolver lo que tocó una operación a como estaba antes. Es otra operación,
+//! Deshacer (`docs/flows.md`, «Undo»): devolver lo que tocó una operación a como estaba antes. Es otra operación,
 //! de tipo `deshacer`, con el mismo orden de escritura: primero copia lo que haya ahora y después restaura. La original
 //! pasa a `deshecha`.
 //!
@@ -226,7 +226,7 @@ fn usa_disenos_de_la_cuenta(diario: &Diario, cuenta: &str) -> bool {
             .any(|c| es_fichero(&c.ruta, modo_edicion::FICHERO_PERSONAJE))
 }
 
-/// La raíz de la versión tiene que seguir existiendo y ser del mismo producto (`docs/flujos.md`, «Mismo juego»).
+/// La raíz de la versión tiene que seguir existiendo y ser del mismo producto (`docs/flows.md`, «Same game»).
 fn mismo_juego(destino: &Destino) -> Result<(), ErrorNucleo> {
     let raiz = &destino.raiz_version;
     let producto = if raiz.is_dir() {
