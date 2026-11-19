@@ -107,11 +107,11 @@ Las entradas del paquete, por categoría y, en `config-addon`, por addon. Para c
 | entrada normal | marcada |
 | `config-addon` de tipo `fichero` (salió de una regla genérica) | **desmarcada**, con aviso: puede llevar estado o datos de otros jugadores. El paquete no lleva firma, así que no se fía de lo que eligió quien exportó |
 | categoría o tipo desconocidos (paquete de una versión menor más nueva) | desmarcada, con aviso |
-| adaptador desconocido o de una versión anterior | desmarcada, con aviso |
-| addon del destino fuera del rango `versionesAddon` del adaptador (se compara con la versión instalada en el destino) | desmarcada, con aviso |
-| addon no instalado en el destino | como si estuviera instalado (marcada, o desmarcada si es de tipo `fichero`), con el aviso «falta el addon» y su enlace si viene en el paquete [V: el cliente conserva el `SavedVariables` de un addon desinstalado; [H] lo carga al instalarlo] |
+| adaptador que la app no conoce, de otro addon o de una versión **más nueva** que la suya; pieza que no es solo datos | no se importa, con su motivo (un adaptador de una versión anterior sí: lo aplica la regla de la app) |
+| addon del destino fuera del rango `versionesAddon` de una regla con `entera` o `excluir` | como las demás, con el aviso en la vista previa: la selección es del paquete y no sabe qué tiene cada destino |
+| addon no instalado en el destino | como si estuviera instalado (marcada, o desmarcada si es de tipo `fichero`), con el aviso «falta el addon» en la vista previa [V: el cliente conserva el `SavedVariables` de un addon desinstalado; [H] lo carga al instalarlo] |
 | entrada que afecta a toda la cuenta del destino: las que van a `cuenta/` (macros generales, opciones de la cuenta), genéricos de cuenta y reglas de adaptador de `ambito: cuenta` que no se limitan a `soloPersonaje` | **sin decidir**, una vez por cada cuenta de los destinos: el jugador la acepta o la quita en esa cuenta antes de aplicar. Con varios personajes de una misma cuenta, se escribe en la operación del primero y en los demás sale «sin cambios» |
-| perfil AceDB con un nombre que ya existe en el destino | **sin decidir**: renombrar (propone `<nombre> (2)`) o sobrescribir |
+| perfil AceDB con un nombre que ya existe en el destino y es distinto (también el de algún módulo) | **sin decidir** en la vista previa, una vez por cuenta: renombrar (propone el primer `<nombre> (n)` libre) o sobrescribir. Si es igual, no hay nada que decidir |
 
 Sobrescribir un perfil AceDB que ya existe cambia la configuración de **todos** los personajes del destino que lo
 usan (los que lo apuntan en `profileKeys`). Si hay alguno además del destino, la opción se presenta con sus
@@ -150,6 +150,22 @@ Decisión de Sergio (2026-11-18, #63), para las categorías de fichero:
 | `addons-activos` | **fusión** por carpeta: cambia el valor de las que trae el paquete, conservando cómo escribe el destino la carpeta, y se añaden al final las que el destino no tiene. Las activadas que no están instaladas se escriben igual, con el aviso «falta el addon» |
 | `macros` | **sobrescribe** el fichero, con el detalle macro a macro |
 | `teclas`, `teclas-clic`, `chat`, `ventanas`, `marcos-banda` | **sobrescribe** el fichero |
+
+Para la configuración de addons (spec 028, #72):
+
+| tipo | cómo |
+|---|---|
+| `perfil-acedb` | **fusión**: el perfil va a `profiles` y el de cada módulo a `namespaces.<módulo>.profiles`, y solo la entrada del personaje destino en `profileKeys` apunta a él. Las demás entradas, también las de otros personajes, quedan byte a byte. Si la variable o el fichero no existen, se crean |
+| `adaptador` | **fusión por clave** con la regla del catálogo de la app ([adaptadores](adaptadores.md#cómo-se-aplica-en-el-destino)) |
+| genérico de cuenta (`fichero` o `fichero-filtrado`) | cada variable de la pieza sustituye a la del destino; las demás variables del fichero se quedan (las que viajan como perfil, por ejemplo). Una pieza con una base AceDB no se importa, y una del destino no se toca |
+| genérico del personaje (`fichero`) | **sobrescribe** el fichero |
+
+- Las entradas que van a un mismo fichero se aplican en el orden del paquete y el fichero se escribe una sola vez.
+- Un fichero de cuenta con varios destinos de esa cuenta lleva lo de todos (cada uno con su `profileKeys`) y se escribe
+  en la operación del primero; en los demás sale «sin cambios». Deshacer la del primero lo deshace para todos.
+- Un personaje sin nombre en los datos no recibe perfiles AceDB ni reglas con `soloPersonaje`: no se sabe con qué clave
+  lo guarda el addon. Un fichero del destino que no se entiende como Lua no se toca. Los dos salen en la vista previa
+  como «no se aplica en este personaje».
 
 En todas, `cache.md5` no se toca: con WoW cerrado, el cliente adopta el fichero local al entrar [V: Fase 1].
 

@@ -41,9 +41,10 @@ const RESUMEN: ResumenPaquete = {
     addons: [],
   },
   entradas: [
-    { id: "macros", categoria: "macros", ambito: "personaje", deCuenta: false, bytes: 10 },
-    { id: "macros-cuenta", categoria: "macros", ambito: "cuenta", deCuenta: true, bytes: 10 },
-    { id: "dominos", categoria: "config-addon", ambito: "personaje", deCuenta: false, bytes: 1, incompatible: "noSeImporta" },
+    { id: "macros", categoria: "macros", ambito: "personaje", deCuenta: false, bytes: 10, tipo: "fichero", marcada: true, generica: false },
+    { id: "macros-cuenta", categoria: "macros", ambito: "cuenta", deCuenta: true, bytes: 10, tipo: "fichero", marcada: true, generica: false },
+    { id: "dominos", categoria: "config-addon", tipo: "fichero", ambito: "personaje", deCuenta: false, bytes: 1, marcada: false, generica: true, addon: "Dominos", incompatible: "piezaNoValida" },
+    { id: "spy", categoria: "config-addon", tipo: "fichero", ambito: "personaje", deCuenta: false, bytes: 1, marcada: false, generica: true, addon: "Spy" },
   ],
 };
 
@@ -56,7 +57,7 @@ describe("importacion", () => {
     expect(versionesDelProducto(DETECCION, "wowc")).toEqual([]);
   });
 
-  it("marca por defecto lo que se puede importar", () => {
+  it("marca por defecto lo que se puede importar, sin los ficheros genéricos de addons", () => {
     expect([...seleccionPorDefecto(RESUMEN)]).toEqual(["macros", "macros-cuenta"]);
   });
 
@@ -88,6 +89,7 @@ describe("importacion", () => {
     expect(pedidoDe(RESUMEN, seleccion, destinos, decisiones)).toEqual({
       seleccion: ["macros", "macros-cuenta"],
       cuentas: [{ cuenta: "1#1", entrada: "macros-cuenta", aceptar: true }],
+      perfiles: [],
     });
     expect(decisionesPendientes(RESUMEN, new Set(["macros"]), destinos)).toEqual([]);
   });

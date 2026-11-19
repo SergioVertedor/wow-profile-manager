@@ -1,6 +1,7 @@
 // Lo que decide la vista «Importar» (spec 024) sin pintar nada: de qué versiones salen los destinos, qué se marca por
 // defecto, qué hay que decidir en cada cuenta y cómo se arma lo que se pide al núcleo.
 import type {
+  DecisionPerfil,
   Deteccion,
   FicheroPlan,
   Grupo,
@@ -60,9 +61,12 @@ export function marcadosEnCuenta(destinos: ReadonlyMap<string, Destino>, cuenta:
   );
 }
 
-/** Marcado por defecto: todo lo que se puede importar. Las de cuenta se deciden además en cada cuenta. */
+/**
+ * Marcado por defecto: lo que se puede importar, salvo los ficheros genéricos de la configuración de addons (el paquete
+ * no lleva firma: no se fía de lo que marcó quien lo hizo). Las de cuenta se deciden además en cada cuenta.
+ */
 export function seleccionPorDefecto(resumen: ResumenPaquete): Set<string> {
-  return new Set(resumen.entradas.filter((e) => e.incompatible === undefined).map((e) => e.id));
+  return new Set(resumen.entradas.filter((e) => e.incompatible === undefined && e.marcada).map((e) => e.id));
 }
 
 /** Lo que hay que decidir: cada entrada de cuenta marcada en cada cuenta de los destinos, una sola vez. */
@@ -88,12 +92,19 @@ export function pedidoDe(
   seleccion: ReadonlySet<string>,
   destinos: readonly Destino[],
   decisiones: ReadonlyMap<string, boolean>,
+  perfiles: readonly DecisionPerfil[] = [],
 ): PedidoImportacion {
   const cuentas = decisionesPendientes(resumen, seleccion, destinos).flatMap(({ cuenta, entrada }) => {
     const aceptar = decisiones.get(claveDeDecision(cuenta, entrada));
     return aceptar === undefined ? [] : [{ cuenta, entrada, aceptar }];
   });
-  return { seleccion: [...seleccion], cuentas };
+  return { seleccion: [...seleccion], cuentas, perfiles: [...perfiles] };
+}
+
+/** Cambia (o pone) lo decidido con un perfil que ya existe en una cuenta. */
+export function decidirPerfil(perfiles: readonly DecisionPerfil[], decision: DecisionPerfil): DecisionPerfil[] {
+  const otras = perfiles.filter((d) => d.cuenta !== decision.cuenta || d.entrada !== decision.entrada);
+  return [...otras, decision];
 }
 
 export const GRUPOS: readonly Grupo[] = ["nuevo", "modificado", "sinCambios"];

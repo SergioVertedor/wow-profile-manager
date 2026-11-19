@@ -5,18 +5,32 @@
 //! El fichero guarda bytes, no texto UTF-8: se lee como Latin-1 (1 byte = 1 `char`) para que el parser lo acepte
 //! entero, y cada trozo que se copia vuelve a ser sus bytes al deshacer esa lectura.
 
-use full_moon::ast::{Ast, Expression, Field, Stmt, TableConstructor, Var};
+mod fusion;
+
+pub use fusion::{PerfilAcedb, fusionar_perfil, fusionar_variable};
+
+use full_moon::ast::{Ast, Expression, Field, Stmt, TableConstructor, UnOp, Var};
 use full_moon::node::Node;
 use full_moon::tokenizer::{TokenReference, TokenType};
 use full_moon::visitors::{Visit, Visitor};
 
 /// Marcador del personaje (`docs/formato-wowprofile.md`, «Marcadores»).
 pub const MARCADOR_PERSONAJE: &str = "@@WOWPROFILE:PERSONAJE@@";
+/// Claves de una variable AceDB (`docs/adaptadores.md`, «Qué es AceDB»).
+pub const CLAVE_PERSONAJES: &str = "profileKeys";
+pub const CLAVE_PERFILES: &str = "profiles";
+pub const CLAVE_NAMESPACES: &str = "namespaces";
+/// La clave del perfil dentro de una pieza `perfil-acedb`.
+pub const CLAVE_PERFIL: &str = "profile";
 /// Cualquier clave de ese nivel.
 const SEGMENTO_CUALQUIERA: &str = "*";
 /// La clave del personaje.
 const SEGMENTO_PERSONAJE: &str = "$PJ";
 const SEPARADOR_RUTA: char = '/';
+/// La variable con la que se envuelve una tabla suelta para poder parsearla.
+const VARIABLE_SUELTA: &str = "_";
+/// Los únicos símbolos que son datos.
+const SIMBOLOS_DE_DATOS: [&str; 3] = ["true", "false", "nil"];
 
 /// Un fichero leído. Si no parsea, no hay documento.
 pub struct Documento {
@@ -46,6 +60,63 @@ impl Documento {
             ast,
             fin_de_linea,
         })
+    }
+
+    /// Una tabla suelta (la pieza `perfil-acedb`) como documento de una sola variable, o `None` si no es exactamente un
+    /// valor. Los bytes de sus nodos son los de `bytes`: la envoltura queda fuera de cualquier rango.
+    pub fn leer_valor(bytes: &[u8]) -> Option<Self> {
+        let mut envuelto = format!("{VARIABLE_SUELTA} = ").into_bytes();
+        envuelto.extend(bytes);
+        let documento = Self::leer(&envuelto)?;
+        let bloque = documento.ast.nodes();
+        let una = bloque.stmts().count() == 1 && bloque.last_stmt().is_none();
+        (una && documento.variable(VARIABLE_SUELTA).is_some()).then_some(documento)
+    }
+
+    /// El valor de un documento leído con `leer_valor`.
+    pub fn valor_suelto(&self) -> Option<Variable<'_>> {
+        self.variable(VARIABLE_SUELTA)
+    }
+
+    /// Solo hay `Nombre = <dato>`: tablas, cadenas, números, `true`, `false` y `nil` (spec 028, decisión 1). El juego
+    /// ejecuta los `SavedVariables`: una llamada, una variable o una función de un paquete ajeno sería código.
+    pub fn solo_datos(&self) -> bool {
+        let bloque = self.ast.nodes();
+        let variables = self.variables();
+        bloque.last_stmt().is_none()
+            && bloque.stmts().count() == variables.len()
+            && variables.iter().all(|v| es_dato(v.valor))
+    }
+
+    /// El fichero entero, tal como se leyó.
+    pub fn bytes(&self) -> Vec<u8> {
+        a_bytes(&self.latin1)
+    }
+
+    /// El fichero con `nombre = valor`: si la variable existe se cambia solo su valor; si no, se añade al final. Lo
+    /// demás queda byte a byte.
+    pub fn con_variable(&self, nombre: &str, valor: &[u8]) -> Vec<u8> {
+        if let Some(variable) = self.variable(nombre)
+            && let Some((inicio, fin)) = variable.valor.range()
+            && let (Some(antes), Some(despues)) = (
+                self.latin1.get(..inicio.bytes()),
+                self.latin1.get(fin.bytes()..),
+            )
+        {
+            let mut salida = a_bytes(antes);
+            salida.extend(valor);
+            salida.extend(a_bytes(despues));
+            return salida;
+        }
+        let fin = self.fin_de_linea.as_bytes();
+        let mut salida = self.bytes();
+        if !salida.is_empty() && !salida.ends_with(b"\n") {
+            salida.extend(fin);
+        }
+        salida.extend(format!("{nombre} = ").as_bytes());
+        salida.extend(valor);
+        salida.extend(fin);
+        salida
     }
 
     /// Las asignaciones de una sola variable con nombre, en el orden del fichero.
@@ -96,6 +167,45 @@ impl Documento {
         self.bytes_de(variable.sentencia)
     }
 
+    /// Los bytes de `nodo` con `ediciones` (posición de inicio y de fin en el documento, y lo que va en su lugar)
+    /// aplicadas. Lo que no se edita queda tal cual.
+    fn editado(&self, nodo: &impl Node, mut ediciones: Vec<(usize, usize, Vec<u8>)>) -> Vec<u8> {
+        let Some((inicio, fin)) = nodo.range().map(|(i, f)| (i.bytes(), f.bytes())) else {
+            return Vec::new();
+        };
+        ediciones.sort_by_key(|(i, ..)| *i);
+        let mut salida = Vec::new();
+        let mut cursor = inicio;
+        for (desde, hasta, bytes) in ediciones {
+            salida.extend(
+                self.latin1
+                    .get(cursor..desde)
+                    .map(a_bytes)
+                    .unwrap_or_default(),
+            );
+            salida.extend(bytes);
+            cursor = hasta;
+        }
+        salida.extend(
+            self.latin1
+                .get(cursor..fin)
+                .map(a_bytes)
+                .unwrap_or_default(),
+        );
+        salida
+    }
+
+    /// Los espacios que hay al principio de la línea antes de la posición `posicion`, o nada si hay algo más.
+    fn sangria(&self, posicion: usize) -> String {
+        let antes = self.latin1.get(..posicion).unwrap_or_default();
+        let linea = antes.rsplit('\n').next().unwrap_or_default();
+        if linea.chars().all(|c| c == ' ' || c == '\t') {
+            linea.to_owned()
+        } else {
+            String::new()
+        }
+    }
+
     pub fn fin_de_linea(&self) -> &'static str {
         self.fin_de_linea
     }
@@ -105,6 +215,7 @@ impl Documento {
         Recorte {
             documento: self,
             personaje: seleccion.personaje,
+            salida_personaje: MARCADOR_PERSONAJE,
         }
         .valor(valor, &Rutas::de(seleccion))
     }
@@ -157,7 +268,10 @@ impl<'a> Rutas<'a> {
 
 struct Recorte<'d> {
     documento: &'d Documento,
+    /// La clave del personaje tal como está en `documento`.
     personaje: &'d str,
+    /// Cómo se escribe la clave del personaje en la salida: el marcador al exportar, la del destino al importar.
+    salida_personaje: &'d str,
 }
 
 impl Recorte<'_> {
@@ -200,7 +314,7 @@ impl Recorte<'_> {
                 continue;
             };
             if es_personaje {
-                cuerpo.extend(format!("[\"{MARCADOR_PERSONAJE}\"]").as_bytes());
+                cuerpo.extend(clave_entre_corchetes(self.salida_personaje));
             } else {
                 cuerpo.extend(self.documento.bytes_de_clave(campo));
             }
@@ -290,6 +404,34 @@ impl Documento {
     }
 }
 
+/// AceDB: el valor es una tabla con `profileKeys` y `profiles`.
+pub fn es_acedb(valor: &Expression) -> bool {
+    tabla(valor).is_some_and(|t| {
+        campo(t, CLAVE_PERSONAJES).and_then(tabla).is_some()
+            && campo(t, CLAVE_PERFILES).and_then(tabla).is_some()
+    })
+}
+
+/// Un valor que es solo dato, a cualquier profundidad.
+fn es_dato(valor: &Expression) -> bool {
+    match valor {
+        Expression::String(_) | Expression::Number(_) => true,
+        Expression::Symbol(token) => {
+            SIMBOLOS_DE_DATOS.contains(&token.token().to_string().as_str())
+        }
+        Expression::UnaryOperator {
+            unop: UnOp::Minus(_),
+            expression,
+        } => matches!(**expression, Expression::Number(_)),
+        Expression::TableConstructor(tabla) => tabla.fields().iter().all(|campo| match campo {
+            Field::ExpressionKey { key, value, .. } => es_dato(key) && es_dato(value),
+            Field::NameKey { value, .. } | Field::NoKey(value) => es_dato(value),
+            _ => false,
+        }),
+        _ => false,
+    }
+}
+
 /// La tabla de un valor, si lo es.
 pub fn tabla(valor: &Expression) -> Option<&TableConstructor> {
     match valor {
@@ -371,6 +513,21 @@ impl Visitor for ClavesDeCadena {
 /// Un texto UTF-8 como lo vería el parser: cada byte, un `char` (para comparar con las claves de un documento).
 pub fn a_latin1(texto: &str) -> String {
     texto.bytes().map(char::from).collect()
+}
+
+/// Un texto UTF-8 tal como va entre comillas en un fichero, en Latin-1 (spec 028, decisión 12): `\`, `"` y los
+/// caracteres de control escapados (`\ddd`), para que un nombre con un salto de línea no rompa el fichero.
+pub fn literal_latin1(texto: &str) -> String {
+    let mut escapado = String::with_capacity(texto.len());
+    for c in texto.chars() {
+        match c {
+            '\\' => escapado.push_str("\\\\"),
+            '"' => escapado.push_str("\\\""),
+            c if c.is_ascii_control() => escapado.push_str(&format!("\\{:03}", u32::from(c))),
+            c => escapado.push(c),
+        }
+    }
+    a_latin1(&escapado)
 }
 
 /// `["clave"]` con los bytes originales de una clave leída en Latin-1.
@@ -512,6 +669,109 @@ mod tests {
             recorte(fuente, "Db", &seleccion(Some(&incluir), &[], &[])).unwrap(),
             "{\n[\"l\"] = {\n\"a\",\n\"b\",\n},\n[\"m\"] = {\n[\"k\"] = 1,\n},\n}"
         );
+    }
+
+    #[test]
+    fn solo_datos_admite_datos_y_rechaza_codigo() {
+        let datos = "A = {
+[\"s\"] = \"x\",
+[1] = -2.5,
+n = nil,
+{ true, false },
+}
+B = 3
+";
+        assert!(Documento::leer(datos.as_bytes()).unwrap().solo_datos());
+        for codigo in [
+            "A = RunScript(\"x\")",
+            "A = { k = os.exit() }",
+            "A = { k = Otra }",
+            "A = function() end",
+            "A = 1 + 2",
+            "A = -x",
+            "A = ...",
+            "RunScript(\"x\")",
+            "local A = 1",
+            "A, B = 1, 2",
+            "A = 1
+return A",
+            "A = { [f()] = 1 }",
+        ] {
+            let documento = Documento::leer(codigo.as_bytes()).unwrap();
+            assert!(!documento.solo_datos(), "{codigo}");
+        }
+    }
+
+    #[test]
+    fn valor_suelto_es_exactamente_una_tabla() {
+        let documento = Documento::leer_valor(
+            b"{
+[\"a\"] = 1,
+}
+",
+        )
+        .unwrap();
+        let valor = documento.valor_suelto().unwrap();
+        assert_eq!(
+            documento.bytes_de(valor.valor),
+            b"{
+[\"a\"] = 1,
+}"
+        );
+        assert!(documento.solo_datos());
+        assert!(Documento::leer_valor(b"{} X = 1").is_none());
+        assert!(Documento::leer_valor(b"{} return").is_none());
+        assert!(Documento::leer_valor(b"{").is_none());
+    }
+
+    #[test]
+    fn con_variable_cambia_solo_su_valor_o_la_anade() {
+        let mut bytes = b"-- x
+A = {
+[\"k\"] = \""
+            .to_vec();
+        bytes.push(0xFF);
+        bytes.extend(
+            b"\",
+}
+B = 1
+",
+        );
+        let documento = Documento::leer(&bytes).unwrap();
+        let mut esperado = b"-- x
+A = {
+[\"k\"] = \""
+            .to_vec();
+        esperado.push(0xFF);
+        esperado.extend(
+            b"\",
+}
+B = 2
+",
+        );
+        assert_eq!(documento.con_variable("B", b"2"), esperado);
+        let mut anadida = bytes.clone();
+        anadida.extend(
+            b"C = 3
+",
+        );
+        assert_eq!(documento.con_variable("C", b"3"), anadida);
+        let sin_salto = Documento::leer(b"A = 1").unwrap();
+        assert_eq!(
+            sin_salto.con_variable("C", b"3"),
+            b"A = 1
+C = 3
+"
+        );
+    }
+
+    #[test]
+    fn literal_escapa_comillas_y_barras() {
+        assert_eq!(literal_latin1("Gø \"x\" \\"), a_latin1("Gø \\\"x\\\" \\\\"));
+        assert_eq!(literal_latin1("a\nb\r"), "a\\010b\\013");
+        // Escapado, vuelve a parsear.
+        let texto = format!("A = \"{}\"", literal_latin1("x\n\"\\y"));
+        assert!(Documento::leer(texto.as_bytes()).unwrap().solo_datos());
     }
 
     #[test]

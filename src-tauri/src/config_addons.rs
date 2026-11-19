@@ -6,8 +6,9 @@ use crate::addons::Addon;
 use crate::descubrimiento::CARPETA_SAVED_VARIABLES as CARPETA_SV;
 use crate::deteccion::PersonajeUbicado;
 use crate::lua::{
-    self, Documento, MARCADOR_PERSONAJE, Seleccion, Variable, a_latin1, a_utf8, cadena, campo,
-    campos, clave_entre_corchetes, tabla,
+    self, CLAVE_NAMESPACES, CLAVE_PERFILES, CLAVE_PERSONAJES, Documento, MARCADOR_PERSONAJE,
+    Seleccion, Variable, a_latin1, a_utf8, cadena, campo, campos, clave_entre_corchetes, es_acedb,
+    tabla,
 };
 use crate::paquetes::{
     Ambito, Categoria, DeAddon, MARCADOR, MAX_BYTES_PIEZA, Marcador, Pieza, RefAdaptador, Tipo,
@@ -19,9 +20,6 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 const EXTENSION_LUA: &str = ".lua";
-const CLAVE_PERSONAJES: &str = "profileKeys";
-const CLAVE_PERFILES: &str = "profiles";
-const CLAVE_NAMESPACES: &str = "namespaces";
 /// `perfil` en el schema 1.0.
 const MAX_PERFIL: usize = 128;
 const MAX_ID: usize = 64;
@@ -532,14 +530,6 @@ fn de_addon(addon: &Addon) -> DeAddon {
         addon: addon.carpeta.clone(),
         ..DeAddon::default()
     }
-}
-
-/// AceDB: la variable es una tabla con `profileKeys` y `profiles`.
-fn es_acedb(valor: &full_moon::ast::Expression) -> bool {
-    tabla(valor).is_some_and(|t| {
-        campo(t, CLAVE_PERSONAJES).and_then(tabla).is_some()
-            && campo(t, CLAVE_PERFILES).and_then(tabla).is_some()
-    })
 }
 
 /// El nombre del perfil (Latin-1) y la pieza

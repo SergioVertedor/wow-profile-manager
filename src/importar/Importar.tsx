@@ -8,13 +8,14 @@ import type { UsoDeteccion } from "../instalaciones/useDeteccion";
 import {
   abrirPaquete,
   cerrarPaquete,
+  type DecisionPerfil,
   type Deteccion,
   type ResultadoImportacion,
   type ResumenPaquete,
 } from "../nucleo";
 import { mensajeDeError } from "../textos/errores";
 import { fechaLegible } from "../textos/formato";
-import { pedidoDe, seleccionPorDefecto, type Destino } from "./importacion";
+import { decidirPerfil, pedidoDe, seleccionPorDefecto, type Destino } from "./importacion";
 import css from "./Importar.module.css";
 import PasoDestino from "./PasoDestino";
 import PasoSeleccion from "./PasoSeleccion";
@@ -109,6 +110,7 @@ function Asistente({ resumen, deteccion, irAHistorial }: PropsAsistente) {
   const [destinos, setDestinos] = useState<ReadonlyMap<string, Destino>>(new Map());
   const [seleccion, setSeleccion] = useState<ReadonlySet<string>>(() => seleccionPorDefecto(resumen));
   const [decisiones, setDecisiones] = useState<ReadonlyMap<string, boolean>>(new Map());
+  const [perfiles, setPerfiles] = useState<readonly DecisionPerfil[]>([]);
   const lista = [...destinos.values()];
   const indice = PASOS.indexOf(paso);
   const puedeSeguir = (paso === "destino" && destinos.size > 0) || (paso === "seleccion" && seleccion.size > 0);
@@ -141,7 +143,8 @@ function Asistente({ resumen, deteccion, irAHistorial }: PropsAsistente) {
           <VistaPrevia
             resumen={resumen}
             destinos={lista}
-            pedido={pedidoDe(resumen, seleccion, lista, decisiones)}
+            pedido={pedidoDe(resumen, seleccion, lista, decisiones, perfiles)}
+            decidirPerfil={(decision) => setPerfiles((actuales) => decidirPerfil(actuales, decision))}
             alAplicar={(hechos) => {
               setResultados(hechos);
               setPaso("resultado");

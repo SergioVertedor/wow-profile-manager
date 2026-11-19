@@ -60,6 +60,13 @@ pub struct Regla {
     pub clave_personaje: ClavePersonaje,
 }
 
+impl Regla {
+    /// `entera` y `excluir` dejan pasar claves que nadie ha listado: solo valen con la versión medida.
+    pub fn deja_pasar_sin_nombrar(&self) -> bool {
+        self.entera || !self.excluir.is_empty()
+    }
+}
+
 /// Cómo escribe el addon la clave del personaje.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -74,10 +81,7 @@ pub enum ClavePersonaje {
 impl Adaptador {
     /// Las reglas que dejan pasar claves que nadie ha listado (`entera`, `excluir`) solo valen con la versión medida.
     pub fn version_medida(&self, instalada: Option<&str>) -> bool {
-        let necesita = self
-            .reglas
-            .iter()
-            .any(|r| r.entera || !r.excluir.is_empty());
+        let necesita = self.reglas.iter().any(Regla::deja_pasar_sin_nombrar);
         !necesita || instalada.is_some_and(|v| self.versiones_addon.iter().any(|m| m == v))
     }
 }

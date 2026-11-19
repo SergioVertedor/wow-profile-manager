@@ -326,7 +326,9 @@
     "deLaCuenta": "{{categoria}} de la cuenta",
     "incompatible": {
       "noSeImporta": "esta versión aún no lo importa",
-      "destinoAjeno": "no se importa: apunta a un fichero que no es el suyo"
+      "destinoAjeno": "no se importa: apunta a un fichero que no es el suyo",
+      "piezaNoValida": "no se importa: no es solo configuración (podría llevar código que el juego ejecutaría)",
+      "adaptadorDesconocido": "esta versión no conoce cómo se aplica (adaptador desconocido o más nuevo)"
     },
     "teclasSinComprobar": "Las teclas se guardan como teclas propias de este personaje. Si antes usaba las comunes de la cuenta, entra al juego y comprueba que tiene las nuevas. Si no, puedes deshacer la importación desde el Historial.",
     "decisionesEtiqueta": "Lo que afecta a toda la cuenta",
@@ -341,7 +343,8 @@
       "modificado": "Modificados",
       "sinCambios": "Sin cambios",
       "conflictos": "Sin decidir",
-      "incompatibles": "No se importan"
+      "incompatibles": "No se importan",
+      "noAplicables": "No se aplican en este personaje"
     },
     "sinDecidir": "{{entrada}}: decide si se aplica en esta cuenta.",
     "nadaQueImportar": "Nada que importar en este personaje.",
@@ -360,7 +363,7 @@
     "aplicarImportacion": "Aplicar…",
     "noSePuedeAplicar": {
       "juegoAbierto": "Cierra WoW para poder aplicar.",
-      "conflictos": "Decide antes lo que afecta a toda la cuenta.",
+      "conflictos": "Decide antes lo que falta: lo que afecta a toda la cuenta y los perfiles que ya existen.",
       "nada": "No hay nada que escribir: todo está ya igual."
     },
     "confirmar": {
@@ -398,6 +401,38 @@
       "activados_other": "Se activan {{count}}",
       "desactivados_one": "Se desactiva {{count}}",
       "desactivados_other": "Se desactivan {{count}}"
+    },
+    "addons": {
+      "titulo": "Configuración de addons",
+      "explicacion": "Va marcado lo que se reconoce como configuración. Los ficheros enteros van desmarcados: pueden llevar progreso, estado o datos de otros jugadores, y el perfil no dice quién lo hizo.",
+      "generico": "Fichero entero: puede llevar progreso, estado o datos de otros jugadores.",
+      "pieza": {
+        "perfilAcedb": "Perfil «{{perfil}}»",
+        "perfilDelPersonaje": "Perfil con el nombre del personaje",
+        "adaptador": "Ajustes: {{variable}}",
+        "genericoCuenta": "Fichero de la cuenta",
+        "genericoPersonaje": "Fichero del personaje"
+      }
+    },
+    "perfiles": {
+      "existe": "{{entrada}}: ya hay un perfil «{{perfil}}» distinto en esta cuenta.",
+      "renombrar": "Importarlo como «{{propuesto}}»",
+      "sobrescribir": "Sobrescribir «{{perfil}}»",
+      "usadoPor": "También lo usan {{personajes}}: sobrescribirlo les cambia la configuración."
+    },
+    "noAplicable": {
+      "sinNombre": "no se aplica: no se sabe cómo se llama este personaje en los datos del addon.",
+      "destinoIlegible": "no se aplica: su fichero en este personaje no se entiende y no se toca.",
+      "noEncaja": "no se aplica: lo que se escribiría no sería solo configuración, así que no se escribe."
+    },
+    "avisos": {
+      "faltaAddon": "{{addon}} no está instalado aquí: se guarda igual y lo usará cuando lo instales.",
+      "versionNoMedida": "{{addon}} {{instalada}}: esto se comprobó con la versión {{medidas}}; podría llevar algo más que su configuración.",
+      "sinVersion": "(sin versión)"
+    },
+    "elemento": {
+      "perfil": "Perfil «{{nombre}}»",
+      "perfilDe": "Perfil de {{nombre}}"
     }
   },
   "restaurar": {

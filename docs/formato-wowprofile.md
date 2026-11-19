@@ -159,13 +159,22 @@ se recortan. Una clave de personaje de `soloPersonaje` se escribe `["@@WOWPROFIL
 
 Cómo se aplica cada tipo al importar:
 - `fichero` y `fichero-filtrado`: se escribe en el `destino`, con WoW cerrado, sin tocar el `cache.md5` del
-  destino.
+  destino. En `config-addon`, el del personaje sustituye al fichero; el de cuenta solo cambia sus variables y deja las
+  demás del fichero (las que viajan como perfil, por ejemplo). Un genérico de cuenta no lleva ni toca una base AceDB
+  (`profileKeys` y `profiles`): eso solo entra como `perfil-acedb`.
 - `perfil-acedb`: se añade a `<variable>.profiles["<perfil>"]` del fichero de cuenta del destino (y cada módulo a
   `<variable>.namespaces["<módulo>"].profiles["<perfil>"]`), y se apunta **solo** el `profileKeys` del personaje destino
-  a ese perfil. Si ya existe un perfil con ese nombre, la app
-  pregunta (renombrar o sobrescribir).
-- `adaptador`: lo aplica el adaptador con ese `id`. Si la app no lo conoce, o conoce una versión anterior, la
-  entrada se ofrece desactivada y con aviso.
+  a ese perfil. Si ya existe un perfil con ese nombre y es distinto, la app
+  pregunta (renombrar o sobrescribir). Con el marcador, el perfil se llama como el personaje destino. Si la variable o el
+  fichero no existen, se crean.
+- Todo lo demás del fichero queda byte a byte: solo cambian los valores que cambian y lo nuevo se añade al final de su
+  tabla. La excepción son las entradas sin clave (las listas, que van por posición): si cambian, esa tabla se escribe de
+  nuevo, con sus entradas con clave tal cual. Si la pieza no trae ninguna, se quedan las del destino.
+- Antes de escribir, el fichero que sale se vuelve a leer: si no se entiende como datos, esa entrada no se aplica en ese
+  personaje y la vista previa lo dice.
+- `adaptador`: lo aplica el adaptador con ese `id`, con la regla del catálogo de la app: la pieza se vuelve a recortar
+  con ella, así que una clave que la regla no nombra no llega aunque venga en la pieza. Si la app no lo conoce, es de
+  otro addon o el paquete trae una versión más nueva que la suya, la entrada no se importa.
 
 Las entradas de `cuenta` que no se pueden aplicar solo al personaje destino (macros generales, opciones de
 cuenta) se muestran con lo que van a sobrescribir y solo se aplican si el usuario acepta.
@@ -202,6 +211,10 @@ Requisitos de la implementación, en este orden, **antes** de escribir nada:
      Si no, no se importa, aunque cumpla el patrón del schema: un paquete no puede mandar un fichero a un sitio que su
      categoría no explica.
    - La ruta real sale de esa tabla, no del texto del `destino`.
+
+7. Cada pieza `config-addon` tiene que ser **solo datos**: sentencias `Nombre = <valor>` (o una tabla suelta en
+   `perfil-acedb`) con tablas, cadenas, números, `true`, `false` y `nil`. Una llamada a función, una variable, una
+   función o un operador hacen que la entrada no se importe: el juego ejecuta los `SavedVariables` al cargarlos.
 
 Después vienen la vista previa, el backup y la escritura, con WoW cerrado.
 
