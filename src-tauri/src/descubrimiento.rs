@@ -67,6 +67,10 @@ pub fn descubrir(carpeta_account: &Path, producto: Producto) -> Result<Cuentas, 
         if es_cuenta(&carpeta.nombre) {
             cuentas.push(leer_cuenta(carpeta.nombre, &carpeta.ruta, producto)?);
         } else {
+            log::info!(
+                "{}: saltada, no tiene la forma de una cuenta (<número>#<número>)",
+                carpeta.ruta.display()
+            );
             ignoradas += 1;
         }
     }

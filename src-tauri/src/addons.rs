@@ -40,7 +40,14 @@ pub fn descubrir_addons(carpeta_addons: &Path, producto: Producto) -> Result<Add
                 carpeta: carpeta.nombre,
                 toc,
             }),
-            None => ignoradas += 1,
+            None => {
+                let [propio, general] = nombres_de_toc(&carpeta.nombre, producto);
+                log::info!(
+                    "{}: saltada, sin {propio} ni {general} que el juego cargue",
+                    carpeta.ruta.display()
+                );
+                ignoradas += 1;
+            }
         }
     }
     Ok(Addons { addons, ignoradas })

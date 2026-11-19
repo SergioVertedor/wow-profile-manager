@@ -5,30 +5,22 @@
   "nav": {
     "etiqueta": "Views",
     "personajes": "Characters",
-    "acercaDe": "About",
     "instalaciones": "Installations",
     "historial": "History",
-    "importar": "Import"
+    "importar": "Import",
+    "diagnostico": "Diagnostics",
+    "acercaDe": "About"
   },
   "personajes": {
     "titulo": "Characters",
     "buscando": "Looking for WoW installations…",
     "ninguna": "No WoW installation found on this computer.",
     "versiones": "Game version",
-    "fuente": {
-      "registro": "Found in the Windows registry",
-      "manual": "Added by hand",
-      "battlenet": "Found by the Battle.net agent"
-    },
     "build": "Build",
     "addons": "Addons",
     "noSoportada": "This app does not support this game version.",
     "sinInterfaz": "Open the game once with this version: until then it cannot be exported.",
     "sinCuentas": "No accounts yet: log in to the game once.",
-    "cuentasIgnoradas_one": "{{count}} folder in WTF/Account is not an account and was skipped.",
-    "cuentasIgnoradas_other": "{{count}} folders in WTF/Account are not accounts and were skipped.",
-    "addonsIgnorados_one": "{{count}} folder in Interface/AddOns has no .toc the game loads and was skipped.",
-    "addonsIgnorados_other": "{{count}} folders in Interface/AddOns have no .toc the game loads and were skipped.",
     "verAddons_one": "Show the installed addon",
     "verAddons_other": "Show the {{count}} installed addons",
     "addon": "{{titulo}} · {{version}}",
@@ -449,5 +441,20 @@
     "estado": "Game state, not settings: what you track, what you have already seen or what you have collapsed.",
     "addonNoInstalado": "Addons that are not installed on this computer.",
     "viajaComoPerfil": "They travel separately, as their profile: that way only this character's one goes."
+  },
+  "diagnostico": {
+    "titulo": "Diagnostics",
+    "explicacion": "What the app is doing in this session: where it looked for the game, which folders it skipped and why, and every operation with its result. Use it to track down problems.",
+    "guardar": "Save the log to a .txt file",
+    "abrirCarpeta": "Open logs folder",
+    "privacidad": "The log never leaves this computer. It contains paths to your folders (with your Windows user name), the names of your account and addon folders, and system error messages: if you share it to ask for help, you share those too.",
+    "consola": "Log for this session",
+    "vacio": "No lines in this session yet."
+  },
+  "cierre": {
+    "titulo": "An operation is in progress",
+    "explicacion": "The app is writing to the game folder. If you close it now, whatever was left half done will be undone the next time you open it; if it was an import, you will be asked whether to restore it.",
+    "seguir": "Wait",
+    "cerrar": "Close anyway"
   }
 }

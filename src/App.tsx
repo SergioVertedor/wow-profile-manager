@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HardDrive, History, Import, Info, Users, type LucideIcon } from "lucide-react";
+import { HardDrive, History, Import, Info, ScrollText, Users, type LucideIcon } from "lucide-react";
 import AcercaDe from "./AcercaDe";
 import css from "./App.module.css";
+import Diagnostico from "./diagnostico/Diagnostico";
 import Importar from "./importar/Importar";
 import Instalaciones from "./instalaciones/Instalaciones";
 import Historial from "./historial/Historial";
 import { useDeteccion } from "./instalaciones/useDeteccion";
 import { pedirInfoApp, type InfoApp } from "./nucleo";
+import AvisoCierre from "./operaciones/AvisoCierre";
 import AvisoRecuperacion from "./operaciones/AvisoRecuperacion";
 import Personajes from "./personajes/Personajes";
 
@@ -17,13 +19,14 @@ type Estado =
   | { tipo: "error"; mensaje: string };
 
 /** Vistas de la ventana. Basta un estado: los pasos de importar viven dentro de su vista, sin rutas propias. */
-type Vista = "personajes" | "importar" | "instalaciones" | "historial" | "acercaDe";
+type Vista = "personajes" | "importar" | "instalaciones" | "historial" | "diagnostico" | "acercaDe";
 
 const ICONOS: Record<Vista, LucideIcon> = {
   personajes: Users,
   importar: Import,
   instalaciones: HardDrive,
   historial: History,
+  diagnostico: ScrollText,
   acercaDe: Info,
 };
 
@@ -58,16 +61,20 @@ function App() {
           <BotonVista vista="importar" actual={vista} elegir={setVista} />
           <BotonVista vista="instalaciones" actual={vista} elegir={setVista} />
           <BotonVista vista="historial" actual={vista} elegir={setVista} />
+          {/* Siempre: sobre todo hace falta cuando algo falla. */}
+          <BotonVista vista="diagnostico" actual={vista} elegir={setVista} />
           {estado.tipo === "listo" && <BotonVista vista="acercaDe" actual={vista} elegir={setVista} />}
         </nav>
         {estado.tipo === "listo" && <p className={css.pie}>{t("versionApp", { version: estado.info.version })}</p>}
       </aside>
       <main className={css.contenido}>
         <AvisoRecuperacion alRestaurar={deteccion.recargar} />
+        <AvisoCierre />
         {vista === "personajes" && <Personajes {...deteccion} />}
         {vista === "importar" && <Importar {...deteccion} irAHistorial={() => setVista("historial")} />}
         {vista === "instalaciones" && <Instalaciones {...deteccion} />}
         {vista === "historial" && <Historial alCambiarWtf={deteccion.recargar} />}
+        {vista === "diagnostico" && <Diagnostico />}
         {vista === "acercaDe" && estado.tipo === "listo" && <AcercaDe info={estado.info} />}
       </main>
     </div>

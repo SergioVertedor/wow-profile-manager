@@ -249,16 +249,15 @@ describe("Personajes", () => {
     expect(within(ficha()).getByText("SinTitulo")).toBeDefined();
   });
 
-  it("dice lo que se ha saltado: cuentas, reinos y addons, con su plural", async () => {
+  it("dice los reinos saltados, con su plural; la raíz y las carpetas saltadas van a Diagnóstico", async () => {
     pintar("es", () => instalacion(FOREVER));
 
     await screen.findByRole("heading", { name: "Goldberg Joestar" });
-    expect(screen.getByText("1 carpeta de WTF/Account no es una cuenta y se ha saltado.")).toBeDefined();
     expect(screen.getByText("2 carpetas de reino son de la otra versión del juego y se han saltado.")).toBeDefined();
-    expect(
-      screen.getByText("1 carpeta de Interface/AddOns no tiene un .toc que el juego cargue y se ha saltado."),
-    ).toBeDefined();
-    expect(screen.getByText("C:\\Juegos\\World of Warcraft — Encontrada en el registro de Windows")).toBeDefined();
+    // Spec 029: el pie de diagnóstico ya no está, aunque haya carpetas saltadas.
+    expect(screen.queryByText(/WTF\/Account/)).toBeNull();
+    expect(screen.queryByText(/Interface\/AddOns/)).toBeNull();
+    expect(screen.queryByText(/C:\\Juegos\\World of Warcraft/)).toBeNull();
   });
 
   it("una versión no compatible se puede elegir y dice por qué no hay personajes", async () => {

@@ -26,6 +26,8 @@ pub struct Preferencias {
     pub nombres_instalacion: BTreeMap<String, String>,
     /// Clave: `clave_cuenta`.
     pub nombres_cuenta: BTreeMap<String, String>,
+    /// El interruptor «Guardar registro de diagnóstico» (spec 029). Apagado si el fichero no lo trae.
+    pub registro: bool,
 }
 
 /// Lo que se guarda en disco: las preferencias con la versión del formato.
@@ -210,6 +212,19 @@ mod tests {
             cargar(&tmp.path().join("no-existe")).unwrap(),
             Preferencias::default()
         );
+    }
+
+    #[test]
+    fn un_fichero_sin_el_interruptor_del_registro_lo_deja_apagado() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::write(
+            tmp.path().join(FICHERO),
+            r#"{"version":1,"carpetasManuales":["D:\\WoW"]}"#,
+        )
+        .unwrap();
+        let preferencias = cargar(tmp.path()).unwrap();
+        assert!(!preferencias.registro);
+        assert_eq!(preferencias.carpetas_manuales, [PathBuf::from("D:\\WoW")]);
     }
 
     #[test]

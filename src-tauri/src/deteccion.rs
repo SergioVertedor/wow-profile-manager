@@ -173,28 +173,56 @@ pub fn detectar(
         no_encontradas: Vec::new(),
         preferencias: None,
     };
+    log::info!(
+        "detección: {} raíces del registro, {} del agente de Battle.net y {} a mano",
+        registro.len(),
+        agente.len(),
+        preferencias.carpetas_manuales.len()
+    );
     for (raiz, fuente) in candidatas {
         if !vistas.insert(clave_de_ruta(raiz)) {
+            log::info!("{} ({fuente:?}): repetida, ya contada", raiz.display());
             continue;
         }
         let nombre = preferencias.nombre_instalacion(raiz);
         match (leer_instalacion(raiz, preferencias), fuente) {
-            (Ok(Some(versiones)), _) => deteccion.instalaciones.push(Instalacion {
-                raiz: raiz.clone(),
-                fuente,
-                nombre,
-                versiones,
-            }),
+            (Ok(Some(versiones)), _) => {
+                log::info!(
+                    "{} ({fuente:?}): instalación con {} versiones",
+                    raiz.display(),
+                    versiones.len()
+                );
+                deteccion.instalaciones.push(Instalacion {
+                    raiz: raiz.clone(),
+                    fuente,
+                    nombre,
+                    versiones,
+                });
+            }
             // Una carpeta a mano que no se puede leer (unidad desconectada, permisos) no tumba la detección de las
             // demás: se lista como no encontrada.
             (Ok(None) | Err(_), Fuente::Manual) => {
+                log::warn!("{} (Manual): no encontrada", raiz.display());
                 deteccion.no_encontradas.push(CarpetaPerdida {
                     raiz: raiz.clone(),
                     nombre,
                 });
             }
-            // El agente es una pista: una ruta suya que no es una instalación o no se puede leer se calla.
-            (Ok(None), Fuente::Registro) | (Ok(None) | Err(_), Fuente::Battlenet) => {}
+            // El agente es una pista: una ruta suya que no es una instalación o no se puede leer se calla en la
+            // interfaz, pero queda en el registro.
+            (Ok(None), Fuente::Registro | Fuente::Battlenet) => {
+                log::info!(
+                    "{} ({fuente:?}): no es una instalación, sin {BUILD_INFO}",
+                    raiz.display()
+                );
+            }
+            (Err(error), Fuente::Battlenet) => {
+                log::info!(
+                    "{} (Battlenet): no se pudo leer: {}",
+                    raiz.display(),
+                    error.detalle()
+                );
+            }
             (Err(error), Fuente::Registro) => return Err(error),
         }
     }
@@ -274,6 +302,19 @@ fn leer_version(
             None,
         ),
     };
+    let soporte = if soportado.is_some() {
+        "soportada"
+    } else {
+        "no soportada: no se mira dentro"
+    };
+    log::info!(
+        "{}: producto «{producto}», {soporte}, {} cuentas ({} carpetas saltadas), {} addons ({} saltados)",
+        ruta.display(),
+        cuentas.cuentas.len(),
+        cuentas.ignoradas,
+        addons.addons.len(),
+        addons.ignoradas
+    );
     Ok(VersionJuego {
         build: build_de(build_info, &producto),
         interfaz,
