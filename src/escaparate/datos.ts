@@ -263,6 +263,7 @@ export const VISTA_PREVIA: VistaPrevia = {
         conflictos: [],
         conflictosPerfil: [],
         noAplicables: [],
+        addons: [],
         ficheros: [
           {
             entrada: "macros-personaje",

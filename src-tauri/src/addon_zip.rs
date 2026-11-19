@@ -220,7 +220,7 @@ pub fn leer(zip: &[u8]) -> Result<Vec<FicheroAddon>, ErrorAddon> {
 }
 
 /// `a/b/c.lua`: segmentos literales de Windows separados por `/`, sin `..` ni `.`, sin raíz ni unidad.
-fn ruta_relativa_valida(ruta: &str) -> bool {
+pub(crate) fn ruta_relativa_valida(ruta: &str) -> bool {
     let segmentos: Vec<&str> = ruta.split('/').collect();
     segmentos.len() <= MAX_PROFUNDIDAD + 1
         && segmentos

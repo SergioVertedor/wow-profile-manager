@@ -6,10 +6,12 @@
 //! ficheros de un perfil; y `deshacer` (spec 022), devolver lo que hizo una de las otras dos. El historial (listar,
 //! borrar, abrir) vive en `historial.rs`, deshacer en `deshacer.rs` e importar en `importar.rs`.
 
+mod carpetas;
 mod deshacer;
 mod historial;
 mod importar;
 
+pub use carpetas::{Cargar, InstalarCarpeta};
 pub use deshacer::PlanDeshacer;
 pub use historial::Historial;
 pub use importar::{AccionImportar, Escritura, PaqueteImportado};
@@ -165,6 +167,9 @@ struct Diario {
     error: Option<String>,
     destino: Destino,
     cambios: Vec<Cambio>,
+    /// Solo en `importacion` y en el `deshacer` de una: las carpetas de addons que instaló (spec 036).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    carpetas: Vec<carpetas::CarpetaInstalada>,
 }
 
 impl Diario {
@@ -589,6 +594,7 @@ fn preparar(
         error: None,
         destino: destino_de(personaje),
         cambios,
+        carpetas: Vec::new(),
     })
 }
 
@@ -649,6 +655,15 @@ fn restaurar(dir: &Path, diario: &mut Diario, motivo: String) -> bool {
         if let Err(error) = restaurar_uno(dir, diario, cambio) {
             faltan.push(error.detalle());
         }
+    }
+    // Las carpetas de addons solo las instala una importación: devolverla es quitarlas. Un deshacer las quita al final y
+    // no tiene copia de lo quitado: lo que no llegó a quitar se queda.
+    if diario.tipo == Tipo::Importacion {
+        faltan.extend(carpetas::quitar(
+            &diario.destino.raiz_version,
+            &diario.id,
+            &diario.carpetas,
+        ));
     }
     if faltan.is_empty() {
         diario.terminar(Estado::FallidaRestaurada, Some(motivo));
@@ -766,8 +781,9 @@ fn quitar_carpetas_vacias(carpeta: &Path) {
     let mut carpetas = vec![carpeta.to_path_buf()];
     let mut i = 0;
     while let Some(actual) = carpetas.get(i).cloned() {
+        // `subcarpetas` sigue enlaces: una unión de dentro no se recorre, para no quitar carpetas de fuera.
         if let Ok(hijas) = subcarpetas(&actual) {
-            carpetas.extend(hijas.into_iter().map(|h| h.ruta));
+            carpetas.extend(hijas.into_iter().map(|h| h.ruta).filter(|r| !es_enlace(r)));
         }
         i += 1;
     }

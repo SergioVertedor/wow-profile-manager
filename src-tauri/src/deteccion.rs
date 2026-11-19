@@ -115,8 +115,8 @@ const COLUMNA_FLAVOR: &str = "Product Flavor";
 pub const CARPETA_WTF: &str = "WTF";
 pub const CARPETA_ACCOUNT: &str = "Account";
 const CONFIG_WTF: &str = "Config.wtf";
-const CARPETA_INTERFACE: &str = "Interface";
-const CARPETA_ADDONS: &str = "AddOns";
+pub(crate) const CARPETA_INTERFACE: &str = "Interface";
+pub(crate) const CARPETA_ADDONS: &str = "AddOns";
 const PREFIJO_INTERFAZ: &str = "SET engineSurveyPatch ";
 
 /// Instalaciones de este equipo, buscadas en todas las fuentes. Si las preferencias no se pudieron leer, se detecta

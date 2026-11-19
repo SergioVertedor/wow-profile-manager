@@ -5,7 +5,7 @@
 mod lectura;
 
 use lectura::id_de_entrada_valido;
-pub use lectura::{EntradaLeida, ManifiestoLeido, PaqueteLeido, leer_fichero};
+pub use lectura::{EntradaLeida, ManifiestoLeido, PaqueteLeido, leer_carpeta, leer_fichero};
 
 use crate::addon_zip;
 use crate::error::ErrorNucleo;

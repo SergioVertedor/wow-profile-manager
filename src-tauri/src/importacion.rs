@@ -14,7 +14,8 @@ use crate::error::{ErrorNucleo, MotivoPaquete};
 use crate::modo_edicion;
 use crate::operaciones::{Operaciones, PaqueteImportado, sha256};
 use crate::paquetes::{
-    AmbitoEntrada, Categoria, EntradaLeida, ManifiestoLeido, PaqueteLeido, Tipo, leer_fichero,
+    AmbitoEntrada, Categoria, EntradaLeida, ManifiestoLeido, PaqueteLeido, Tipo, leer_carpeta,
+    leer_fichero,
 };
 use crate::piezas::{Filtro, Fuente, Quitadas, fuente_de_destino};
 pub use aplicar::ResultadoPersonaje;
@@ -118,6 +119,9 @@ pub struct Destino {
     pub instalados: HashSet<String>,
     /// La versión de cada addon instalado (por carpeta en minúsculas), si la declara.
     pub versiones: HashMap<String, Option<String>>,
+    /// Todo lo que hay en `Interface/AddOns`, en minúsculas, cargue o no el juego: una carpeta de addon solo se
+    /// instala si no hay nada con su nombre (spec 036).
+    pub en_addons: HashSet<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -148,6 +152,20 @@ pub struct PlanPersonaje {
     pub conflictos_perfil: Vec<ConflictoPerfil>,
     /// Entradas que no se pueden aplicar en este personaje.
     pub no_aplicables: Vec<NoAplicable>,
+    /// Carpetas de addons del paquete (spec 036). Son de la instalación: van solo en el primer personaje.
+    pub addons: Vec<AddonPlan>,
+}
+
+/// Una carpeta de addon del plan: se instala si no hay ninguna con su nombre; si la hay, no se toca.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AddonPlan {
+    pub entrada: String,
+    pub addon: String,
+    /// Ya hay algo con ese nombre en `Interface/AddOns`: no se instala.
+    pub ya_instalado: bool,
+    /// Lo que ocupa la pieza en el paquete.
+    pub bytes: u64,
 }
 
 /// Algo que avisar de un fichero de la configuración de addons.
@@ -334,6 +352,9 @@ pub fn resumen(paquete: &PaqueteLeido) -> Resumen {
 }
 
 fn entrada_resumen(entrada: &EntradaLeida, paquete: &PaqueteLeido) -> EntradaResumen {
+    if es_carpeta(entrada) {
+        return resumen_de_carpeta(entrada);
+    }
     let clasificada = clasificar(entrada, paquete);
     let (de_cuenta, marcada, generica, que_trae) = match &clasificada {
         Ok(Clasificada::Fichero(importable)) => (
@@ -367,6 +388,32 @@ fn entrada_resumen(entrada: &EntradaLeida, paquete: &PaqueteLeido) -> EntradaRes
         incompatible: clasificada.err(),
         contenido: que_trae,
     }
+}
+
+/// La carpeta de un addon (formato 1.1): marcada como el resto (decisión 1 de la spec 036), de la instalación.
+fn resumen_de_carpeta(entrada: &EntradaLeida) -> EntradaResumen {
+    EntradaResumen {
+        id: entrada.id.clone(),
+        categoria: entrada.categoria.clone(),
+        tipo: entrada.tipo.clone(),
+        ambito: entrada.ambito,
+        de_cuenta: false,
+        bytes: entrada.bytes,
+        marcada: true,
+        generica: false,
+        addon: entrada.addon.clone(),
+        variable: None,
+        perfil: None,
+        incompatible: None,
+        contenido: None,
+    }
+}
+
+/// Una pieza que es la carpeta de un addon. Leer el paquete ya comprobó que su destino es `addons/<addon>`.
+fn es_carpeta(entrada: &EntradaLeida) -> bool {
+    entrada.categoria_conocida() == Some(Categoria::Addon)
+        && entrada.tipo_conocido() == Some(Tipo::Carpeta)
+        && entrada.addon.is_some()
 }
 
 /// Todos de una misma instalación y de la versión del juego del paquete, sin repetir. Si no, no se planifica.
@@ -423,12 +470,34 @@ pub fn leer_destino(
             .into_iter()
             .map(|a| (a.carpeta.to_lowercase(), a.datos.version))
             .collect();
+    // Solo hace falta si el paquete trae carpetas: un `AddOns` que no se puede leer no bloquea los demás.
+    let en_addons = if paquete.manifiesto.entradas.iter().any(es_carpeta) {
+        nombres_en(&deteccion::carpeta_addons(&personaje.raiz_version))?
+    } else {
+        HashSet::new()
+    };
     Ok(Destino {
         personaje,
         actuales,
         instalados: versiones.keys().cloned().collect(),
         versiones,
+        en_addons,
     })
+}
+
+/// Los nombres de lo que hay en `carpeta`, en minúsculas. Si no existe, ninguno.
+fn nombres_en(carpeta: &Path) -> Result<HashSet<String>, ErrorNucleo> {
+    let entradas = match std::fs::read_dir(carpeta) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(HashSet::new()),
+        Err(e) => return Err(ErrorNucleo::lectura(carpeta, &e)),
+        Ok(entradas) => entradas,
+    };
+    entradas
+        .map(|e| {
+            e.map(|e| e.file_name().to_string_lossy().to_lowercase())
+                .map_err(|e| ErrorNucleo::lectura(carpeta, &e))
+        })
+        .collect()
 }
 
 /// El contenido de un fichero, o `None` solo si no existe. Si no se puede mirar, es un error: un fichero que existe y no
@@ -476,8 +545,13 @@ pub fn planificar(
     let mut incompatibles = Vec::new();
     let mut importables = Vec::new();
     let mut de_addons = Vec::new();
+    let mut carpetas = Vec::new();
     for entrada in &paquete.manifiesto.entradas {
         if !pedido.seleccion.contains(&entrada.id) {
+            continue;
+        }
+        if es_carpeta(entrada) {
+            carpetas.push(entrada);
             continue;
         }
         match clasificar(entrada, paquete) {
@@ -515,10 +589,29 @@ pub fn planificar(
         plan.conflictos_perfil = addons.conflictos_perfil;
         plan.no_aplicables.extend(addons.no_aplicables);
     }
+    if let (Some(plan), Some(destino)) = (personajes.first_mut(), destinos.first()) {
+        plan.addons = planificar_carpetas(destino, &carpetas);
+    }
     Ok(Plan {
         personajes,
         incompatibles,
     })
+}
+
+/// Las carpetas de addons, en el primer personaje: son de la instalación, comprobada igual para todos.
+fn planificar_carpetas(destino: &Destino, carpetas: &[&EntradaLeida]) -> Vec<AddonPlan> {
+    carpetas
+        .iter()
+        .filter_map(|entrada| {
+            let addon = entrada.addon.clone()?;
+            Some(AddonPlan {
+                entrada: entrada.id.clone(),
+                ya_instalado: destino.en_addons.contains(&addon.to_lowercase()),
+                addon,
+                bytes: entrada.bytes,
+            })
+        })
+        .collect()
 }
 
 /// Cuenta → carpeta del primer personaje del plan que escribe en ella: los siguientes no la vuelven a escribir (sus
@@ -590,6 +683,7 @@ fn planificar_personaje<'a>(
         conflictos,
         conflictos_perfil: Vec::new(),
         no_aplicables,
+        addons: Vec::new(),
     }
 }
 
@@ -851,7 +945,24 @@ impl PaquetesAbiertos {
             nombre: paquete.manifiesto.perfil.nombre.clone(),
             sha256: paquete.sha256.clone(),
         };
-        aplicar::aplicar(&plan, &destinos, &importado, operaciones, juego_en_marcha)
+        // Cada carpeta se vuelve a leer del fichero al instalarla, de una en una.
+        let cargar = |id: &str| {
+            let entrada = paquete
+                .manifiesto
+                .entradas
+                .iter()
+                .find(|e| e.id == id)
+                .ok_or(ErrorNucleo::PaqueteCambiado {})?;
+            leer_carpeta(&ruta, entrada)
+        };
+        aplicar::aplicar(
+            &plan,
+            &destinos,
+            &importado,
+            operaciones,
+            &cargar,
+            juego_en_marcha,
+        )
     }
 
     fn abierto(&self, sha256: &str) -> Result<Arc<PaqueteLeido>, ErrorNucleo> {
@@ -961,6 +1072,7 @@ mod tests {
                 .map(|(d, b)| ((*d).to_owned(), Some(b.to_vec())))
                 .collect(),
             instalados: HashSet::new(),
+            en_addons: HashSet::new(),
             versiones: HashMap::new(),
         }
     }

@@ -3,8 +3,9 @@
 //! su cuenta van en la del primer personaje de esa cuenta (eso lo decide el plan, no este módulo).
 //!
 //! Aquí no se planifica nada: se escriben exactamente los bytes del plan, y solo si cada fichero sigue como estaba al
-//! planificar.
+//! planificar. Las carpetas de addons (spec 036) se instalan después de los ficheros (`carpetas.rs`).
 
+use super::carpetas::{self, Cargar, InstalarCarpeta};
 use super::{
     Accion, Antes, Cambio, Despues, Diario, ESQUEMA, Estado, MAXIMO_CAMBIOS, Operaciones, Tipo,
     ahora_rfc3339, base_de, comprobar, comprobar_bases, contenido, copia_n, destino_de, ejecutar,
@@ -57,13 +58,16 @@ pub struct Escritura {
 }
 
 impl Operaciones {
-    /// Escribe `escrituras` en el `WTF` de `personaje` como una operación `importacion`. Si algún fichero ya no está
-    /// como al planificar, no crea nada (`PlanCaducado`). Devuelve el id de la operación.
+    /// Escribe `escrituras` en el `WTF` de `personaje` e instala `carpetas` en `Interface/AddOns` de su versión, como
+    /// una operación `importacion`. Si algún fichero ya no está como al planificar o alguna carpeta ya existe, no crea
+    /// nada (`PlanCaducado`). Devuelve el id de la operación.
     pub fn importar(
         &self,
         personaje: &PersonajeUbicado,
         paquete: PaqueteImportado,
         escrituras: Vec<Escritura>,
+        carpetas: Vec<InstalarCarpeta>,
+        cargar: &Cargar,
         juego_en_marcha: impl Fn() -> bool,
     ) -> Result<String, ErrorNucleo> {
         let _turno = self.cerrojo.lock().unwrap_or_else(|e| e.into_inner());
@@ -74,6 +78,10 @@ impl Operaciones {
         self.recuperar_sin_cerrojo(&juego_en_marcha);
         self.sin_operacion_por_resolver()?;
         let (mut diario, contenidos) = preparar(personaje, paquete, escrituras)?;
+        diario.carpetas = carpetas::preparar(&personaje.raiz_version, carpetas, cargar)?;
+        if diario.cambios.is_empty() && diario.carpetas.is_empty() {
+            return Err(ErrorNucleo::PlanCaducado {});
+        }
         let (id, dir) = self.nueva_carpeta()?;
         diario.id = id;
         if let Err(error) = guardar(&dir, &diario) {
@@ -82,7 +90,13 @@ impl Operaciones {
             return Err(error);
         }
         ejecutar(&dir, diario, &juego_en_marcha, |diario| {
-            escribir(diario, &contenidos)
+            escribir(diario, &contenidos)?;
+            carpetas::instalar(
+                &diario.destino.raiz_version,
+                &diario.id,
+                &diario.carpetas,
+                cargar,
+            )
         })
     }
 }
@@ -94,7 +108,7 @@ fn preparar(
     paquete: PaqueteImportado,
     escrituras: Vec<Escritura>,
 ) -> Result<(Diario, Vec<Vec<u8>>), ErrorNucleo> {
-    if escrituras.is_empty() || escrituras.len() > MAXIMO_CAMBIOS {
+    if escrituras.len() > MAXIMO_CAMBIOS {
         return Err(ErrorNucleo::PlanCaducado {});
     }
     let destino = destino_de(personaje);
@@ -132,6 +146,7 @@ fn preparar(
         error: None,
         destino,
         cambios,
+        carpetas: Vec::new(),
     };
     comprobar_bases(&diario)?;
     let mut copias = 0;

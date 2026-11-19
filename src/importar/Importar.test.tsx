@@ -101,6 +101,7 @@ const VISTA: VistaPrevia = {
         conflictos: ["macros-cuenta"],
         conflictosPerfil: [],
         noAplicables: [],
+        addons: [],
         ficheros: [
           {
             entrada: "macros",
