@@ -20,4 +20,10 @@ export default tseslint.config(
       "sonarjs/cognitive-complexity": ["error", 15],
     },
   },
+  {
+    // Herramientas de desarrollo que corren con Node (p. ej. `scripts/capturas.mjs`).
+    files: ["scripts/**/*.mjs"],
+    languageOptions: { globals: globals.node },
+    rules: { "no-console": "error", "sonarjs/cognitive-complexity": ["error", 15] },
+  },
 );
