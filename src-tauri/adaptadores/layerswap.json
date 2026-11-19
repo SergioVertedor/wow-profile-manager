@@ -1,0 +1,7 @@
+{
+  "id": "layerswap",
+  "version": 1,
+  "addon": "LayerSwap",
+  "medido": "Datos de sesión (session, previous, hostLockWho) con nombres de personajes: estado.",
+  "noExportar": true
+}

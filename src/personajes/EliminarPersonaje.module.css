@@ -1,0 +1,20 @@
+/* «Eliminar carpeta»: un botón discreto bajo la ficha. El rojo de alerta solo aparece al pasar por encima y en la
+   confirmación (`estilo/Dialogo.module.css`): no es una acción para hacer de pasada. */
+.boton {
+  display: inline-flex;
+  gap: var(--espacio-2);
+  align-items: center;
+  margin-top: var(--espacio-6);
+  padding: var(--espacio-1) var(--espacio-3);
+  border: 1px solid var(--color-linea-control);
+  border-radius: var(--radio-s);
+  background: none;
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+  cursor: pointer;
+}
+
+.boton:hover {
+  border-color: var(--color-alerta);
+  color: var(--color-alerta);
+}

@@ -1,0 +1,72 @@
+/* Acerca de: una sola tarjeta de lectura con la luz del escenario y el aviso de marca debajo, discreto pero visible. */
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  max-width: var(--ancho-texto);
+  padding: var(--espacio-5) var(--espacio-7);
+}
+
+.titulo {
+  font-size: var(--texto-l);
+}
+
+.pergamino {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  padding: var(--espacio-6);
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, var(--oro-halo) 0%, transparent 70%),
+    var(--color-superficie);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-l);
+  box-shadow: inset 0 1px 0 var(--luz-borde);
+}
+
+.version {
+  font-size: var(--texto-m);
+  font-weight: 650;
+  font-variation-settings: var(--abocinado);
+}
+
+.koFi {
+  display: flex;
+  gap: var(--espacio-2);
+  align-items: baseline;
+}
+
+.tazaKoFi {
+  /* Taza oficial de Ko-fi (285×229), a la altura de la línea de texto. */
+  flex: none;
+  align-self: center;
+  width: 1.375rem;
+  height: auto;
+}
+
+.alerta {
+  color: var(--color-alerta);
+}
+
+.marca {
+  color: var(--color-texto-3);
+  font-size: var(--texto-pequeno);
+}
+
+.actualizaciones {
+  padding-top: var(--espacio-3);
+  border-top: 1px solid var(--color-linea-control);
+}
+
+.interruptor {
+  display: inline-flex;
+  gap: var(--espacio-2);
+  align-items: center;
+  cursor: pointer;
+}
+
+.ayuda {
+  margin-top: var(--espacio-1);
+  color: var(--color-texto-2);
+  font-size: var(--texto-control);
+}

@@ -1,0 +1,510 @@
+{
+  "cargando": "Cargando…",
+  "cabecera": "{{nombre}} {{version}}",
+  "errorNucleo": "No se pudo contactar con el núcleo: {{mensaje}}",
+  "nav": {
+    "etiqueta": "Vistas",
+    "personajes": "Personajes",
+    "instalaciones": "Instalaciones",
+    "historial": "Historial",
+    "importar": "Importar",
+    "diagnostico": "Diagnóstico",
+    "acercaDe": "Acerca de"
+  },
+  "personajes": {
+    "titulo": "Personajes",
+    "buscando": "Buscando instalaciones de WoW…",
+    "ninguna": "No se ha encontrado ninguna instalación de WoW en este equipo.",
+    "versiones": "Versión del juego",
+    "build": "Build",
+    "addons": "Addons",
+    "noSoportada": "La app no es compatible con esta versión del juego.",
+    "sinInterfaz": "Abre el juego una vez con esta versión: hasta entonces no se puede exportar.",
+    "sinCuentas": "Todavía no hay cuentas: entra al juego una vez.",
+    "verAddons_one": "Ver el addon instalado",
+    "verAddons_other": "Ver los {{count}} addons instalados",
+    "addon": "{{titulo}} · {{version}}",
+    "versionDeInstalacion": "{{instalacion}} · {{version}}"
+  },
+  "plantel": {
+    "etiqueta": "Personajes de la cuenta",
+    "elegirCuenta": "Cuenta",
+    "cuenta": "Cuenta {{numero}}",
+    "personajes_one": "{{count}} personaje",
+    "personajes_other": "{{count}} personajes",
+    "buscar": "Buscar personaje",
+    "sinResultados": "Ningún personaje coincide con «{{consulta}}».",
+    "sinPersonajes": "Esta cuenta aún no tiene personajes: entra al juego con uno.",
+    "reinosIgnorados_one": "{{count}} carpeta de reino es de la otra versión del juego y se ha saltado.",
+    "reinosIgnorados_other": "{{count}} carpetas de reino son de la otra versión del juego y se han saltado.",
+    "nombreCuenta": "Nombre de la cuenta"
+  },
+  "ficha": {
+    "etiqueta": "Personaje elegido",
+    "abrirCarpeta": "Abrir carpeta"
+  },
+  "acercaDe": {
+    "titulo": "Acerca de",
+    "autoria": "{{nombre}}, de {{autor}} — ",
+    "licencia": "Software libre bajo la GNU General Public License v3.0. Se distribuye SIN NINGUNA GARANTÍA.",
+    "verLicencia": "Leer la licencia",
+    "web": "Más sobre el autor en",
+    "koFi": "Si la app te resulta útil, puedes apoyarla en Ko-fi.",
+    "buscarActualizaciones": "Buscar actualizaciones al arrancar",
+    "ayudaActualizaciones": "Mira en GitHub si hay una versión nueva y pregunta antes de instalarla. Solo se instala si trae la firma de la app. Apagado, la app no se conecta a internet al arrancar.",
+    "marca": "{{nombre}} no está hecho, respaldado ni apoyado por Blizzard Entertainment. World of Warcraft es una marca de Blizzard Entertainment, Inc."
+  },
+  "productos": {
+    "wow": "World of Warcraft (Retail)",
+    "wowf": "WoW Forever"
+  },
+  "actualizacion": {
+    "disponible": "Hay una versión nueva de la app: {{version}}.",
+    "instalar": "Actualizar y reiniciar",
+    "instalando": "Actualizando…",
+    "ahoraNo": "Ahora no"
+  },
+  "errores": {
+    "actualizacionNoDescargada": "No se pudo descargar la versión nueva. Comprueba la conexión e inténtalo más tarde.",
+    "actualizacionSinFirmaValida": "La versión descargada no trae la firma de la app y no se ha instalado. Sigues con la versión de ahora.",
+    "actualizacionNoDisponible": "Ya no hay una versión nueva publicada.",
+    "lecturaFallida": "No se pudo leer {{ruta}}: {{detalle}}",
+    "desconocido": "Error inesperado: {{mensaje}}",
+    "enlaceNoAbierto": "No se pudo abrir {{url}}: {{detalle}}",
+    "escrituraFallida": "No se pudo guardar {{ruta}}: {{detalle}}",
+    "preferenciasIlegibles": "No se entiende {{ruta}}: se sigue sin nombres ni carpetas a mano, y no se guardarán cambios hasta que lo arregles o lo borres.",
+    "nombreNoValido": "El nombre puede tener hasta {{maximo}} caracteres y una sola línea.",
+    "juegoAbierto": "WoW está abierto. Ciérralo y vuelve a intentarlo: al salir, el juego reescribiría la carpeta.",
+    "personajeNoEncontrado": "Ese personaje ya no está en disco. Vuelve a cargar la lista.",
+    "operacionFallida": "No se pudo terminar ni dejarlo todo como estaba. Las copias siguen en la operación {{id}}, en la carpeta de datos de la app: {{detalle}}",
+    "operacionFallidaRestaurada": "No se pudo terminar y se ha dejado todo como estaba (operación {{id}}): {{detalle}}",
+    "enlaceNoAdmitido": "Hay un enlace o una unión de carpetas en {{ruta}}. No se sigue, porque podría llevar fuera de WTF. Quítalo a mano para continuar.",
+    "operacionNoEncontrada": "Esa operación ya no está en el historial. Vuelve a cargarlo.",
+    "noDeshacible": "Esta operación ya no se puede deshacer: solo se deshace una eliminación o una importación terminada que no esté deshecha.",
+    "operacionPosterior": "Antes hay que deshacer la operación {{id}}: es más reciente y tocó los mismos ficheros.",
+    "juegoDistinto": "En {{raiz}} ya no está la misma versión del juego (se movió, se borró o se reinstaló). No se ha escrito nada y la copia sigue en la operación.",
+    "planCaducado": "Algún fichero ha cambiado desde que se mostró qué iba a pasar. No se ha escrito nada: vuelve a intentarlo para verlo de nuevo.",
+    "operacionEnCurso": "La operación está a medias: no se puede borrar hasta que termine.",
+    "restauracionManualSinConfirmar": "Confirma que ya has restaurado a mano lo que faltaba.",
+    "carpetaNoAbierta": "No se pudo abrir {{ruta}}: {{detalle}}",
+    "exportacionSinVersion": "No se sabe la versión del juego o su número de interfaz (.build.info o WTF/Config.wtf): entra una vez en el juego y vuelve a intentarlo.",
+    "perfilNoValido": "El nombre es obligatorio y puede tener hasta 80 caracteres; la descripción, hasta 500.",
+    "seleccionVacia": "Marca al menos una cosa que exportar.",
+    "paqueteDemasiadoGrande": "Es demasiado grande para un .wowprofile (como mucho 256 piezas, 32 MiB cada una y 128 MiB en total; 64 MiB por addon y 512 MiB de addons).",
+    "addonNoEmpaquetado": "La carpeta del addon {{addon}} no se pudo empaquetar: puede haber cambiado desde que se abrió el diálogo.",
+    "paqueteInvalido": "El fichero no es un perfil válido: {{motivo}}",
+    "versionPaquete": "Este perfil es de una versión más nueva del formato ({{version}}). Actualiza la app para importarlo.",
+    "paqueteNoAbierto": "El perfil ya no está abierto. Vuelve a abrirlo.",
+    "destinosNoValidos": "Los personajes elegidos tienen que ser de una misma instalación y de la versión del juego del perfil.",
+    "noRestaurable": "Esta operación no se restaura desde aquí: solo una que se cortó a mitad o que no se pudo deshacer del todo.",
+    "operacionAMedias": "Hay una operación sin resolver (operación {{id}}): se cortó a mitad o no se pudo deshacer del todo. Restáurala desde el Historial o, si ya la devolviste a mano, bórrala allí. Hasta entonces no se hace ninguna otra.",
+    "paqueteCambiado": "El fichero del perfil ya no está donde lo abriste o ha cambiado. Vuelve a abrirlo.",
+    "conflictosSinDecidir": "Falta decidir lo que afecta a toda la cuenta."
+  },
+  "versionApp": "Versión {{version}}",
+  "instalaciones": {
+    "titulo": "Instalaciones",
+    "explicacion": "Las carpetas de WoW que conoce la app. Si la tuya no aparece (movida, en otra unidad o portable), añádela a mano. Los nombres solo se guardan en este equipo.",
+    "anadir": "Añadir carpeta",
+    "porDefecto": "Instalación {{numero}}",
+    "nombre": "Nombre de la instalación",
+    "fuente": {
+      "registro": "Registro de Windows",
+      "manual": "A mano",
+      "battlenet": "Agente de Battle.net"
+    },
+    "sinVersiones": "sin versiones del juego",
+    "noEncontrada": "No encontrada: la carpeta ya no está, no se puede leer o le falta el fichero .build.info.",
+    "quitar": "Quitar",
+    "quitarEtiqueta": "Quitar {{nombre}} de la lista",
+    "ninguna": "Aún no hay ninguna instalación. Añade la carpeta de WoW a mano.",
+    "alta": {
+      "anadida": "Carpeta añadida.",
+      "yaEstaba": "Esa carpeta ya está en la lista.",
+      "noEsInstalacion": "Esa carpeta no es una instalación de WoW: le falta el fichero .build.info en su raíz. Elige la carpeta que contiene _retail_ o _forever_."
+    }
+  },
+  "nombre": {
+    "editar": "Cambiar: {{que}}",
+    "guardar": "Guardar el nombre",
+    "cancelar": "Cancelar"
+  },
+  "eliminar": {
+    "boton": "Eliminar carpeta",
+    "titulo": "¿Eliminar la carpeta de {{nombre}}?",
+    "contenido_one": "{{count}} fichero, {{tamano}}.",
+    "contenido_other": "{{count}} ficheros, {{tamano}}.",
+    "aviso": "Si el personaje sigue existiendo, el juego volverá a crear la carpeta al entrar con él. Las macros y el Modo Edición vuelven del servidor, pero la configuración de sus addons vuelve a la de por defecto y todos los addons quedan activados.",
+    "copia": "Antes de quitar nada se guarda una copia completa en la carpeta de datos de la app. Las claves del personaje en los ficheros de la cuenta no se tocan.",
+    "cancelar": "Cancelar",
+    "confirmar": "Eliminar carpeta",
+    "eliminando": "Eliminando…",
+    "cerrar": "Cerrar",
+    "hecho": "Carpeta eliminada. La copia está guardada en la operación {{id}}."
+  },
+  "recuperacion": {
+    "canceladas_one": "Una operación se cortó antes de tocar nada y se ha cancelado.",
+    "canceladas_other": "{{count}} operaciones se cortaron antes de tocar nada y se han cancelado.",
+    "restauradas_one": "Una operación se cortó a mitad y se ha dejado todo como estaba.",
+    "restauradas_other": "{{count}} operaciones se cortaron a mitad y se ha dejado todo como estaba.",
+    "sinRestaurar_one": "Una operación cortada a mitad no se pudo deshacer del todo. Sus copias siguen en la carpeta de datos de la app.",
+    "sinRestaurar_other": "{{count}} operaciones cortadas a mitad no se pudieron deshacer del todo. Sus copias siguen en la carpeta de datos de la app.",
+    "pendientes_one": "Hay una operación a medias, pero WoW está abierto. Cierra el juego y vuelve a abrir la app para terminarla.",
+    "pendientes_other": "Hay {{count}} operaciones a medias, pero WoW está abierto. Cierra el juego y vuelve a abrir la app para terminarlas.",
+    "ilegibles_one": "Hay una operación cuyo diario no se entiende. No se ha tocado.",
+    "ilegibles_other": "Hay {{count}} operaciones cuyo diario no se entiende. No se han tocado.",
+    "aMedias_one": "Una importación se cortó a mitad y no se ha tocado. Restáurala desde el Historial: hasta entonces no se puede hacer ninguna otra operación.",
+    "aMedias_other": "{{count}} importaciones se cortaron a mitad y no se han tocado. Restáuralas desde el Historial: hasta entonces no se puede hacer ninguna otra operación."
+  },
+  "historial": {
+    "titulo": "Historial",
+    "explicacion": "Lo que la app ha cambiado en las carpetas del juego, cada cosa con una copia de cómo estaba. Nada se borra solo: tú decides cuándo liberar espacio.",
+    "cargando": "Leyendo el historial…",
+    "vacio": "Aún no hay operaciones.",
+    "total": "Ocupa {{tamano}} en total",
+    "tipo": {
+      "eliminacion": "Carpeta eliminada",
+      "deshacer": "Deshacer",
+      "importacion": "Importación"
+    },
+    "estado": {
+      "preparando": "A medias",
+      "copiada": "A medias",
+      "escribiendo": "A medias",
+      "completa": "Hecha",
+      "deshecha": "Deshecha",
+      "cancelada": "Cancelada",
+      "fallida-restaurada": "Falló; todo quedó como estaba",
+      "fallida-sin-restaurar": "Falló sin poder restaurar"
+    },
+    "ficheros_one": "{{count}} fichero",
+    "ficheros_other": "{{count}} ficheros",
+    "deshace": "Deshace la operación {{id}}.",
+    "deshaceBorrada": "Deshizo una operación que ya se ha borrado.",
+    "deshechaPor": "Deshecha por la operación {{id}}.",
+    "sinDevolver": "Estos ficheros no están como antes de la operación. Para devolverlos a mano, copia cada copia a su sitio (o quita el que sobra):",
+    "copiaDe": "{{ruta}} ← {{copia}}",
+    "sobra": "{{ruta}} (antes no existía: sobra)",
+    "ilegibles_one": "Hay una operación cuyo diario no se entiende. No se toca; puedes abrir su carpeta.",
+    "ilegibles_other": "Hay {{count}} operaciones cuyo diario no se entiende. No se tocan; puedes abrir sus carpetas.",
+    "abrir": "Abrir carpeta",
+    "deshacer": "Deshacer",
+    "borrar": "Borrar",
+    "perfil": "Perfil «{{nombre}}»",
+    "aMedias": "Se cortó a mitad de escribir. «Restaurar» deja estos ficheros como estaban antes de importar:",
+    "restaurar": "Restaurar"
+  },
+  "deshacer": {
+    "titulo": {
+      "eliminacion": "¿Deshacer la eliminación de {{nombre}}?",
+      "importacion": "¿Deshacer la importación en {{nombre}}?"
+    },
+    "contenido_one": "Vuelve {{count}} fichero a como estaba.",
+    "contenido_other": "Vuelven {{count}} ficheros a como estaban.",
+    "nada": "Todo está ya como antes: no se escribe nada, solo se marca como deshecha.",
+    "aviso": "Estos ficheros se sustituyen o se quitan. Si el juego guardó algo en ellos desde entonces, se pierde:",
+    "copia": "Antes de escribir se guarda una copia de lo que hay ahora, en una operación nueva del historial.",
+    "cancelar": "Cancelar",
+    "confirmar": "Deshacer",
+    "deshaciendo": "Deshaciendo…",
+    "cerrar": "Cerrar",
+    "hecho": "Hecho: todo vuelve a estar como antes (operación {{id}}).",
+    "sobran_one": "Se quita {{count}} fichero que antes no estaba.",
+    "sobran_other": "Se quitan {{count}} ficheros que antes no estaban.",
+    "deCuenta": "Estos son de la cuenta: cambian para todos sus personajes:",
+    "addons_one": "Se quita {{count}} addon que se instaló.",
+    "addons_other": "Se quitan {{count}} addons que se instalaron.",
+    "addonsCambiados": "Estos ficheros de esos addons cambiaron o se añadieron después: se quedan."
+  },
+  "borrar": {
+    "titulo": "¿Borrar la operación {{id}}?",
+    "explicacion": "Libera {{tamano}}. Su copia desaparece y ya no se podrá deshacer.",
+    "sinRestaurar": "Esta operación no se pudo restaurar del todo: su copia puede ser lo único que queda de cómo estaban esos ficheros.",
+    "confirmarManual": "Ya he restaurado a mano lo que faltaba",
+    "cancelar": "Cancelar",
+    "confirmar": "Borrar",
+    "borrando": "Borrando…",
+    "deshacer": "Es un deshacer: su copia es lo que el juego había guardado en la carpeta después de eliminarla."
+  },
+  "exportar": {
+    "boton": "Exportar",
+    "titulo": "Exportar a {{nombre}}",
+    "piezas": "Qué se lleva",
+    "deLaCuenta": "de la cuenta",
+    "diseno": "diseño «{{nombre}}»",
+    "quitadas_one": "sin {{count}} línea que no viaja",
+    "quitadas_other": "sin {{count}} líneas que no viajan",
+    "categorias": {
+      "macros": "Macros",
+      "teclas": "Teclas",
+      "teclas-clic": "Teclas de clic",
+      "opciones": "Opciones",
+      "chat": "Chat",
+      "ventanas": "Ventanas",
+      "modo-edicion": "Modo Edición",
+      "marcos-banda": "Marcos de banda",
+      "addons-activos": "Addons activos",
+      "config-addon": "Configuración de addons",
+      "addon": "Addon"
+    },
+    "nada": "Este personaje no tiene nada que exportar todavía.",
+    "barras": "El contenido de los botones de las barras de acción no viaja: lo guarda el servidor. Sí viajan las teclas, las macros y la lista de addons activos.",
+    "juegoAbierto": "WoW está abierto: lo que hayas cambiado en esta sesión no está en disco hasta que salgas del personaje o escribas /reload.",
+    "apartadas": "No viajan porque ya contienen el texto reservado «@@WOWPROFILE:»: {{piezas}}.",
+    "nombre": "Nombre del perfil",
+    "descripcion": "Descripción (opcional)",
+    "cancelar": "Cancelar",
+    "confirmar": "Guardar…",
+    "exportando": "Guardando…",
+    "cerrar": "Cerrar",
+    "hecho": "Guardado como {{fichero}}.",
+    "addons": {
+      "titulo": "Configuración de addons",
+      "explicacion": "Va marcado lo que se reconoce como configuración. Los ficheros enteros van desmarcados: pueden llevar progreso, estado o datos de otros jugadores.",
+      "pieza": {
+        "perfilAcedb": "Perfil «{{perfil}}»",
+        "adaptador": "Ajustes: {{variable}}",
+        "genericoCuenta": "Fichero de la cuenta",
+        "genericoPersonaje": "Fichero del personaje",
+        "genericoCuentaConPersonajes": "Fichero de la cuenta"
+      },
+      "avisos": {
+        "generico": "Fichero entero: puede llevar progreso, estado o datos de otros jugadores.",
+        "conPersonajes": "Menciona a personajes de esta cuenta.",
+        "versionNoMedida": "Esta versión del addon no se ha comprobado: podría llevar algo más que su configuración.",
+        "guid": "Parece contener otros jugadores: identificadores de jugador.",
+        "nombreReino": "Parece contener otros jugadores: nombres con reino."
+      },
+      "marcarTodos": {
+        "genericoCuenta": "Marcar los ficheros de la cuenta",
+        "genericoPersonaje": "Marcar los ficheros del personaje",
+        "genericoCuentaConPersonajes": "Marcar los que mencionan personajes"
+      },
+      "marcarTodosNota": "No marca los que parecen contener otros jugadores: esos, uno a uno.",
+      "noExportables_one": "{{count}} cosa no se puede exportar",
+      "noExportables_other": "{{count}} cosas no se pueden exportar",
+      "noExportable": {
+        "noSeLee": "No se puede leer.",
+        "sinNombre": "No se sabe cómo se llama el personaje en los datos.",
+        "sinPerfil": "Este personaje no tiene perfil asignado en este addon.",
+        "demasiadoGrande": "Ocupa más de lo que admite el formato.",
+        "traeMarcador": "Ya contiene el texto reservado «@@WOWPROFILE:».",
+        "perfilNoValido": "El nombre del perfil no se puede llevar (texto raro o demasiado largo).",
+        "carpetaNoAdmitida": "El nombre de la carpeta del addon no lo admite el formato."
+      },
+      "ambito": {
+        "cuenta": "de la cuenta",
+        "personaje": "del personaje"
+      }
+    },
+    "carpetas": {
+      "titulo": "Addons",
+      "aviso": "Se lleva el código de los addons, no solo su configuración. El juego lo ejecuta: quien importe el perfil tiene que fiarse de ti. Muchos addons no permiten que se redistribuyan: compartirlos es responsabilidad tuya.",
+      "marcarTodas": "Marcar todos",
+      "desmarcarTodas": "Desmarcar todos",
+      "noExportables_one": "{{count}} addon no se puede llevar: quien importe verá que le falta",
+      "noExportables_other": "{{count}} addons no se pueden llevar: quien importe verá que le faltan",
+      "motivo": {
+        "demasiadoGrande": "ocupa más de 64 MiB.",
+        "demasiadosFicheros": "tiene más de 4.096 ficheros.",
+        "rutaNoValida": "tiene un nombre que Windows no admite o que no se puede llevar ({{detalle}}).",
+        "enlace": "tiene un enlace o una unión de Windows ({{detalle}}).",
+        "noSeLee": "no se puede leer."
+      }
+    }
+  },
+  "motivosPaquete": {
+    "noEsZip": "no se puede abrir como .wowprofile.",
+    "demasiadoGrande": "es demasiado grande.",
+    "demasiadasEntradas": "trae demasiados ficheros dentro.",
+    "manifiestoIlegible": "falta su descripción o no se puede leer.",
+    "manifiestoNoValido": "su descripción no cumple el formato.",
+    "entradasDelZip": "trae ficheros de más o le faltan.",
+    "piezaIlegible": "uno de sus ficheros no se puede leer.",
+    "piezaDemasiadoGrande": "uno de sus ficheros ocupa más de lo que dice.",
+    "totalDemasiadoGrande": "sus ficheros ocupan demasiado en total.",
+    "piezaDanada": "uno de sus ficheros está dañado o se ha modificado.",
+    "addonNoValido": "uno de sus addons trae ficheros que se saldrían de su carpeta, nombres que Windows no admite o demasiado contenido."
+  },
+  "importar": {
+    "titulo": "Importar",
+    "abrir": "Abrir perfil…",
+    "abrirOtro": "Abrir otro…",
+    "explicacion": "Abre un fichero .wowprofile para elegir en qué personajes aplicarlo y ver qué cambiaría. Mirar no modifica nada.",
+    "paquete": "Perfil abierto",
+    "entradas_one": "{{count}} elemento",
+    "entradas_other": "{{count}} elementos",
+    "pasosEtiqueta": "Pasos",
+    "pasos": {
+      "destino": "Destino",
+      "seleccion": "Qué se importa",
+      "vistaPrevia": "Vista previa",
+      "resultado": "Resultado"
+    },
+    "atras": "Atrás",
+    "siguiente": "Siguiente",
+    "sinInstalacion": "Este perfil es de {{version}} y en este equipo no hay ninguna instalación de esa versión.",
+    "instalacion": "Instalación",
+    "interfazDistinta": "El perfil se hizo con la interfaz {{paquete}} y esta instalación tiene la {{destino}}: puede que algo no encaje.",
+    "elegirDestinos": "Marca uno o varios personajes. Pueden ser de cuentas distintas de esta instalación.",
+    "marcados_one": "{{count}} personaje marcado",
+    "marcados_other": "{{count}} personajes marcados",
+    "queSeImporta": "Qué se importa",
+    "deLaCuenta": "{{categoria}} de la cuenta",
+    "incompatible": {
+      "noSeImporta": "esta versión aún no lo importa",
+      "destinoAjeno": "no se importa: apunta a un fichero que no es el suyo",
+      "piezaNoValida": "no se importa: no es solo configuración (podría llevar código que el juego ejecutaría)",
+      "adaptadorDesconocido": "esta versión no conoce cómo se aplica (adaptador desconocido o más nuevo)"
+    },
+    "teclasSinComprobar": "Las teclas se guardan como teclas propias de este personaje. Si antes usaba las comunes de la cuenta, entra al juego y comprueba que tiene las nuevas. Si no, puedes deshacer la importación desde el Historial.",
+    "decisionesEtiqueta": "Lo que afecta a toda la cuenta",
+    "decisionesExplicacion": "Esto cambia la configuración de todos los personajes de la cuenta. Decide en cada una si se aplica.",
+    "enCuenta": "{{categoria}} en la cuenta {{cuenta}} ({{personajes}})",
+    "aplicar": "Aplicar",
+    "noAplicar": "No aplicar",
+    "calculando": "Calculando qué cambiaría…",
+    "juegoAbierto": "WoW está abierto. Puedes mirar la vista previa, pero para aplicar habrá que cerrarlo.",
+    "grupos": {
+      "nuevo": "Nuevos",
+      "modificado": "Modificados",
+      "sinCambios": "Sin cambios",
+      "conflictos": "Sin decidir",
+      "incompatibles": "No se importan",
+      "noAplicables": "No se aplican en este personaje",
+      "addons": "Addons"
+    },
+    "sinDecidir": "{{entrada}}: decide si se aplica en esta cuenta.",
+    "nadaQueImportar": "Nada que importar en este personaje.",
+    "afectaCuenta": "Afecta a todos los personajes de la cuenta.",
+    "escritaEn": "Se aplica una sola vez para la cuenta, con {{personaje}}.",
+    "addonsQueFaltan": "Se activan, pero no están instalados en este equipo.",
+    "cambio": {
+      "anadido": "Nuevo",
+      "cambiado": "Cambia",
+      "quitado": "Se quita"
+    },
+    "otrasCategorias": {
+      "config-addon": "Configuración de addons",
+      "addon": "Carpeta de addon"
+    },
+    "aplicarImportacion": "Aplicar…",
+    "noSePuedeAplicar": {
+      "juegoAbierto": "Cierra WoW para poder aplicar.",
+      "conflictos": "Decide antes lo que falta: lo que afecta a toda la cuenta y los perfiles que ya existen.",
+      "nada": "No hay nada que escribir: todo está ya igual."
+    },
+    "confirmar": {
+      "titulo": "¿Aplicar «{{perfil}}»?",
+      "personaje_one": "{{nombre}}: {{count}} fichero",
+      "personaje_other": "{{nombre}}: {{count}} ficheros",
+      "cuenta": "Incluye ficheros de la cuenta: cambian para todos sus personajes.",
+      "copia": "Antes de escribir se guarda una copia de cada fichero que cambia. Cada personaje queda en su propia línea del historial y se deshace por separado.",
+      "cancelar": "Cancelar",
+      "aplicar": "Aplicar",
+      "aplicando": "Aplicando…"
+    },
+    "resultado": {
+      "completa_one": "Hecho: {{count}} fichero escrito.",
+      "completa_other": "Hecho: {{count}} ficheros escritos.",
+      "sinCambios": "Nada que escribir: ya estaba igual.",
+      "fallida": "No se aplicó.",
+      "noAplicada": "No se aplicó: falló un personaje anterior.",
+      "deshecha": "Deshecha.",
+      "addons_one": "{{count}} addon instalado.",
+      "addons_other": "{{count}} addons instalados."
+    },
+    "siguientePaso": "Entra al juego con cada personaje y comprueba que todo está bien. Las habilidades de los botones las colocas tú: el perfil trae la disposición y las teclas, no lo que hay en cada botón.",
+    "verHistorial": "Ver historial",
+    "queTrae": {
+      "boton": "Qué trae",
+      "etiqueta": "Qué trae: {{categoria}}",
+      "macros": "Las macros: su nombre, su icono y su texto.",
+      "teclas": "Qué tecla hace cada acción.",
+      "teclas-clic": "Las acciones asignadas a clics del ratón (lanzamiento con clic).",
+      "opciones": "Opciones del juego: interfaz, cámara, combate y demás.",
+      "chat": "Las pestañas del chat, qué mensajes enseña cada una y sus canales. No trae mensajes.",
+      "ventanas": "Dónde has colocado las ventanas de la interfaz que se pueden mover.",
+      "modo-edicion": "El diseño «{{nombre}}» del Modo Edición. Se añade a los diseños de la cuenta y el personaje pasa a usarlo; los demás diseños y personajes no cambian.",
+      "marcos-banda": "Los perfiles de los marcos de banda: tamaño, colores y qué enseñan.",
+      "addons-activos": "Qué addons quedan activados y cuáles desactivados.",
+      "activados_one": "Se activa {{count}}",
+      "activados_other": "Se activan {{count}}",
+      "desactivados_one": "Se desactiva {{count}}",
+      "desactivados_other": "Se desactivan {{count}}"
+    },
+    "addons": {
+      "titulo": "Configuración de addons",
+      "explicacion": "Va marcado lo que se reconoce como configuración. Los ficheros enteros van desmarcados: pueden llevar progreso, estado o datos de otros jugadores, y el perfil no dice quién lo hizo.",
+      "generico": "Fichero entero: puede llevar progreso, estado o datos de otros jugadores.",
+      "pieza": {
+        "perfilAcedb": "Perfil «{{perfil}}»",
+        "perfilDelPersonaje": "Perfil con el nombre del personaje",
+        "adaptador": "Ajustes: {{variable}}",
+        "genericoCuenta": "Fichero de la cuenta",
+        "genericoPersonaje": "Fichero del personaje"
+      }
+    },
+    "perfiles": {
+      "existe": "{{entrada}}: ya hay un perfil «{{perfil}}» distinto en esta cuenta.",
+      "renombrar": "Importarlo como «{{propuesto}}»",
+      "sobrescribir": "Sobrescribir «{{perfil}}»",
+      "usadoPor": "También lo usan {{personajes}}: sobrescribirlo les cambia la configuración."
+    },
+    "noAplicable": {
+      "sinNombre": "no se aplica: no se sabe cómo se llama este personaje en los datos del addon.",
+      "destinoIlegible": "no se aplica: su fichero en este personaje no se entiende y no se toca.",
+      "noEncaja": "no se aplica: lo que se escribiría no sería solo configuración, así que no se escribe."
+    },
+    "avisos": {
+      "faltaAddon": "{{addon}} no está instalado aquí: se guarda igual y lo usará cuando lo instales.",
+      "versionNoMedida": "{{addon}} {{instalada}}: esto se comprobó con la versión {{medidas}}; podría llevar algo más que su configuración.",
+      "sinVersion": "(sin versión)"
+    },
+    "elemento": {
+      "perfil": "Perfil «{{nombre}}»",
+      "perfilDe": "Perfil de {{nombre}}",
+      "diseno": "Diseño «{{nombre}}» del Modo Edición",
+      "disenoActivo": "Pasa a usar el diseño «{{nombre}}»"
+    },
+    "carpetas": {
+      "titulo": "Addons",
+      "aviso": "El paquete trae addons: es código que el juego ejecuta. Impórtalos solo si te fías de quien te pasó el perfil. Solo se instalan los que no tienes; los que ya tienes no se tocan, aunque sean de otra versión.",
+      "lista": "Addons que trae el paquete",
+      "marcarTodas": "Marcar todos",
+      "desmarcarTodas": "Desmarcar todos"
+    },
+    "addonSeInstala": "— se instala",
+    "addonYaInstalado": "— ya lo tienes: no se toca"
+  },
+  "restaurar": {
+    "titulo": "¿Restaurar lo que cambió en {{nombre}}?",
+    "explicacion": "Los ficheros que la operación llegó a cambiar vuelven a como estaban, desde sus copias. Lo que no llegó a tocar no se toca. Si alguno ya no está como lo dejó la operación, no se pisa y se dice.",
+    "cancelar": "Cancelar",
+    "confirmar": "Restaurar",
+    "restaurando": "Restaurando…",
+    "cerrar": "Cerrar",
+    "hecho": "Hecho: todo está como antes de la operación."
+  },
+  "motivos": {
+    "seguridad": "Por seguridad: quitaría a quien lo importe el aviso del juego antes de ejecutar scripts.",
+    "estado": "Son estado de la partida, no configuración: lo que sigues, lo que ya has visto o lo que tienes plegado.",
+    "addonNoInstalado": "Addons que no están instalados en este equipo.",
+    "viajaComoPerfil": "Van aparte, como su perfil: así solo viaja el de este personaje."
+  },
+  "diagnostico": {
+    "titulo": "Diagnóstico",
+    "explicacion": "Lo que la app va haciendo en esta sesión: dónde ha buscado el juego, qué carpetas se ha saltado y por qué, y cada operación con su resultado. Sirve para encontrar fallos.",
+    "guardar": "Guardar el registro en un fichero .txt",
+    "abrirCarpeta": "Abrir carpeta de registros",
+    "privacidad": "El registro no sale de este equipo. Lleva rutas de tus carpetas (con tu usuario de Windows), los nombres de las carpetas de tus cuentas y de tus addons, y los mensajes de error del sistema: si lo compartes para pedir ayuda, compartes también esos datos.",
+    "consola": "Registro de esta sesión",
+    "vacio": "Todavía no hay líneas en esta sesión."
+  },
+  "cierre": {
+    "titulo": "Hay una operación en marcha",
+    "explicacion": "La app está escribiendo en la carpeta del juego. Si cierras ahora, al volver a abrirla se deshará lo que quedó a medias; si era una importación, te preguntará si restaurarla.",
+    "seguir": "Esperar",
+    "cerrar": "Cerrar igualmente"
+  }
+}

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Icono temporal de WoW Profile Manager (#92): un escudo con dos flechas de intercambio. Original, sin marcas de
+       terceros. Colores de src/estilo/tokens.css. Se regeneran los tamaños con `npx tauri icon`. -->
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f2330"/>
+      <stop offset="1" stop-color="#0f1117"/>
+    </linearGradient>
+    <linearGradient id="oro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4d898"/>
+      <stop offset="0.55" stop-color="#e2b85c"/>
+      <stop offset="1" stop-color="#c79a3e"/>
+    </linearGradient>
+  </defs>
+  <rect x="32" y="32" width="960" height="960" rx="200" fill="url(#fondo)"/>
+  <rect x="32" y="32" width="960" height="960" rx="200" fill="none" stroke="#c79a3e" stroke-width="16"/>
+  <!-- Escudo -->
+  <path d="M512 150 L800 250 V500 C800 690 680 810 512 880 C344 810 224 690 224 500 V250 Z"
+        fill="url(#oro)" stroke="#22180a" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M512 210 L748 292 V500 C748 655 652 760 512 822 C372 760 276 655 276 500 V292 Z" fill="#171a22"/>
+  <!-- Flecha hacia la derecha (arriba) -->
+  <path d="M340 400 H600 V340 L700 435 L600 530 V470 H340 Z" fill="url(#oro)"/>
+  <!-- Flecha hacia la izquierda (abajo) -->
+  <path d="M660 620 H440 V560 L350 650 L440 740 V680 H660 Z" fill="#8ab8ff"/>
+</svg>

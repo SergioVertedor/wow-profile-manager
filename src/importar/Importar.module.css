@@ -1,0 +1,362 @@
+/* Vista «Importar» (spec 024): cabecera con el botón de abrir, el paquete, los pasos del asistente y cada paso. */
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  height: 100%;
+  padding: var(--espacio-5) var(--espacio-7) var(--espacio-4);
+  overflow-y: auto;
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-4);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.titulo {
+  font-size: var(--texto-l);
+}
+
+.boton,
+.secundario {
+  display: inline-flex;
+  gap: var(--espacio-2);
+  align-items: center;
+  padding: var(--espacio-2) var(--espacio-5);
+  border-radius: var(--radio-s);
+  font-size: var(--texto-control);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.boton {
+  border: 1px solid var(--color-oro-hondo);
+  background: linear-gradient(180deg, var(--color-oro-claro), var(--color-oro));
+  color: var(--color-sobre-oro);
+}
+
+.boton:hover:not(:disabled) {
+  background: var(--color-oro-claro);
+}
+
+.boton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.secundario {
+  border: 1px solid var(--color-linea-control);
+  background: none;
+  color: var(--color-texto);
+}
+
+.secundario:hover {
+  background: var(--blanco-velo);
+}
+
+.nota {
+  color: var(--color-texto-2);
+}
+
+.alerta {
+  color: var(--color-alerta);
+}
+
+.aviso {
+  display: flex;
+  gap: var(--espacio-2);
+  align-items: flex-start;
+  padding: var(--espacio-2) var(--espacio-3);
+  border: 1px solid var(--aviso-borde);
+  border-radius: var(--radio-s);
+  background: var(--aviso-velo);
+  color: var(--color-aviso);
+}
+
+.paquete {
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-m);
+  background: var(--color-superficie);
+}
+
+.nombrePerfil {
+  color: var(--color-nombre);
+  font-size: var(--texto-m);
+}
+
+.datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-4);
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+}
+
+.pasos {
+  display: flex;
+  gap: var(--espacio-4);
+  padding: 0;
+  list-style: none;
+  color: var(--color-texto-3);
+  font-size: var(--texto-control);
+  counter-reset: paso;
+}
+
+.pasos li {
+  counter-increment: paso;
+}
+
+.pasos li::before {
+  content: counter(paso) ". ";
+}
+
+.pasos li[aria-current="step"] {
+  color: var(--color-oro);
+  font-weight: 650;
+}
+
+/* Crece pero nunca se encoge por debajo de su contenido: si no, se desbordaría por debajo de los botones de abajo,
+   que taparían (y se comerían los clics de) lo que queda debajo. La vista entera hace scroll. */
+.paso {
+  flex: 1 0 auto;
+}
+
+.botones {
+  display: flex;
+  gap: var(--espacio-3);
+  justify-content: flex-end;
+}
+
+.destino {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--ancho-plantel);
+  gap: var(--espacio-4);
+  min-height: 24rem;
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+}
+
+.versiones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.versiones button {
+  padding: 6px var(--espacio-4);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-s);
+  background: none;
+  color: var(--color-texto-2);
+  font-size: var(--texto-control);
+  cursor: pointer;
+}
+
+.versiones button[aria-pressed="true"] {
+  border-color: var(--oro-borde);
+  color: var(--color-texto);
+}
+
+.marcados {
+  padding-left: var(--espacio-4);
+}
+
+.secundarioTexto {
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+}
+
+.entradas {
+  padding: 0;
+  border: none;
+}
+
+.entradas legend {
+  margin-bottom: var(--espacio-2);
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+}
+
+.entrada {
+  display: flex;
+  gap: var(--espacio-3);
+  align-items: baseline;
+  padding: var(--espacio-1) 0;
+  font-size: var(--texto-control);
+  cursor: pointer;
+}
+
+.entrada[data-incompatible="true"] {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.entrada input,
+.decision input {
+  accent-color: var(--color-oro);
+}
+
+.categoria {
+  flex: 1;
+}
+
+.tamano {
+  flex: none;
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+  font-variant-numeric: tabular-nums;
+}
+
+/* «Qué trae», bajo cada entrada: sangrado hasta el texto, después de la casilla. */
+.queTrae {
+  margin: 0 0 var(--espacio-2) var(--espacio-6);
+}
+
+.subtitulo {
+  margin-top: var(--espacio-3);
+  color: var(--color-texto);
+}
+
+.contenido {
+  columns: 2;
+  column-gap: var(--espacio-6);
+  margin: var(--espacio-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contenido li {
+  padding: 1px 0;
+  break-inside: avoid;
+  overflow-wrap: anywhere;
+}
+
+.decisiones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+}
+
+/* Configuración de addons: un bloque por addon (spec 028). */
+/* Marcar o desmarcar todas las carpetas de addons (spec 036). */
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+}
+
+.addons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+}
+
+.addons .grupo,
+.addons .nota {
+  margin: 0;
+}
+
+.decision {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-4);
+  padding: var(--espacio-2) var(--espacio-3);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-s);
+}
+
+.decision .queTrae {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.decision legend {
+  padding: 0 var(--espacio-1);
+  font-size: var(--texto-control);
+}
+
+.personaje {
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-m);
+  background: var(--color-superficie);
+}
+
+.nombrePersonaje {
+  color: var(--color-nombre);
+  font-size: var(--texto-m);
+}
+
+.grupo {
+  margin-top: var(--espacio-3);
+  color: var(--color-oro);
+  font-size: var(--texto-control);
+}
+
+.ficheros {
+  padding: 0;
+  list-style: none;
+}
+
+.fichero {
+  padding: var(--espacio-2) 0;
+  border-bottom: 1px solid var(--color-linea);
+}
+
+.lineaFichero {
+  display: flex;
+  gap: var(--espacio-3);
+  align-items: baseline;
+}
+
+.elementos {
+  padding-left: var(--espacio-4);
+  font-size: var(--texto-pequeno);
+}
+
+.cambio {
+  color: var(--color-texto-2);
+}
+
+.cambio[data-cambio="anadido"] {
+  color: var(--color-arcano);
+}
+
+.cambio[data-cambio="quitado"] {
+  color: var(--color-alerta);
+}
+
+.conflicto {
+  color: var(--color-aviso);
+}
+
+/* Pie de la vista previa (spec 025): el motivo si no se puede aplicar y el botón, a la derecha. */
+.aplicar {
+  display: flex;
+  gap: var(--espacio-3);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.resultados {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  padding: 0;
+  list-style: none;
+}
+
+.resultados > li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  align-items: flex-start;
+}

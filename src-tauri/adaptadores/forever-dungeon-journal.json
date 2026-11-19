@@ -1,0 +1,19 @@
+{
+  "id": "forever-dungeon-journal",
+  "version": 1,
+  "addon": "ForeverDungeonJournal",
+  "medido": "ForeverDungeonJournalCharacterDB (por personaje) tiene 16 claves: journalMode, favouriteItems, trackerSlots, trackedDungeons y hiddenDungeons son preferencias; rpgTrash, rpgBosses, rpgKills, rpgMaps, rpgQuests, runTracker, runLog, flightPoints, flightPointsVersion, hearthSpot y arrowChains son progreso.",
+  "reglas": [
+    {
+      "ambito": "personaje",
+      "variable": "ForeverDungeonJournalCharacterDB",
+      "incluir": [
+        "journalMode",
+        "favouriteItems",
+        "trackerSlots",
+        "trackedDungeons",
+        "hiddenDungeons"
+      ]
+    }
+  ]
+}

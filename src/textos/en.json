@@ -1,0 +1,510 @@
+{
+  "cargando": "Loading…",
+  "cabecera": "{{nombre}} {{version}}",
+  "errorNucleo": "Could not reach the core: {{mensaje}}",
+  "nav": {
+    "etiqueta": "Views",
+    "personajes": "Characters",
+    "instalaciones": "Installations",
+    "historial": "History",
+    "importar": "Import",
+    "diagnostico": "Diagnostics",
+    "acercaDe": "About"
+  },
+  "personajes": {
+    "titulo": "Characters",
+    "buscando": "Looking for WoW installations…",
+    "ninguna": "No WoW installation found on this computer.",
+    "versiones": "Game version",
+    "build": "Build",
+    "addons": "Addons",
+    "noSoportada": "This app does not support this game version.",
+    "sinInterfaz": "Open the game once with this version: until then it cannot be exported.",
+    "sinCuentas": "No accounts yet: log in to the game once.",
+    "verAddons_one": "Show the installed addon",
+    "verAddons_other": "Show the {{count}} installed addons",
+    "addon": "{{titulo}} · {{version}}",
+    "versionDeInstalacion": "{{instalacion}} · {{version}}"
+  },
+  "plantel": {
+    "etiqueta": "Characters in the account",
+    "elegirCuenta": "Account",
+    "cuenta": "Account {{numero}}",
+    "personajes_one": "{{count}} character",
+    "personajes_other": "{{count}} characters",
+    "buscar": "Search characters",
+    "sinResultados": "No character matches “{{consulta}}”.",
+    "sinPersonajes": "This account has no characters yet: log in to the game with one.",
+    "reinosIgnorados_one": "{{count}} realm folder belongs to the other game version and was skipped.",
+    "reinosIgnorados_other": "{{count}} realm folders belong to the other game version and were skipped.",
+    "nombreCuenta": "Account name"
+  },
+  "ficha": {
+    "etiqueta": "Selected character",
+    "abrirCarpeta": "Open folder"
+  },
+  "acercaDe": {
+    "titulo": "About",
+    "autoria": "{{nombre}}, by {{autor}} — ",
+    "licencia": "Free software under the GNU General Public License v3.0. It comes with NO WARRANTY.",
+    "verLicencia": "Read the license",
+    "web": "More about the author at",
+    "koFi": "If the app is useful to you, you can support it on Ko-fi.",
+    "buscarActualizaciones": "Check for updates on startup",
+    "ayudaActualizaciones": "Looks on GitHub for a new version and asks before installing it. It is only installed if it carries the app's signature. Off, the app does not connect to the internet on startup.",
+    "marca": "{{nombre}} is not made, endorsed or supported by Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment, Inc."
+  },
+  "productos": {
+    "wow": "World of Warcraft (Retail)",
+    "wowf": "WoW Forever"
+  },
+  "actualizacion": {
+    "disponible": "A new version of the app is available: {{version}}.",
+    "instalar": "Update and restart",
+    "instalando": "Updating…",
+    "ahoraNo": "Not now"
+  },
+  "errores": {
+    "actualizacionNoDescargada": "The new version could not be downloaded. Check your connection and try again later.",
+    "actualizacionSinFirmaValida": "The downloaded version is not signed by the app and was not installed. You are still on the current version.",
+    "actualizacionNoDisponible": "There is no newer version published any more.",
+    "lecturaFallida": "Could not read {{ruta}}: {{detalle}}",
+    "desconocido": "Unexpected error: {{mensaje}}",
+    "enlaceNoAbierto": "Could not open {{url}}: {{detalle}}",
+    "escrituraFallida": "Could not save {{ruta}}: {{detalle}}",
+    "preferenciasIlegibles": "{{ruta}} cannot be read: the app carries on without names or hand-added folders, and no changes will be saved until you fix or delete it.",
+    "nombreNoValido": "A name can have up to {{maximo}} characters on a single line.",
+    "juegoAbierto": "WoW is running. Close it and try again: on exit, the game would write over the folder.",
+    "personajeNoEncontrado": "That character is no longer on disk. Reload the list.",
+    "operacionFallida": "It could not finish, nor put everything back. The copies are still in operation {{id}}, in the app's data folder: {{detalle}}",
+    "operacionFallidaRestaurada": "It could not finish and everything was put back as it was (operation {{id}}): {{detalle}}",
+    "enlaceNoAdmitido": "There is a link or folder junction at {{ruta}}. It is not followed, because it could lead outside WTF. Remove it by hand to continue.",
+    "operacionNoEncontrada": "That operation is no longer in the history. Reload it.",
+    "noDeshacible": "This operation can no longer be undone: only a finished deletion or import that has not been undone can be.",
+    "operacionPosterior": "Undo operation {{id}} first: it is more recent and touched the same files.",
+    "juegoDistinto": "{{raiz}} no longer holds the same game version (it was moved, deleted or reinstalled). Nothing was written and the copy is still in the operation.",
+    "planCaducado": "A file changed since you were shown what would happen. Nothing was written: try again to see it anew.",
+    "operacionEnCurso": "The operation is unfinished: it can't be deleted until it ends.",
+    "restauracionManualSinConfirmar": "Confirm that you have already restored what was missing by hand.",
+    "carpetaNoAbierta": "Could not open {{ruta}}: {{detalle}}",
+    "exportacionSinVersion": "The game version or its interface number is unknown (.build.info or WTF/Config.wtf): log into the game once and try again.",
+    "perfilNoValido": "The name is required and can be up to 80 characters; the description, up to 500.",
+    "seleccionVacia": "Tick at least one thing to export.",
+    "paqueteDemasiadoGrande": "It is too large for a .wowprofile (at most 256 pieces, 32 MiB each and 128 MiB in total; 64 MiB per add-on and 512 MiB of add-ons).",
+    "addonNoEmpaquetado": "The {{addon}} add-on folder couldn't be packed: it may have changed since the dialog was opened.",
+    "paqueteInvalido": "The file is not a valid profile: {{motivo}}",
+    "versionPaquete": "This profile uses a newer version of the format ({{version}}). Update the app to import it.",
+    "paqueteNoAbierto": "The profile is no longer open. Open it again.",
+    "destinosNoValidos": "The chosen characters must belong to one installation and to the profile's game version.",
+    "noRestaurable": "This operation is not restored from here: only one that was cut off halfway or could not be fully undone.",
+    "operacionAMedias": "There is an unresolved operation (operation {{id}}): it was cut off halfway or could not be fully undone. Restore it from History or, if you already put things back by hand, delete it there. Until then no other operation runs.",
+    "paqueteCambiado": "The profile file is no longer where you opened it, or it has changed. Open it again.",
+    "conflictosSinDecidir": "You still need to decide on what affects the whole account."
+  },
+  "versionApp": "Version {{version}}",
+  "instalaciones": {
+    "titulo": "Installations",
+    "explicacion": "The WoW folders the app knows about. If yours is missing (moved, on another drive or portable), add it by hand. Names are only stored on this computer.",
+    "anadir": "Add folder",
+    "porDefecto": "Installation {{numero}}",
+    "nombre": "Installation name",
+    "fuente": {
+      "registro": "Windows registry",
+      "manual": "By hand",
+      "battlenet": "Battle.net agent"
+    },
+    "sinVersiones": "no game versions",
+    "noEncontrada": "Not found: the folder is gone, cannot be read or is missing its .build.info file.",
+    "quitar": "Remove",
+    "quitarEtiqueta": "Remove {{nombre}} from the list",
+    "ninguna": "No installations yet. Add your WoW folder by hand.",
+    "alta": {
+      "anadida": "Folder added.",
+      "yaEstaba": "That folder is already in the list.",
+      "noEsInstalacion": "That folder is not a WoW installation: its .build.info file is missing. Choose the folder that contains _retail_ or _forever_."
+    }
+  },
+  "nombre": {
+    "editar": "Rename: {{que}}",
+    "guardar": "Save the name",
+    "cancelar": "Cancel"
+  },
+  "eliminar": {
+    "boton": "Delete folder",
+    "titulo": "Delete {{nombre}}'s folder?",
+    "contenido_one": "{{count}} file, {{tamano}}.",
+    "contenido_other": "{{count}} files, {{tamano}}.",
+    "aviso": "If the character still exists, the game will create the folder again when you log in with it. Macros and Edit Mode come back from the server, but its addon settings go back to their defaults and every addon is enabled.",
+    "copia": "Before removing anything, a full copy is saved in the app's data folder. The character's keys in the account files are not touched.",
+    "cancelar": "Cancel",
+    "confirmar": "Delete folder",
+    "eliminando": "Deleting…",
+    "cerrar": "Close",
+    "hecho": "Folder deleted. The copy is saved in operation {{id}}."
+  },
+  "recuperacion": {
+    "canceladas_one": "An operation was cut off before touching anything and has been cancelled.",
+    "canceladas_other": "{{count}} operations were cut off before touching anything and have been cancelled.",
+    "restauradas_one": "An operation was cut off halfway and everything was put back as it was.",
+    "restauradas_other": "{{count}} operations were cut off halfway and everything was put back as it was.",
+    "sinRestaurar_one": "An operation cut off halfway could not be fully undone. Its copies are still in the app's data folder.",
+    "sinRestaurar_other": "{{count}} operations cut off halfway could not be fully undone. Their copies are still in the app's data folder.",
+    "pendientes_one": "An operation is unfinished, but WoW is running. Close the game and open the app again to finish it.",
+    "pendientes_other": "{{count}} operations are unfinished, but WoW is running. Close the game and open the app again to finish them.",
+    "ilegibles_one": "An operation has a log that cannot be read. It has not been touched.",
+    "ilegibles_other": "{{count}} operations have a log that cannot be read. They have not been touched.",
+    "aMedias_one": "An import was cut off halfway and has not been touched. Restore it from History: until then no other operation can run.",
+    "aMedias_other": "{{count}} imports were cut off halfway and have not been touched. Restore them from History: until then no other operation can run."
+  },
+  "historial": {
+    "titulo": "History",
+    "explicacion": "What the app has changed in the game folders, each with a copy of how it was. Nothing is deleted on its own: you decide when to free space.",
+    "cargando": "Reading the history…",
+    "vacio": "No operations yet.",
+    "total": "{{tamano}} in total",
+    "tipo": {
+      "eliminacion": "Folder deleted",
+      "deshacer": "Undo",
+      "importacion": "Import"
+    },
+    "estado": {
+      "preparando": "Unfinished",
+      "copiada": "Unfinished",
+      "escribiendo": "Unfinished",
+      "completa": "Done",
+      "deshecha": "Undone",
+      "cancelada": "Cancelled",
+      "fallida-restaurada": "Failed; everything left as it was",
+      "fallida-sin-restaurar": "Failed and could not restore"
+    },
+    "ficheros_one": "{{count}} file",
+    "ficheros_other": "{{count}} files",
+    "deshace": "Undoes operation {{id}}.",
+    "deshaceBorrada": "Undid an operation that has since been deleted.",
+    "deshechaPor": "Undone by operation {{id}}.",
+    "sinDevolver": "These files are not as they were before the operation. To restore them by hand, copy each copy back to its place (or remove the extra one):",
+    "copiaDe": "{{ruta}} ← {{copia}}",
+    "sobra": "{{ruta}} (did not exist before: extra)",
+    "ilegibles_one": "One operation has a log that can't be read. It is left alone; you can open its folder.",
+    "ilegibles_other": "{{count}} operations have logs that can't be read. They are left alone; you can open their folders.",
+    "abrir": "Open folder",
+    "deshacer": "Undo",
+    "borrar": "Delete",
+    "perfil": "Profile “{{nombre}}”",
+    "aMedias": "It was cut off while writing. “Restore” puts these files back as they were before the import:",
+    "restaurar": "Restore"
+  },
+  "deshacer": {
+    "titulo": {
+      "eliminacion": "Undo the deletion of {{nombre}}?",
+      "importacion": "Undo the import into {{nombre}}?"
+    },
+    "contenido_one": "{{count}} file goes back to how it was.",
+    "contenido_other": "{{count}} files go back to how they were.",
+    "nada": "Everything is already as it was: nothing is written, it is only marked as undone.",
+    "aviso": "These files are replaced or removed. Anything the game saved in them since then is lost:",
+    "copia": "Before writing, a copy of what is there now is kept as a new operation in the history.",
+    "cancelar": "Cancel",
+    "confirmar": "Undo",
+    "deshaciendo": "Undoing…",
+    "cerrar": "Close",
+    "hecho": "Done: everything is back as it was (operation {{id}}).",
+    "sobran_one": "{{count}} file that wasn't there before is removed.",
+    "sobran_other": "{{count}} files that weren't there before are removed.",
+    "deCuenta": "These belong to the account: they change for all its characters:",
+    "addons_one": "{{count}} add-on that was installed is removed.",
+    "addons_other": "{{count}} add-ons that were installed are removed.",
+    "addonsCambiados": "These files of those add-ons changed or were added later: they stay."
+  },
+  "borrar": {
+    "titulo": "Delete operation {{id}}?",
+    "explicacion": "Frees {{tamano}}. Its copy goes away and it can no longer be undone.",
+    "sinRestaurar": "This operation could not be fully restored: its copy may be all that is left of how those files were.",
+    "confirmarManual": "I have already restored what was missing by hand",
+    "cancelar": "Cancel",
+    "confirmar": "Delete",
+    "borrando": "Deleting…",
+    "deshacer": "This is an undo: its copy is what the game had saved in the folder after the deletion."
+  },
+  "exportar": {
+    "boton": "Export",
+    "titulo": "Export {{nombre}}",
+    "piezas": "What goes in",
+    "deLaCuenta": "from the account",
+    "diseno": "layout “{{nombre}}”",
+    "quitadas_one": "without {{count}} line that does not travel",
+    "quitadas_other": "without {{count}} lines that do not travel",
+    "categorias": {
+      "macros": "Macros",
+      "teclas": "Key bindings",
+      "teclas-clic": "Click bindings",
+      "opciones": "Options",
+      "chat": "Chat",
+      "ventanas": "Windows",
+      "modo-edicion": "Edit Mode",
+      "marcos-banda": "Raid frames",
+      "addons-activos": "Enabled add-ons",
+      "config-addon": "Addon settings",
+      "addon": "Addon"
+    },
+    "nada": "This character has nothing to export yet.",
+    "barras": "What is on the action bar buttons does not travel: the server keeps it. Key bindings, macros and the list of enabled add-ons do.",
+    "juegoAbierto": "WoW is open: what you changed this session is not on disk until you log out of the character or type /reload.",
+    "apartadas": "Not included because they already contain the reserved text “@@WOWPROFILE:”: {{piezas}}.",
+    "nombre": "Profile name",
+    "descripcion": "Description (optional)",
+    "cancelar": "Cancel",
+    "confirmar": "Save…",
+    "exportando": "Saving…",
+    "cerrar": "Close",
+    "hecho": "Saved as {{fichero}}.",
+    "addons": {
+      "titulo": "Addon settings",
+      "explicacion": "What is recognised as settings is ticked. Whole files are not: they may carry progress, state or other players' data.",
+      "pieza": {
+        "perfilAcedb": "Profile “{{perfil}}”",
+        "adaptador": "Settings: {{variable}}",
+        "genericoCuenta": "Account file",
+        "genericoPersonaje": "Character file",
+        "genericoCuentaConPersonajes": "Account file"
+      },
+      "avisos": {
+        "generico": "Whole file: it may carry progress, state or other players' data.",
+        "conPersonajes": "It mentions characters of this account.",
+        "versionNoMedida": "This addon version has not been checked: it could carry more than its settings.",
+        "guid": "It seems to contain other players: player identifiers.",
+        "nombreReino": "It seems to contain other players: names with realm."
+      },
+      "marcarTodos": {
+        "genericoCuenta": "Tick the account files",
+        "genericoPersonaje": "Tick the character files",
+        "genericoCuentaConPersonajes": "Tick the ones that mention characters"
+      },
+      "marcarTodosNota": "Ones that seem to contain other players are left out: tick those one by one.",
+      "noExportables_one": "{{count}} item can't be exported",
+      "noExportables_other": "{{count}} items can't be exported",
+      "noExportable": {
+        "noSeLee": "It can't be read.",
+        "sinNombre": "The character's name in the data is unknown.",
+        "sinPerfil": "This character has no profile assigned in this addon.",
+        "demasiadoGrande": "It is larger than the format allows.",
+        "traeMarcador": "It already contains the reserved text “@@WOWPROFILE:”.",
+        "perfilNoValido": "The profile name can't be carried (odd text or too long).",
+        "carpetaNoAdmitida": "The format doesn't allow the addon folder's name."
+      },
+      "ambito": {
+        "cuenta": "account",
+        "personaje": "character"
+      }
+    },
+    "carpetas": {
+      "titulo": "Add-ons",
+      "aviso": "The add-ons' code travels, not just their settings. The game runs it: whoever imports the profile has to trust you. Many add-ons don't allow redistribution: sharing them is your responsibility.",
+      "marcarTodas": "Tick all",
+      "desmarcarTodas": "Untick all",
+      "noExportables_one": "{{count}} add-on can't be taken: whoever imports will see it's missing",
+      "noExportables_other": "{{count}} add-ons can't be taken: whoever imports will see they're missing",
+      "motivo": {
+        "demasiadoGrande": "it is larger than 64 MiB.",
+        "demasiadosFicheros": "it has more than 4,096 files.",
+        "rutaNoValida": "it has a name Windows doesn't allow or that can't be taken ({{detalle}}).",
+        "enlace": "it has a Windows link or junction ({{detalle}}).",
+        "noSeLee": "it can't be read."
+      }
+    }
+  },
+  "motivosPaquete": {
+    "noEsZip": "it can't be opened as a .wowprofile.",
+    "demasiadoGrande": "it is too large.",
+    "demasiadasEntradas": "it contains too many files.",
+    "manifiestoIlegible": "its description is missing or unreadable.",
+    "manifiestoNoValido": "its description doesn't follow the format.",
+    "entradasDelZip": "it has extra or missing files.",
+    "piezaIlegible": "one of its files can't be read.",
+    "piezaDemasiadoGrande": "one of its files is larger than it says.",
+    "totalDemasiadoGrande": "its files are too large in total.",
+    "piezaDanada": "one of its files is damaged or was modified.",
+    "addonNoValido": "one of its add-ons has files that would leave its folder, names Windows doesn't allow or too much content."
+  },
+  "importar": {
+    "titulo": "Import",
+    "abrir": "Open profile…",
+    "abrirOtro": "Open another…",
+    "explicacion": "Open a .wowprofile file to choose which characters to apply it to and see what would change. Looking changes nothing.",
+    "paquete": "Open profile",
+    "entradas_one": "{{count}} item",
+    "entradas_other": "{{count}} items",
+    "pasosEtiqueta": "Steps",
+    "pasos": {
+      "destino": "Destination",
+      "seleccion": "What to import",
+      "vistaPrevia": "Preview",
+      "resultado": "Result"
+    },
+    "atras": "Back",
+    "siguiente": "Next",
+    "sinInstalacion": "This profile is for {{version}} and this computer has no installation of that version.",
+    "instalacion": "Installation",
+    "interfazDistinta": "The profile was made with interface {{paquete}} and this installation has {{destino}}: something may not fit.",
+    "elegirDestinos": "Tick one or more characters. They can be from different accounts of this installation.",
+    "marcados_one": "{{count}} character ticked",
+    "marcados_other": "{{count}} characters ticked",
+    "queSeImporta": "What to import",
+    "deLaCuenta": "Account {{categoria}}",
+    "incompatible": {
+      "noSeImporta": "this version doesn't import it yet",
+      "destinoAjeno": "not imported: it points to a file that isn't its own",
+      "piezaNoValida": "not imported: it is not just settings (it could carry code the game would run)",
+      "adaptadorDesconocido": "this version does not know how to apply it (unknown or newer adapter)"
+    },
+    "teclasSinComprobar": "Key bindings are saved as this character's own bindings. If it used the account-wide ones before, log into the game and check it has the new ones. If not, you can undo the import from History.",
+    "decisionesEtiqueta": "What affects the whole account",
+    "decisionesExplicacion": "This changes the settings of every character on the account. Decide for each one whether to apply it.",
+    "enCuenta": "{{categoria}} on account {{cuenta}} ({{personajes}})",
+    "aplicar": "Apply",
+    "noAplicar": "Don't apply",
+    "calculando": "Working out what would change…",
+    "juegoAbierto": "WoW is running. You can look at the preview, but it will have to be closed to apply.",
+    "grupos": {
+      "nuevo": "New",
+      "modificado": "Modified",
+      "sinCambios": "Unchanged",
+      "conflictos": "Undecided",
+      "incompatibles": "Not imported",
+      "noAplicables": "Not applied to this character",
+      "addons": "Add-ons"
+    },
+    "sinDecidir": "{{entrada}}: decide whether to apply it on this account.",
+    "nadaQueImportar": "Nothing to import on this character.",
+    "afectaCuenta": "Affects every character on the account.",
+    "escritaEn": "Applied once for the account, with {{personaje}}.",
+    "addonsQueFaltan": "Enabled, but not installed on this computer.",
+    "cambio": {
+      "anadido": "New",
+      "cambiado": "Changes",
+      "quitado": "Removed"
+    },
+    "otrasCategorias": {
+      "config-addon": "Add-on settings",
+      "addon": "Add-on folder"
+    },
+    "aplicarImportacion": "Apply…",
+    "noSePuedeAplicar": {
+      "juegoAbierto": "Close WoW to be able to apply.",
+      "conflictos": "Decide first what is missing: what affects the whole account and the profiles that already exist.",
+      "nada": "Nothing to write: everything is already the same."
+    },
+    "confirmar": {
+      "titulo": "Apply “{{perfil}}”?",
+      "personaje_one": "{{nombre}}: {{count}} file",
+      "personaje_other": "{{nombre}}: {{count}} files",
+      "cuenta": "Includes account files: they change for all its characters.",
+      "copia": "Before writing, a copy of every file that changes is saved. Each character gets its own line in History and is undone separately.",
+      "cancelar": "Cancel",
+      "aplicar": "Apply",
+      "aplicando": "Applying…"
+    },
+    "resultado": {
+      "completa_one": "Done: {{count}} file written.",
+      "completa_other": "Done: {{count}} files written.",
+      "sinCambios": "Nothing to write: it was already the same.",
+      "fallida": "Not applied.",
+      "noAplicada": "Not applied: an earlier character failed.",
+      "deshecha": "Undone.",
+      "addons_one": "{{count}} add-on installed.",
+      "addons_other": "{{count}} add-ons installed."
+    },
+    "siguientePaso": "Log into the game with each character and check that everything is fine. You place the abilities on the buttons yourself: the profile brings the layout and the key bindings, not what is on each button.",
+    "verHistorial": "View history",
+    "queTrae": {
+      "boton": "What it includes",
+      "etiqueta": "What it includes: {{categoria}}",
+      "macros": "Macros: their name, icon and text.",
+      "teclas": "Which key does each action.",
+      "teclas-clic": "Actions assigned to mouse clicks (click casting).",
+      "opciones": "Game options: interface, camera, combat and more.",
+      "chat": "Chat tabs, which messages each one shows and their channels. It does not include messages.",
+      "ventanas": "Where you placed the interface windows that can be moved.",
+      "modo-edicion": "The Edit Mode layout “{{nombre}}”. It is added to the account's layouts and the character starts using it; other layouts and characters do not change.",
+      "marcos-banda": "Raid frame profiles: size, colors and what they show.",
+      "addons-activos": "Which addons are left enabled and which disabled.",
+      "activados_one": "{{count}} enabled",
+      "activados_other": "{{count}} enabled",
+      "desactivados_one": "{{count}} disabled",
+      "desactivados_other": "{{count}} disabled"
+    },
+    "addons": {
+      "titulo": "Addon settings",
+      "explicacion": "What is recognised as settings is ticked. Whole files are not: they may carry progress, state or other players' data, and the profile does not say who made it.",
+      "generico": "Whole file: it may carry progress, state or other players' data.",
+      "pieza": {
+        "perfilAcedb": "Profile “{{perfil}}”",
+        "perfilDelPersonaje": "Profile named after the character",
+        "adaptador": "Settings: {{variable}}",
+        "genericoCuenta": "Account file",
+        "genericoPersonaje": "Character file"
+      }
+    },
+    "perfiles": {
+      "existe": "{{entrada}}: this account already has a different “{{perfil}}” profile.",
+      "renombrar": "Import it as “{{propuesto}}”",
+      "sobrescribir": "Overwrite “{{perfil}}”",
+      "usadoPor": "{{personajes}} also use it: overwriting it changes their settings."
+    },
+    "noAplicable": {
+      "sinNombre": "not applied: the character's name in the addon data is unknown.",
+      "destinoIlegible": "not applied: its file for this character cannot be understood and is left alone.",
+      "noEncaja": "not applied: what would be written is not just settings, so it is not written."
+    },
+    "avisos": {
+      "faltaAddon": "{{addon}} is not installed here: it is saved anyway and used once you install it.",
+      "versionNoMedida": "{{addon}} {{instalada}}: this was checked with version {{medidas}}; it could carry more than its settings.",
+      "sinVersion": "(no version)"
+    },
+    "elemento": {
+      "perfil": "Profile “{{nombre}}”",
+      "perfilDe": "{{nombre}}'s profile",
+      "diseno": "Edit Mode layout “{{nombre}}”",
+      "disenoActivo": "Starts using layout “{{nombre}}”"
+    },
+    "carpetas": {
+      "titulo": "Add-ons",
+      "aviso": "The package carries add-ons: code the game runs. Only import them if you trust whoever gave you the profile. Only the ones you don't have are installed; the ones you have aren't touched, even if they're a different version.",
+      "lista": "Add-ons in the package",
+      "marcarTodas": "Tick all",
+      "desmarcarTodas": "Untick all"
+    },
+    "addonSeInstala": "— installed",
+    "addonYaInstalado": "— you already have it: not touched"
+  },
+  "restaurar": {
+    "titulo": "Restore what changed in {{nombre}}?",
+    "explicacion": "The files the operation managed to change go back to how they were, from their copies. What it did not touch is not touched. If one is no longer as the operation left it, it is not overwritten and you are told.",
+    "cancelar": "Cancel",
+    "confirmar": "Restore",
+    "restaurando": "Restoring…",
+    "cerrar": "Close",
+    "hecho": "Done: everything is as it was before the operation."
+  },
+  "motivos": {
+    "seguridad": "For safety: it would remove the game's warning before running scripts for whoever imports it.",
+    "estado": "Game state, not settings: what you track, what you have already seen or what you have collapsed.",
+    "addonNoInstalado": "Addons that are not installed on this computer.",
+    "viajaComoPerfil": "They travel separately, as their profile: that way only this character's one goes."
+  },
+  "diagnostico": {
+    "titulo": "Diagnostics",
+    "explicacion": "What the app is doing in this session: where it looked for the game, which folders it skipped and why, and every operation with its result. Use it to track down problems.",
+    "guardar": "Save the log to a .txt file",
+    "abrirCarpeta": "Open logs folder",
+    "privacidad": "The log never leaves this computer. It contains paths to your folders (with your Windows user name), the names of your account and addon folders, and system error messages: if you share it to ask for help, you share those too.",
+    "consola": "Log for this session",
+    "vacio": "No lines in this session yet."
+  },
+  "cierre": {
+    "titulo": "An operation is in progress",
+    "explicacion": "The app is writing to the game folder. If you close it now, whatever was left half done will be undone the next time you open it; if it was an import, you will be asked whether to restore it.",
+    "seguir": "Wait",
+    "cerrar": "Close anyway"
+  }
+}

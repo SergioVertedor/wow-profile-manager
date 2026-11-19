@@ -1,0 +1,96 @@
+/*
+ * Tokens de la identidad visual (spec 017). Ningún color ni fuente fuera de este fichero; las medidas salen de la
+ * escala de espaciado, salvo trazos finos (bordes, anillos) en px.
+ *
+ * Inspiración: la pantalla de selección de personaje del juego. Fondo grafito, el oro solo para lo elegido y la
+ * acción principal, y un foco de luz cálida sobre el personaje. Nada de material de Blizzard: fuente OFL y colores
+ * propios. El fondo de la ventana (`tauri.conf.json`, `backgroundColor`) repite `--color-fondo` para que no destelle.
+ *
+ * Contraste medido (WCAG) sobre fondo / superficie / superficie alta / fila elegida. Todo texto ≥ 4,5:1:
+ *   texto 15,17 / 13,98 / 12,58 / 12,08 · secundario 7,78 / 7,18 / 6,46 / 6,20
+ *   terciario 5,85 / 5,39 / 4,85 / 4,66 · oro 10,10 / 9,31 / 8,38 / 8,05
+ *   arcano 9,33 / 8,60 / 7,74 / 7,43 · aviso 9,38 / 8,65 / 7,79 / 7,48 · alerta 7,47 / 6,88 / 6,20 / 5,95
+ *   texto sobre el botón de oro 9,35 (6,75 en su parte más oscura)
+ * `#767A88` como terciario no llegaba (3,52 sobre la fila elegida): descartado.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Superficies */
+  --color-fondo: #0f1117;
+  --color-barra-alto: #13161d;
+  --color-barra-bajo: #0d0f14;
+  --color-superficie: #171a22;
+  --color-superficie-alta: #1f2330;
+  --color-hundido: #12141b;
+  --color-retrato-luz: #2a2f3e;
+  --color-linea: #2a2f3d;
+  --color-linea-control: #6b7389; /* borde de controles: ≥ 3:1 sobre todos los fondos (3,31 en el más claro) */
+
+  /* Texto */
+  --color-texto: #ece6d8;
+  --color-texto-2: #a3a6b3;
+  --color-texto-3: #8b8f9c;
+  --color-nombre: #fff7e6;
+
+  /* Acentos */
+  --color-oro: #e2b85c;
+  --color-oro-claro: #f4d898;
+  --color-oro-hondo: #c79a3e;
+  --color-sobre-oro: #22180a;
+  --color-arcano: #8ab8ff;
+  --color-aviso: #f0a93b;
+  --color-alerta: #ff7b6e;
+
+  /* Transparencias derivadas: luz, velos y sombras */
+  --oro-velo: rgb(226 184 92 / 14%);
+  --oro-velo-tenue: rgb(226 184 92 / 3%);
+  --oro-borde: rgb(226 184 92 / 35%);
+  --oro-foco: rgb(226 184 92 / 22%);
+  --oro-halo: rgb(226 184 92 / 12%);
+  --arcano-foco: rgb(80 110 200 / 14%);
+  --arcano-velo: rgb(138 184 255 / 7%);
+  --arcano-borde: rgb(138 184 255 / 25%);
+  --aviso-velo: rgb(240 169 59 / 9%);
+  --aviso-borde: rgb(240 169 59 / 30%);
+  --blanco-velo: rgb(255 255 255 / 4%);
+  --blanco-brillo: rgb(255 255 255 / 35%);
+  --luz-borde: rgb(244 216 152 / 18%);
+  --sombra: rgb(0 0 0 / 40%);
+
+  /* Tipografía: Commissioner, con terminales abocinados (FLAR) en títulos y nombres */
+  --fuente: "Commissioner Variable", "Segoe UI", system-ui, sans-serif;
+  /* Consola de Diagnóstico: fuentes de Windows, sin descargar nada */
+  --fuente-mono: "Cascadia Mono", Consolas, monospace;
+  --abocinado: "FLAR" 100;
+  --liso: "FLAR" 0;
+  --texto-pequeno: 0.8rem;
+  --texto-control: 0.875rem;
+  --texto-base: 0.9375rem;
+  --texto-m: 1.125rem;
+  --texto-l: 1.5rem;
+  --texto-xl: 2.5rem;
+  --texto-monograma: 3rem;
+  --interlineado: 1.5;
+
+  /* Espaciado: múltiplos de 4 px */
+  --espacio-1: 0.25rem;
+  --espacio-2: 0.5rem;
+  --espacio-3: 0.75rem;
+  --espacio-4: 1rem;
+  --espacio-5: 1.25rem;
+  --espacio-6: 1.5rem;
+  --espacio-7: 1.75rem;
+  --espacio-8: 2rem;
+  --espacio-10: 2.5rem;
+
+  /* Formas */
+  --radio-s: 7px;
+  --radio-m: 10px;
+  --radio-l: 14px;
+  --radio-pildora: 999px;
+  --ancho-barra: 13rem;
+  --ancho-plantel: 18.5rem;
+  --ancho-texto: 38rem;
+  --duracion: 160ms;
+}

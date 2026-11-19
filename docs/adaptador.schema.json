@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SergioVertedor/wow-profile-manager/blob/develop/docs/adaptador.schema.json",
+  "title": "Adaptador de addon 1.x",
+  "description": "Qué parte de los SavedVariables de un addon viaja en un .wowprofile. Ver docs/adaptadores.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "addon", "medido"],
+  "if": {
+    "required": ["reglas"],
+    "properties": { "reglas": { "contains": { "anyOf": [{ "required": ["excluir"] }, { "required": ["entera"] }] } } }
+  },
+  "then": { "required": ["versionesAddon"] },
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "version": { "type": "integer", "minimum": 1 },
+    "addon": {
+      "description": "Carpeta del addon en Interface/AddOns.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_!.\\-]{1,64}$",
+      "not": { "pattern": "^\\.+$" }
+    },
+    "versionesAddon": {
+      "description": "Versiones del addon (## Version del .toc) con las que se midió. Fuera de ellas, la entrada se ofrece desactivada y con aviso.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1, "maxLength": 64 }
+    },
+    "medido": {
+      "description": "Qué se midió para escribir el adaptador: claves vistas y fecha.",
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 1000
+    },
+    "reglas": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/regla" }
+    },
+    "noExportar": {
+      "description": "El addon solo guarda estado o datos de otros jugadores: nunca se ofrece.",
+      "const": true
+    }
+  },
+  "oneOf": [
+    { "required": ["reglas"], "not": { "required": ["noExportar"] } },
+    { "required": ["noExportar"], "not": { "required": ["reglas"] } }
+  ],
+  "$defs": {
+    "ruta": {
+      "description": "Claves separadas por '/'. Un segmento es '*' (cualquier clave), '$PJ' (la clave del personaje) o un nombre literal.",
+      "type": "string",
+      "maxLength": 256,
+      "pattern": "^(\\*|\\$PJ|[^/$*]+)(/(\\*|\\$PJ|[^/$*]+))*$"
+    },
+    "rutaConPersonaje": {
+      "allOf": [
+        { "$ref": "#/$defs/ruta" },
+        { "pattern": "(^|/)\\$PJ($|/)" }
+      ]
+    },
+    "listaRutas": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/ruta" }
+    },
+    "regla": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ambito", "variable"],
+      "properties": {
+        "ambito": { "enum": ["personaje", "cuenta"] },
+        "variable": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,127}$" },
+        "entera": { "const": true },
+        "incluir": { "$ref": "#/$defs/listaRutas" },
+        "excluir": { "$ref": "#/$defs/listaRutas" },
+        "perfilAcedb": { "const": true },
+        "soloPersonaje": {
+          "description": "Tablas indexadas por personaje: solo viaja la entrada del personaje de origen, con su clave cambiada a la del destino.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/rutaConPersonaje" }
+        },
+        "clavePersonaje": {
+          "description": "Cómo escribe el addon la clave del personaje. Por defecto, como AceDB en Forever.",
+          "enum": ["nombre-apellido", "nombre-guion-reino"],
+          "default": "nombre-apellido"
+        }
+      },
+      "oneOf": [
+        { "required": ["entera"] },
+        { "required": ["incluir"] },
+        { "required": ["excluir"] },
+        { "required": ["perfilAcedb"] }
+      ],
+      "allOf": [
+        {
+          "if": { "required": ["perfilAcedb"] },
+          "then": { "properties": { "ambito": { "const": "cuenta" } }, "not": { "required": ["soloPersonaje"] } }
+        }
+      ]
+    }
+  }
+}

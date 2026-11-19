@@ -1,0 +1,15 @@
+/* Cada grupo: la frase y, debajo, sus claves como etiquetas que fluyen en líneas. */
+.grupo + .grupo {
+  margin-top: var(--espacio-3);
+}
+
+.claves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-1) var(--espacio-2);
+  margin: var(--espacio-1) 0 0;
+  padding: 0;
+  color: var(--color-texto-3);
+  list-style: none;
+  overflow-wrap: anywhere;
+}

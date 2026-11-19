@@ -1,0 +1,102 @@
+/* Armazón: barra lateral estrecha con la marca y las vistas; contenido a la derecha. */
+.armazon {
+  display: grid;
+  grid-template-columns: var(--ancho-barra) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
+}
+
+.barra {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-7);
+  padding: var(--espacio-5) var(--espacio-3) var(--espacio-4);
+  background: linear-gradient(180deg, var(--color-barra-alto) 0%, var(--color-barra-bajo) 100%);
+  border-right: 1px solid var(--color-linea);
+}
+
+.marca {
+  display: flex;
+  gap: var(--espacio-3);
+  align-items: center;
+  padding: 0 var(--espacio-1);
+}
+
+.emblema {
+  flex: none;
+  fill: none;
+}
+
+.emblemaAlto {
+  stop-color: var(--color-oro-claro);
+}
+
+.emblemaBajo {
+  stop-color: var(--color-oro-hondo);
+}
+
+.nombreApp {
+  font-weight: 650;
+  font-variation-settings: var(--abocinado);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.secundario {
+  color: var(--color-texto-3);
+  font-size: var(--texto-pequeno);
+}
+
+.alerta {
+  color: var(--color-alerta);
+  font-size: var(--texto-pequeno);
+}
+
+.navegacion {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pestana {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  padding: var(--espacio-2) var(--espacio-3);
+  border: 0;
+  border-radius: var(--radio-s);
+  background: none;
+  color: var(--color-texto-2);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--duracion), background-color var(--duracion);
+}
+
+.pestana:hover {
+  color: var(--color-texto);
+  background: var(--blanco-velo);
+}
+
+.pestana[aria-pressed="true"] {
+  color: var(--color-texto);
+  background: linear-gradient(90deg, var(--oro-velo), var(--oro-velo-tenue));
+  box-shadow: inset 2px 0 0 var(--color-oro);
+}
+
+.pestana[aria-pressed="true"] svg {
+  color: var(--color-oro);
+}
+
+.pie {
+  margin-top: auto;
+  padding: 0 var(--espacio-3);
+  color: var(--color-texto-3);
+  font-size: var(--texto-pequeno);
+}
+
+.contenido {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}

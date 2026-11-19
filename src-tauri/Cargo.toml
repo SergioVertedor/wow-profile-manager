@@ -1,0 +1,78 @@
+[package]
+name = "wow-profile-manager"
+version = "0.1.0"
+description = "Exporta, comparte e importa perfiles de configuración de personajes de WoW Forever"
+authors = ["Sergio Vertedor"]
+license = "GPL-3.0-only"
+repository = "https://github.com/SergioVertedor/wow-profile-manager"
+edition = "2024"
+
+[lib]
+# El sufijo `_lib` evita que la biblioteca y el ejecutable se llamen igual, que en Windows choca:
+# https://github.com/rust-lang/cargo/issues/8519
+name = "wow_profile_manager_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sys-locale = "0.3"
+open = "5"
+# Lector de Lua sin pérdidas para los SavedVariables (D-02: 1.467 de 1.467 ficheros reales, idénticos).
+full_moon = "2"
+tauri-plugin-dialog = "2"
+# Hash de las copias de Operaciones. Ya estaba en el Cargo.lock (tauri-codegen): sin crates nuevos.
+sha2 = "0.11"
+# Fecha UTC de las operaciones. Ya estaba en el árbol (cookie, de Tauri): sin crates nuevos.
+# `local-offset`: hora local del registro de diagnóstico (spec 029). Solo añade crates en Unix (`libc`, `num_threads`).
+time = { version = "0.3", features = ["local-offset"] }
+# Fachada del registro de diagnóstico (spec 029). Ya estaba en el árbol (transitiva de Tauri): sin crates nuevos.
+log = "0.4"
+# Contenedor del `.wowprofile` (spec 023). Solo deflate. `zip` no trae backend con `deflate-flate2`: se elige el de
+# Rust puro de `flate2` (miniz_oxide), que ya estaba en el árbol. Medido: +5 crates (`zip` y 4 suyas).
+zip = { version = "9.7.0", default-features = false, features = ["deflate-flate2"] }
+flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
+# Autoactualización (spec 035). HTTP con el TLS y los certificados de Windows (`native-tls` → SChannel), sin rustls
+# ni ring. Solo se usa si el interruptor está encendido.
+ureq = { version = "3", default-features = false, features = ["native-tls", "json"] }
+# Firma Ed25519/minisign de las actualizaciones (la de `tauri signer`). Sin dependencias.
+minisign-verify = "0.3"
+# Sustituir el `.exe` en uso en Windows.
+self-replace = "1.5"
+# El `.sig` de `tauri signer` es la firma minisign en base64. Ya estaba en el árbol: sin crates nuevos.
+base64 = "0.23"
+
+# Registro de Windows para encontrar la instalación. Ya estaba en el árbol (dependencia de Tauri).
+[target.'cfg(windows)'.dependencies]
+winreg = "0.56"
+
+[dev-dependencies]
+# Carpetas temporales para los árboles de prueba: los tests nunca tocan una instalación real.
+tempfile = "3"
+# Runtime simulado de Tauri: los tests llaman a los comandos por su nombre sin abrir ventanas.
+tauri = { version = "2", features = ["test"] }
+
+# Reglas de calidad (Sonar y Clean Code) que comprueba `cargo clippy -- -D warnings` en la CI.
+[lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+cognitive_complexity = "warn"
+too_many_arguments = "warn"
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

@@ -1,0 +1,207 @@
+/* La lista de personajes: controles fijos arriba y filas con su propio scroll. */
+.plantel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-l);
+}
+
+.controles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  padding: var(--espacio-3);
+  border-bottom: 1px solid var(--color-linea);
+}
+
+.cuenta {
+  padding: var(--espacio-1) var(--espacio-1) 0;
+  font-size: var(--texto-base);
+  font-variation-settings: var(--liso);
+}
+
+.datosCuenta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espacio-2);
+  padding: 0 var(--espacio-1);
+  color: var(--color-texto-3);
+  font-size: var(--texto-pequeno);
+}
+
+.campo {
+  position: relative;
+}
+
+.selector,
+.buscar {
+  width: 100%;
+  border: 1px solid var(--color-linea-control);
+  border-radius: var(--radio-m);
+}
+
+.selector {
+  appearance: none;
+  padding: var(--espacio-2) var(--espacio-8) var(--espacio-2) var(--espacio-3);
+  background: var(--color-superficie-alta);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.iconoSelector,
+.iconoCampo {
+  position: absolute;
+  top: 50%;
+  color: var(--color-texto-2);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.iconoSelector {
+  right: var(--espacio-3);
+}
+
+.iconoCampo {
+  left: var(--espacio-3);
+  color: var(--color-texto-3);
+}
+
+.buscar {
+  padding: 7px var(--espacio-3) 7px var(--espacio-8);
+  background: var(--color-hundido);
+  font-size: var(--texto-control);
+}
+
+.buscar::placeholder {
+  color: var(--color-texto-3);
+}
+
+.lista {
+  flex: 1;
+  min-height: 0;
+  padding: var(--espacio-2);
+  overflow-y: auto;
+}
+
+.nota {
+  padding: var(--espacio-2);
+  color: var(--color-texto-2);
+  font-size: var(--texto-control);
+}
+
+/* Cabecera de reino: se queda fija mientras se recorren sus personajes y es el botón que los pliega (spec 019). */
+.reino {
+  position: sticky;
+  top: calc(-1 * var(--espacio-2));
+  z-index: 1;
+  margin: var(--espacio-1) 0 2px;
+  background: var(--color-superficie);
+  font-size: var(--texto-pequeno);
+  font-variation-settings: var(--liso);
+}
+
+.reino button {
+  display: flex;
+  gap: var(--espacio-1);
+  align-items: center;
+  width: 100%;
+  padding: var(--espacio-1) var(--espacio-2);
+  border: 0;
+  border-radius: var(--radio-s);
+  background: none;
+  color: var(--color-texto-2);
+  font-weight: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--duracion), background-color var(--duracion);
+}
+
+.reino button:hover {
+  background: var(--blanco-velo);
+  color: var(--color-texto);
+}
+
+.reino svg {
+  flex: none;
+  color: var(--color-texto-3);
+}
+
+.reino span {
+  margin-left: auto;
+  color: var(--color-texto-3);
+  font-weight: 400;
+}
+
+.filas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fila {
+  display: flex;
+  gap: var(--espacio-3);
+  align-items: center;
+  width: 100%;
+  min-height: 3rem;
+  padding: var(--espacio-2) var(--espacio-3);
+  border: 0;
+  border-radius: var(--radio-m);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duracion);
+}
+
+.fila:hover {
+  background: var(--blanco-velo);
+}
+
+.fila[aria-pressed="true"],
+.fila[data-marcada="true"] {
+  background: linear-gradient(90deg, var(--oro-velo), var(--oro-velo-tenue));
+  box-shadow: inset 0 0 0 1px var(--oro-borde);
+}
+
+/* Selección múltiple al importar: la casilla es el control; la fila entera es su etiqueta. */
+.casilla {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-oro);
+}
+
+.fila:has(.casilla:focus-visible) {
+  outline: 2px solid var(--color-oro);
+  outline-offset: 2px;
+}
+
+.monograma {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 50%;
+  background: var(--color-superficie-alta);
+  box-shadow: 0 0 0 1px var(--color-linea);
+  color: var(--color-texto-2);
+  font-weight: 600;
+  font-variation-settings: var(--abocinado);
+}
+
+.fila[aria-pressed="true"] .monograma,
+.fila[data-marcada="true"] .monograma {
+  color: var(--color-oro-claro);
+  box-shadow: 0 0 0 1.5px var(--color-oro);
+}
+
+.nombre {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permisos de la ventana principal: solo los del núcleo de Tauri. Cada plugin que se añada declara aquí su permiso, uno a uno.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default"
+  ]
+}
