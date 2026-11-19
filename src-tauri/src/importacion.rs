@@ -3,9 +3,11 @@
 //! ficheros actuales va aparte (`leer_destino`) y escribir es de Operaciones (`aplicar.rs`).
 
 mod aplicar;
+mod config_addon;
 mod contenido;
 mod elementos;
 mod fusion;
+mod plan_addons;
 
 use crate::deteccion::{self, PersonajeUbicado};
 use crate::error::{ErrorNucleo, MotivoPaquete};
@@ -15,6 +17,8 @@ use crate::paquetes::{
 };
 use crate::piezas::{Filtro, Fuente, Quitadas, fuente_de_destino};
 pub use aplicar::ResultadoPersonaje;
+pub use config_addon::{AccionPerfil, ConflictoPerfil, NoAplicable};
+use config_addon::{EntradaAddon, Forma};
 pub use contenido::Contenido;
 pub use elementos::Elemento;
 use serde::{Deserialize, Serialize};
@@ -38,10 +42,22 @@ pub struct Resumen {
 pub struct EntradaResumen {
     pub id: String,
     pub categoria: String,
+    pub tipo: String,
     pub ambito: Ambito,
-    /// Se escribe en la carpeta de la cuenta: afecta a todos sus personajes y hay que decidirla.
+    /// Afecta a todos los personajes de la cuenta: hay que decidirla en cada cuenta (spec 028, decisión 6).
     pub de_cuenta: bool,
     pub bytes: u64,
+    /// Marcada por defecto (spec 028, decisión 10).
+    pub marcada: bool,
+    /// Sale de una regla genérica: puede llevar estado o datos de otros jugadores.
+    pub generica: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub addon: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub variable: Option<String>,
+    /// El perfil AceDB tal como viene (puede ser el marcador del personaje).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub perfil: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub incompatible: Option<MotivoIncompatible>,
     /// Qué trae, para enseñarlo. Solo en las entradas que se importan y cuya categoría tiene lista.
@@ -57,6 +73,10 @@ pub enum MotivoIncompatible {
     NoSeImporta,
     /// El `destino` no es el fichero de su categoría (spec 024, decisión 7).
     DestinoAjeno,
+    /// La pieza no tiene la forma de su tipo o no es solo datos (spec 028, decisión 1).
+    PiezaNoValida,
+    /// Adaptador que esta versión no conoce, de otro addon o más nuevo que el suyo (spec 028, decisión 2).
+    AdaptadorDesconocido,
 }
 
 /// Lo que elige el jugador.
@@ -67,6 +87,17 @@ pub struct Pedido {
     pub seleccion: Vec<String>,
     /// Qué hacer con cada entrada de cuenta en cada cuenta afectada. Sin decisión, es un conflicto.
     pub cuentas: Vec<DecisionCuenta>,
+    /// Qué hacer con cada perfil AceDB que ya existe y es distinto, en cada cuenta. Sin decisión, es un conflicto.
+    #[serde(default)]
+    pub perfiles: Vec<DecisionPerfil>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DecisionPerfil {
+    pub cuenta: String,
+    pub entrada: String,
+    pub accion: AccionPerfil,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -84,6 +115,8 @@ pub struct Destino {
     pub actuales: HashMap<String, Option<Vec<u8>>>,
     /// Carpetas de los addons instalados, en minúsculas.
     pub instalados: HashSet<String>,
+    /// La versión de cada addon instalado (por carpeta en minúsculas), si la declara.
+    pub versiones: HashMap<String, Option<String>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -110,6 +143,27 @@ pub struct PlanPersonaje {
     pub ficheros: Vec<FicheroPlan>,
     /// Entradas de cuenta sin decidir en la cuenta de este personaje.
     pub conflictos: Vec<String>,
+    /// Perfiles AceDB que ya existen y son distintos, sin decidir.
+    pub conflictos_perfil: Vec<ConflictoPerfil>,
+    /// Entradas que no se pueden aplicar en este personaje.
+    pub no_aplicables: Vec<NoAplicable>,
+}
+
+/// Algo que avisar de un fichero de la configuración de addons.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "tipo", rename_all = "camelCase")]
+pub enum AvisoFichero {
+    /// El addon no está instalado en el destino: se escribe igual y lo carga al instalarlo.
+    #[serde(rename_all = "camelCase")]
+    FaltaAddon { addon: String },
+    /// El adaptador se midió con otras versiones del addon.
+    #[serde(rename_all = "camelCase")]
+    VersionNoMedida {
+        addon: String,
+        medidas: Vec<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        instalada: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -133,16 +187,23 @@ pub enum Accion {
 #[serde(rename_all = "camelCase")]
 pub struct FicheroPlan {
     pub entrada: String,
+    /// Todas las entradas que escriben en este fichero (spec 028, decisión 4), en el orden del paquete.
+    pub entradas: Vec<String>,
     pub categoria: Categoria,
     /// Ruta lógica (`personaje/…` o `cuenta/…`).
     pub destino: String,
+    /// Afecta a toda la cuenta.
     pub de_cuenta: bool,
+    /// Está en la carpeta de la cuenta (un perfil AceDB lo está sin afectar a toda la cuenta).
+    #[serde(skip)]
+    pub en_cuenta: bool,
     pub grupo: Grupo,
     pub accion: Accion,
     /// Macros, teclas, opciones y addons: qué cambia dentro. El resto: vacío (se sustituye el fichero).
     pub elementos: Vec<Elemento>,
     /// Opciones del paquete que no se importan (lista negra) o addons activados que el destino no tiene, por motivo.
     pub apartadas: Vec<Quitadas>,
+    pub avisos: Vec<AvisoFichero>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bytes_antes: Option<u64>,
     pub bytes_despues: u64,
@@ -151,9 +212,9 @@ pub struct FicheroPlan {
     pub escrita_en: Option<String>,
     #[serde(skip)]
     pub ruta: PathBuf,
-    /// El fichero, relativo a la carpeta del personaje o de su cuenta (de la tabla de piezas).
+    /// El fichero, relativo a la carpeta del personaje o de su cuenta, con `/`.
     #[serde(skip)]
-    pub fichero: &'static str,
+    pub fichero: String,
     #[serde(skip)]
     pub contenido: Vec<u8>,
     /// Huella: SHA-256 del fichero tal como estaba al planificar, o `None` si no existía.
@@ -161,32 +222,70 @@ pub struct FicheroPlan {
     pub antes_sha256: Option<String>,
 }
 
-/// Una entrada que se puede importar, con la fuente que dice a qué fichero va.
+/// Una entrada de fichero que se puede importar, con la fuente que dice a qué fichero va.
 struct Importable<'a> {
     entrada: &'a EntradaLeida,
     categoria: Categoria,
     fuente: &'static Fuente,
 }
 
+/// Una entrada que esta versión sabe importar.
+enum Clasificada<'a> {
+    Fichero(Importable<'a>),
+    Addon(EntradaAddon<'a>),
+}
+
+impl Clasificada<'_> {
+    fn destino(&self) -> &str {
+        match self {
+            Self::Fichero(importable) => importable.fuente.destino,
+            Self::Addon(addon) => &addon.entrada.destino,
+        }
+    }
+
+    /// Relativo a la carpeta del personaje o de su cuenta, con `/`.
+    fn fichero(&self) -> &str {
+        match self {
+            Self::Fichero(importable) => importable.fuente.fichero,
+            Self::Addon(addon) => &addon.fichero,
+        }
+    }
+
+    fn en_cuenta(&self) -> bool {
+        match self {
+            Self::Fichero(importable) => es_de_cuenta(importable.fuente.destino),
+            Self::Addon(addon) => addon.en_cuenta,
+        }
+    }
+}
+
 /// Una entrada se importa si esta versión conoce su categoría y su tipo, y su `destino` es exactamente el de su
-/// categoría. Nada del `destino` que trae el paquete llega a una ruta: la ruta sale de la tabla.
-fn clasificar(entrada: &EntradaLeida) -> Result<Importable<'_>, MotivoIncompatible> {
-    let tipo_admitido = matches!(
-        entrada.tipo_conocido(),
-        Some(Tipo::Fichero | Tipo::FicheroFiltrado)
-    );
-    // La configuración de addons aún no se importa (#72).
-    let categoria = entrada
-        .categoria_conocida()
-        .filter(|c| tipo_admitido && *c != Categoria::ConfigAddon)
-        .ok_or(MotivoIncompatible::NoSeImporta)?;
+/// categoría. Nada del `destino` que trae el paquete llega a una ruta: la ruta sale de la tabla o, en la configuración
+/// de addons, de la carpeta del addon comprobada. Una pieza de un addon tiene que ser solo datos (spec 028).
+fn clasificar<'a>(
+    entrada: &'a EntradaLeida,
+    paquete: &PaqueteLeido,
+) -> Result<Clasificada<'a>, MotivoIncompatible> {
+    let (Some(categoria), Some(tipo)) = (entrada.categoria_conocida(), entrada.tipo_conocido())
+    else {
+        return Err(MotivoIncompatible::NoSeImporta);
+    };
+    if categoria == Categoria::ConfigAddon {
+        let pieza = paquete
+            .pieza(&entrada.id)
+            .ok_or(MotivoIncompatible::PiezaNoValida)?;
+        return config_addon::clasificar(entrada, tipo, pieza).map(Clasificada::Addon);
+    }
+    if !matches!(tipo, Tipo::Fichero | Tipo::FicheroFiltrado) {
+        return Err(MotivoIncompatible::NoSeImporta);
+    }
     let fuente =
         fuente_de_destino(categoria, &entrada.destino).ok_or(MotivoIncompatible::DestinoAjeno)?;
-    Ok(Importable {
+    Ok(Clasificada::Fichero(Importable {
         entrada,
         categoria,
         fuente,
-    })
+    }))
 }
 
 fn es_de_cuenta(destino: &str) -> bool {
@@ -198,28 +297,48 @@ pub fn resumen(paquete: &PaqueteLeido) -> Resumen {
         .manifiesto
         .entradas
         .iter()
-        .map(|e| {
-            let clasificada = clasificar(e);
-            let que_trae = clasificada.as_ref().ok().and_then(|importable| {
-                paquete
-                    .pieza(&e.id)
-                    .and_then(|pieza| contenido::contenido(importable.categoria, pieza))
-            });
-            EntradaResumen {
-                id: e.id.clone(),
-                categoria: e.categoria.clone(),
-                ambito: e.ambito,
-                de_cuenta: es_de_cuenta(&e.destino),
-                bytes: e.bytes,
-                incompatible: clasificada.err(),
-                contenido: que_trae,
-            }
-        })
+        .map(|e| entrada_resumen(e, paquete))
         .collect();
     Resumen {
         sha256: paquete.sha256.clone(),
         manifiesto: paquete.manifiesto.clone(),
         entradas,
+    }
+}
+
+fn entrada_resumen(entrada: &EntradaLeida, paquete: &PaqueteLeido) -> EntradaResumen {
+    let clasificada = clasificar(entrada, paquete);
+    let (de_cuenta, marcada, generica, que_trae) = match &clasificada {
+        Ok(Clasificada::Fichero(importable)) => (
+            es_de_cuenta(&entrada.destino),
+            true,
+            false,
+            paquete
+                .pieza(&entrada.id)
+                .and_then(|pieza| contenido::contenido(importable.categoria, pieza)),
+        ),
+        Ok(Clasificada::Addon(addon)) => (
+            addon.afecta_cuenta(),
+            addon.marcada(),
+            matches!(addon.forma, Forma::Generico),
+            None,
+        ),
+        Err(_) => (es_de_cuenta(&entrada.destino), false, false, None),
+    };
+    EntradaResumen {
+        id: entrada.id.clone(),
+        categoria: entrada.categoria.clone(),
+        tipo: entrada.tipo.clone(),
+        ambito: entrada.ambito,
+        de_cuenta,
+        bytes: entrada.bytes,
+        marcada,
+        generica,
+        addon: entrada.addon.clone(),
+        variable: entrada.variable.clone(),
+        perfil: entrada.perfil.clone(),
+        incompatible: clasificada.err(),
+        contenido: que_trae,
     }
 }
 
@@ -252,24 +371,26 @@ pub fn leer_destino(
 ) -> Result<Destino, ErrorNucleo> {
     personaje.comprobar_sin_enlaces()?;
     let mut actuales = HashMap::new();
-    for importable in paquete
+    for clasificada in paquete
         .manifiesto
         .entradas
         .iter()
-        .filter_map(|e| clasificar(e).ok())
+        .filter_map(|e| clasificar(e, paquete).ok())
     {
-        let ruta = ruta_de(&personaje, importable.fuente);
-        actuales.insert(importable.fuente.destino.to_owned(), leer_si_existe(&ruta)?);
+        let ruta = ruta_de(&personaje, clasificada.en_cuenta(), clasificada.fichero());
+        actuales.insert(clasificada.destino().to_owned(), leer_si_existe(&ruta)?);
     }
-    let instalados = deteccion::addons_de(&personaje.raiz_version, personaje.producto)?
-        .addons
-        .iter()
-        .map(|a| a.carpeta.to_lowercase())
-        .collect();
+    let versiones: HashMap<String, Option<String>> =
+        deteccion::addons_de(&personaje.raiz_version, personaje.producto)?
+            .addons
+            .into_iter()
+            .map(|a| (a.carpeta.to_lowercase(), a.datos.version))
+            .collect();
     Ok(Destino {
         personaje,
         actuales,
-        instalados,
+        instalados: versiones.keys().cloned().collect(),
+        versiones,
     })
 }
 
@@ -297,14 +418,15 @@ fn leer_si_existe(ruta: &Path) -> Result<Option<Vec<u8>>, ErrorNucleo> {
         .map_err(|e| ErrorNucleo::lectura(ruta, &e))
 }
 
-/// La ruta real de una pieza: su fichero (de la tabla) en la carpeta del personaje o en la de su cuenta.
-fn ruta_de(personaje: &PersonajeUbicado, fuente: &Fuente) -> PathBuf {
-    let carpeta = if es_de_cuenta(fuente.destino) {
+/// La ruta real de una pieza: su fichero (relativo, con `/`) en la carpeta del personaje o en la de su cuenta.
+fn ruta_de(personaje: &PersonajeUbicado, en_cuenta: bool, fichero: &str) -> PathBuf {
+    let mut ruta = if en_cuenta {
         personaje.carpeta_cuenta()
     } else {
         personaje.carpeta()
     };
-    carpeta.join(fuente.fichero)
+    ruta.extend(fichero.split('/'));
+    ruta
 }
 
 /// El plan de importar `paquete` en `destinos` con lo que pide el jugador. Puro. Una entrada sin su pieza es un paquete
@@ -316,12 +438,13 @@ pub fn planificar(
 ) -> Result<Plan, ErrorNucleo> {
     let mut incompatibles = Vec::new();
     let mut importables = Vec::new();
+    let mut de_addons = Vec::new();
     for entrada in &paquete.manifiesto.entradas {
         if !pedido.seleccion.contains(&entrada.id) {
             continue;
         }
-        match clasificar(entrada) {
-            Ok(importable) => {
+        match clasificar(entrada, paquete) {
+            Ok(clasificada) => {
                 let pieza =
                     paquete
                         .pieza(&entrada.id)
@@ -329,7 +452,10 @@ pub fn planificar(
                             motivo: MotivoPaquete::PiezaIlegible,
                             detalle: entrada.id.clone(),
                         })?;
-                importables.push((importable, pieza));
+                match clasificada {
+                    Clasificada::Fichero(importable) => importables.push((importable, pieza)),
+                    Clasificada::Addon(addon) => de_addons.push((addon, pieza)),
+                }
             }
             Err(motivo) => incompatibles.push(Incompatible {
                 entrada: entrada.id.clone(),
@@ -340,10 +466,19 @@ pub fn planificar(
     }
     // Cuenta → carpeta del primer personaje que la escribe.
     let mut cuentas_escritas: HashMap<&str, &str> = HashMap::new();
-    let personajes = destinos
+    let mut personajes: Vec<PlanPersonaje> = destinos
         .iter()
         .map(|destino| planificar_personaje(destino, &importables, pedido, &mut cuentas_escritas))
         .collect();
+    for (plan, addons) in personajes
+        .iter_mut()
+        .zip(plan_addons::planificar(destinos, &de_addons, pedido))
+    {
+        plan.ficheros.extend(addons.ficheros);
+        plan.conflictos.extend(addons.conflictos);
+        plan.conflictos_perfil = addons.conflictos_perfil;
+        plan.no_aplicables = addons.no_aplicables;
+    }
     Ok(Plan {
         personajes,
         incompatibles,
@@ -393,6 +528,8 @@ fn planificar_personaje<'a>(
         personaje: personaje.personaje.clone(),
         ficheros,
         conflictos,
+        conflictos_perfil: Vec::new(),
+        no_aplicables: Vec::new(),
     }
 }
 
@@ -431,20 +568,24 @@ fn planificar_fichero(destino: &Destino, importable: &Importable<'_>, pieza: &[u
         (Some(_), Filtro::Ninguno) => Accion::Sobrescribir,
         (Some(_), _) => Accion::Fusionar,
     };
+    let en_cuenta = es_de_cuenta(fuente.destino);
     FicheroPlan {
         entrada: importable.entrada.id.clone(),
+        entradas: vec![importable.entrada.id.clone()],
         categoria: importable.categoria,
         destino: fuente.destino.to_owned(),
-        de_cuenta: es_de_cuenta(fuente.destino),
+        de_cuenta: en_cuenta,
+        en_cuenta,
         grupo,
         accion,
         elementos,
         apartadas,
+        avisos: Vec::new(),
         bytes_antes: antes.as_ref().map(|a| a.len() as u64),
         bytes_despues: contenido.len() as u64,
         escrita_en: None,
-        ruta: ruta_de(&destino.personaje, fuente),
-        fichero: fuente.fichero,
+        ruta: ruta_de(&destino.personaje, en_cuenta, fuente.fichero),
+        fichero: fuente.fichero.to_owned(),
         antes_sha256: antes.as_deref().map(sha256),
         contenido,
     }
@@ -622,7 +763,12 @@ mod tests {
                     "opciones",
                     b"SET a \"2\"\r\nSET AllowDangerousScripts \"1\"\r\n",
                 ),
-                ("dominos", b"x"),
+                // Lua que el juego ejecutaría: una llamada, no un dato (spec 028, decisión 1).
+                (
+                    "dominos",
+                    b"DominosDB = RunScript(\"x\")
+",
+                ),
                 ("colada", b"SET AllowDangerousScripts \"1\"\r\n"),
             ],
         )
@@ -648,6 +794,7 @@ mod tests {
                 .map(|(d, b)| ((*d).to_owned(), Some(b.to_vec())))
                 .collect(),
             instalados: HashSet::new(),
+            versiones: HashMap::new(),
         }
     }
 
@@ -662,6 +809,7 @@ mod tests {
                     aceptar: *aceptar,
                 })
                 .collect(),
+            perfiles: Vec::new(),
         }
     }
 
@@ -731,7 +879,7 @@ mod tests {
         assert_eq!(
             incompatibles,
             [
-                ("dominos", MotivoIncompatible::NoSeImporta),
+                ("dominos", MotivoIncompatible::PiezaNoValida),
                 ("colada", MotivoIncompatible::DestinoAjeno)
             ]
         );
@@ -791,7 +939,7 @@ mod tests {
     }
 
     #[test]
-    fn el_resumen_dice_que_es_de_cuenta_y_que_no_se_importa() {
+    fn el_resumen_dice_que_es_de_cuenta_y_que_no_se_importa_lo_que_no_es_dato() {
         let resumen = resumen(&paquete());
         let entradas: Vec<_> = resumen
             .entradas
@@ -802,7 +950,7 @@ mod tests {
         assert_eq!(entradas[0], ("macros", false, None));
         assert_eq!(
             entradas[5],
-            ("dominos", false, Some(MotivoIncompatible::NoSeImporta))
+            ("dominos", false, Some(MotivoIncompatible::PiezaNoValida))
         );
         assert_eq!(
             entradas[6],

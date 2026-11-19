@@ -326,7 +326,9 @@
     "deLaCuenta": "Account {{categoria}}",
     "incompatible": {
       "noSeImporta": "this version doesn't import it yet",
-      "destinoAjeno": "not imported: it points to a file that isn't its own"
+      "destinoAjeno": "not imported: it points to a file that isn't its own",
+      "piezaNoValida": "not imported: it is not just settings (it could carry code the game would run)",
+      "adaptadorDesconocido": "this version does not know how to apply it (unknown or newer adapter)"
     },
     "teclasSinComprobar": "Key bindings are saved as this character's own bindings. If it used the account-wide ones before, log into the game and check it has the new ones. If not, you can undo the import from History.",
     "decisionesEtiqueta": "What affects the whole account",
@@ -341,7 +343,8 @@
       "modificado": "Modified",
       "sinCambios": "Unchanged",
       "conflictos": "Undecided",
-      "incompatibles": "Not imported"
+      "incompatibles": "Not imported",
+      "noAplicables": "Not applied to this character"
     },
     "sinDecidir": "{{entrada}}: decide whether to apply it on this account.",
     "nadaQueImportar": "Nothing to import on this character.",
@@ -360,7 +363,7 @@
     "aplicarImportacion": "Apply…",
     "noSePuedeAplicar": {
       "juegoAbierto": "Close WoW to be able to apply.",
-      "conflictos": "First decide on what affects the whole account.",
+      "conflictos": "Decide first what is missing: what affects the whole account and the profiles that already exist.",
       "nada": "Nothing to write: everything is already the same."
     },
     "confirmar": {
@@ -398,6 +401,38 @@
       "activados_other": "{{count}} enabled",
       "desactivados_one": "{{count}} disabled",
       "desactivados_other": "{{count}} disabled"
+    },
+    "addons": {
+      "titulo": "Addon settings",
+      "explicacion": "What is recognised as settings is ticked. Whole files are not: they may carry progress, state or other players' data, and the profile does not say who made it.",
+      "generico": "Whole file: it may carry progress, state or other players' data.",
+      "pieza": {
+        "perfilAcedb": "Profile “{{perfil}}”",
+        "perfilDelPersonaje": "Profile named after the character",
+        "adaptador": "Settings: {{variable}}",
+        "genericoCuenta": "Account file",
+        "genericoPersonaje": "Character file"
+      }
+    },
+    "perfiles": {
+      "existe": "{{entrada}}: this account already has a different “{{perfil}}” profile.",
+      "renombrar": "Import it as “{{propuesto}}”",
+      "sobrescribir": "Overwrite “{{perfil}}”",
+      "usadoPor": "{{personajes}} also use it: overwriting it changes their settings."
+    },
+    "noAplicable": {
+      "sinNombre": "not applied: the character's name in the addon data is unknown.",
+      "destinoIlegible": "not applied: its file for this character cannot be understood and is left alone.",
+      "noEncaja": "not applied: what would be written is not just settings, so it is not written."
+    },
+    "avisos": {
+      "faltaAddon": "{{addon}} is not installed here: it is saved anyway and used once you install it.",
+      "versionNoMedida": "{{addon}} {{instalada}}: this was checked with version {{medidas}}; it could carry more than its settings.",
+      "sinVersion": "(no version)"
+    },
+    "elemento": {
+      "perfil": "Profile “{{nombre}}”",
+      "perfilDe": "{{nombre}}'s profile"
     }
   },
   "restaurar": {

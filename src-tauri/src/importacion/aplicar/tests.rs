@@ -129,6 +129,7 @@ fn pedido(decidido: bool) -> Pedido {
         } else {
             Vec::new()
         },
+        perfiles: Vec::new(),
     }
 }
 
@@ -196,6 +197,7 @@ fn un_personaje_sin_nada_que_escribir_no_crea_operacion() {
     let solo_pj = Pedido {
         seleccion: vec!["macros".into()],
         cuentas: Vec::new(),
+        perfiles: Vec::new(),
     };
     let huella = huella_vista(&m, &["A"], &solo_pj);
 

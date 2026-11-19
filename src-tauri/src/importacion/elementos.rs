@@ -18,6 +18,21 @@ pub enum Cambio {
     Quitado,
 }
 
+/// Qué es un elemento de la configuración de un addon (spec 028). Sin clase, es una macro, una tecla, una opción o un
+/// addon.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Clase {
+    /// Un perfil AceDB (`nombre` = el perfil).
+    Perfil,
+    /// El perfil que usa un personaje (`nombre` = su clave en `profileKeys`).
+    PerfilDe,
+    /// Una variable del fichero.
+    Variable,
+    /// Una clave de primer nivel de una variable (`nombre` = `variable.clave`).
+    Clave,
+}
+
 /// Un elemento que cambia: una macro, una tecla, una opción o un addon. `antes` y `despues` son lo que se enseña de
 /// cada lado (sin valor en el lado que no existe).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -29,6 +44,8 @@ pub struct Elemento {
     pub antes: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub despues: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub clase: Option<Clase>,
 }
 
 impl Elemento {
@@ -45,7 +62,16 @@ impl Elemento {
             cambio,
             antes: antes.map(str::to_owned),
             despues: despues.map(str::to_owned),
+            clase: None,
         })
+    }
+
+    /// El mismo elemento, de una clase de la configuración de addons.
+    pub fn de_clase(self, clase: Clase) -> Self {
+        Self {
+            clase: Some(clase),
+            ..self
+        }
     }
 }
 
@@ -134,6 +160,7 @@ pub fn diferencias_macros(antes: &[u8], despues: &[u8]) -> Vec<Elemento> {
                 cambio: Cambio::Cambiado,
                 antes: Some(vieja.etiqueta.clone()),
                 despues: Some(nueva.etiqueta.clone()),
+                clase: None,
             }),
             Some(_) => None,
         })

@@ -54,6 +54,12 @@ pub fn huella(plan: &Plan) -> String {
         for conflicto in &personaje.conflictos {
             texto.push_str(&format!("?{}/{conflicto}\n", personaje.cuenta));
         }
+        for conflicto in &personaje.conflictos_perfil {
+            texto.push_str(&format!(
+                "?perfil/{}/{}\n",
+                personaje.cuenta, conflicto.entrada
+            ));
+        }
     }
     sha256(texto.as_bytes())
 }
@@ -67,7 +73,11 @@ pub fn aplicar(
     operaciones: &Operaciones,
     juego_en_marcha: impl Fn() -> bool + Copy,
 ) -> Result<Vec<ResultadoPersonaje>, ErrorNucleo> {
-    if plan.personajes.iter().any(|p| !p.conflictos.is_empty()) {
+    if plan
+        .personajes
+        .iter()
+        .any(|p| !p.conflictos.is_empty() || !p.conflictos_perfil.is_empty())
+    {
         return Err(ErrorNucleo::ConflictosSinDecidir {});
     }
     let mut parar = false;
@@ -128,8 +138,8 @@ fn aplicar_uno(
 
 fn escritura(fichero: &FicheroPlan) -> Escritura {
     Escritura {
-        fichero: fichero.fichero.to_owned(),
-        de_cuenta: fichero.de_cuenta,
+        fichero: fichero.fichero.clone(),
+        de_cuenta: fichero.en_cuenta,
         entrada: fichero.entrada.clone(),
         accion: match fichero.accion {
             Accion::Crear => AccionImportar::Crear,

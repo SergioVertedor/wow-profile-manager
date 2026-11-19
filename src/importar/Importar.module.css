@@ -245,6 +245,18 @@
   gap: var(--espacio-2);
 }
 
+/* Configuración de addons: un bloque por addon (spec 028). */
+.addons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+}
+
+.addons .grupo,
+.addons .nota {
+  margin: 0;
+}
+
 .decision {
   display: flex;
   flex-wrap: wrap;

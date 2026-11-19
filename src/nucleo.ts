@@ -302,8 +302,11 @@ export interface ManifiestoPaquete {
   addons: { id: string; titulo: string; version?: string; enlace?: string; dependencias: string[] }[];
 }
 
-/** Por qué una entrada no se importa: aún no se sabe, o su destino no es el fichero de su categoría. */
-export type MotivoIncompatible = "noSeImporta" | "destinoAjeno";
+/**
+ * Por qué una entrada no se importa: aún no se sabe, su destino no es el fichero de su categoría, la pieza no es solo
+ * datos o su adaptador no lo conoce esta versión.
+ */
+export type MotivoIncompatible = "noSeImporta" | "destinoAjeno" | "piezaNoValida" | "adaptadorDesconocido";
 
 /** Qué trae una entrada (`Contenido` en `src-tauri/src/importacion/contenido.rs`). */
 export type Contenido =
@@ -315,10 +318,20 @@ export interface EntradaPaquete {
   id: string;
   /** Texto: un paquete de una versión más nueva puede traer categorías que esta app no conoce. */
   categoria: string;
+  /** Texto, como la categoría. */
+  tipo: string;
   ambito: "personaje" | "cuenta";
-  /** Se escribe en la carpeta de la cuenta: afecta a todos sus personajes y hay que decidirla en cada cuenta. */
+  /** Afecta a todos los personajes de la cuenta: hay que decidirla en cada cuenta. */
   deCuenta: boolean;
   bytes: number;
+  /** Marcada por defecto: los genéricos de la configuración de addons, no. */
+  marcada: boolean;
+  /** Sale de una regla genérica: puede llevar estado o datos de otros jugadores. */
+  generica: boolean;
+  /** Configuración de addons: la carpeta del addon, la variable y el perfil AceDB (puede ser el marcador). */
+  addon?: string;
+  variable?: string;
+  perfil?: string;
   incompatible?: MotivoIncompatible;
   /** Solo en las que se importan y cuya categoría tiene lista. */
   contenido?: Contenido;
@@ -349,34 +362,56 @@ export interface DecisionCuenta {
   aceptar: boolean;
 }
 
+export type AccionPerfil = "renombrar" | "sobrescribir";
+
+/** Qué hacer con un perfil AceDB que ya existe y es distinto, en una cuenta. */
+export interface DecisionPerfil {
+  cuenta: string;
+  entrada: string;
+  accion: AccionPerfil;
+}
+
 export interface PedidoImportacion {
   seleccion: string[];
   cuentas: DecisionCuenta[];
+  perfiles: DecisionPerfil[];
 }
 
 export type Cambio = "anadido" | "cambiado" | "quitado";
 
-/** Una macro, tecla, opción o addon que cambia. */
+/** De la configuración de addons: un perfil, el perfil de un personaje, una variable o una clave (`variable.clave`). */
+export type ClaseElemento = "perfil" | "perfilDe" | "variable" | "clave";
+
+/** Una macro, tecla, opción o addon que cambia, o algo de la configuración de un addon (con `clase`). */
 export interface Elemento {
   nombre: string;
   cambio: Cambio;
   antes?: string;
   despues?: string;
+  clase?: ClaseElemento;
 }
+
+export type AvisoFichero =
+  | { tipo: "faltaAddon"; addon: string }
+  | { tipo: "versionNoMedida"; addon: string; medidas: string[]; instalada?: string };
 
 export type Grupo = "nuevo" | "modificado" | "sinCambios";
 
 export interface FicheroPlan {
   entrada: string;
+  /** Todas las entradas que escriben en este fichero. */
+  entradas: string[];
   categoria: Categoria;
   /** Ruta lógica (`personaje/…` o `cuenta/…`). */
   destino: string;
+  /** Afecta a toda la cuenta. */
   deCuenta: boolean;
   grupo: Grupo;
   accion: "crear" | "sobrescribir" | "fusionar";
   elementos: Elemento[];
   /** Opciones que no se importan, o addons activados que no están instalados en el destino, por motivo. */
   apartadas: Quitadas[];
+  avisos: AvisoFichero[];
   bytesAntes?: number;
   bytesDespues: number;
   /** Lo de cuenta que ya escribe otro personaje de la misma cuenta (su carpeta). */
@@ -390,7 +425,22 @@ export interface PlanPersonaje {
   ficheros: FicheroPlan[];
   /** Entradas de cuenta sin decidir. */
   conflictos: string[];
+  /** Perfiles AceDB que ya existen y son distintos, sin decidir. */
+  conflictosPerfil: ConflictoPerfil[];
+  /** Entradas que no se pueden aplicar en este personaje. */
+  noAplicables: { entrada: string; motivo: MotivoNoAplicable }[];
 }
+
+export interface ConflictoPerfil {
+  entrada: string;
+  perfil: string;
+  /** El nombre que tendría al renombrar. */
+  propuesto: string;
+  /** Otros personajes que usan ese perfil: sobrescribirlo los cambia también. */
+  usadoPor: string[];
+}
+
+export type MotivoNoAplicable = "sinNombre" | "destinoIlegible" | "noEncaja";
 
 export interface VistaPrevia {
   plan: {

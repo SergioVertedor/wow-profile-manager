@@ -70,9 +70,20 @@ const RESUMEN: ResumenPaquete = {
     addons: [],
   },
   entradas: [
-    { id: "macros", categoria: "macros", ambito: "personaje", deCuenta: false, bytes: 2_000 },
-    { id: "macros-cuenta", categoria: "macros", ambito: "cuenta", deCuenta: true, bytes: 200 },
-    { id: "dominos", categoria: "config-addon", ambito: "personaje", deCuenta: false, bytes: 1, incompatible: "noSeImporta" },
+    { id: "macros", categoria: "macros", tipo: "fichero", ambito: "personaje", deCuenta: false, bytes: 2_000, marcada: true, generica: false },
+    { id: "macros-cuenta", categoria: "macros", tipo: "fichero", ambito: "cuenta", deCuenta: true, bytes: 200, marcada: true, generica: false },
+    {
+      id: "dominos",
+      categoria: "config-addon",
+      tipo: "fichero",
+      ambito: "personaje",
+      deCuenta: false,
+      bytes: 1,
+      marcada: false,
+      generica: true,
+      addon: "Dominos",
+      incompatible: "piezaNoValida",
+    },
   ],
 };
 
@@ -88,9 +99,12 @@ const VISTA: VistaPrevia = {
         reino: "93",
         personaje: "Goldberg-Joestar",
         conflictos: ["macros-cuenta"],
+        conflictosPerfil: [],
+        noAplicables: [],
         ficheros: [
           {
             entrada: "macros",
+            entradas: ["macros"],
             categoria: "macros",
             destino: "personaje/macros-cache.txt",
             deCuenta: false,
@@ -98,6 +112,7 @@ const VISTA: VistaPrevia = {
             accion: "sobrescribir",
             elementos: [{ nombre: "Foco", cambio: "cambiado", antes: "Viejo", despues: "Foco" }],
             apartadas: [],
+            avisos: [],
             bytesAntes: 100,
             bytesDespues: 2_000,
           },
@@ -148,7 +163,7 @@ describe("Importar", () => {
 
     const dominos = screen.getByRole("checkbox", { name: /Configuración de addons/ }) as HTMLInputElement;
     expect({ marcada: dominos.checked, desactivada: dominos.disabled }).toEqual({ marcada: false, desactivada: true });
-    expect(screen.getByText(/aún no lo importa/)).toBeTruthy();
+    expect(screen.getByText(/podría llevar código/)).toBeTruthy();
     const decision = screen.getByRole("group", { name: /Macros de la cuenta en la cuenta 1#1/ });
     expect(within(decision).getByText(/Goldberg Joestar, Otro/, { exact: false })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
@@ -167,7 +182,7 @@ describe("Importar", () => {
         { raiz: RAIZ, version: "_forever_", cuenta: "1#1", reino: "93", personaje: "Goldberg-Joestar" },
         { raiz: RAIZ, version: "_forever_", cuenta: "1#1", reino: "93", personaje: "Otro" },
       ],
-      pedido: { seleccion: ["macros", "macros-cuenta"], cuentas: [] },
+      pedido: { seleccion: ["macros", "macros-cuenta"], cuentas: [], perfiles: [] },
     });
   });
 
@@ -191,6 +206,7 @@ describe("Importar", () => {
     expect((plan?.argumentos as { pedido: unknown }).pedido).toEqual({
       seleccion: ["macros", "macros-cuenta"],
       cuentas: [{ cuenta: "1#1", entrada: "macros-cuenta", aceptar: false }],
+      perfiles: [],
     });
   });
 
@@ -206,9 +222,21 @@ describe("Importar", () => {
           ambito: "personaje",
           deCuenta: false,
           bytes: 90,
+          tipo: "fichero-filtrado",
+          marcada: true,
+          generica: false,
           contenido: { tipo: "addons", activados: ["Dominos", "Details"], desactivados: ["WeakAuras"] },
         },
-        { id: "ventanas", categoria: "ventanas", ambito: "personaje", deCuenta: false, bytes: 30 },
+        {
+          id: "ventanas",
+          categoria: "ventanas",
+          tipo: "fichero",
+          ambito: "personaje",
+          deCuenta: false,
+          bytes: 30,
+          marcada: true,
+          generica: false,
+        },
         RESUMEN.entradas[2],
       ],
     };
@@ -364,5 +392,87 @@ describe("Importar", () => {
     await waitFor(() => expect(llamadas.some((l) => l.comando === "abrir_paquete")).toBe(true));
     vista.unmount();
     expect(llamadas.some((l) => l.comando === "cerrar_paquete")).toBe(true);
+  });
+
+  it("la configuración de addons va por addon, con los genéricos desmarcados, y un perfil que existe se decide", async () => {
+    const deAddon = { categoria: "config-addon", ambito: "cuenta", deCuenta: false, bytes: 50, addon: "Dominos" } as const;
+    const resumen: ResumenPaquete = {
+      ...RESUMEN,
+      entradas: [
+        RESUMEN.entradas[0],
+        {
+          ...deAddon,
+          id: "addon-dominos-perfil",
+          tipo: "perfil-acedb",
+          variable: "DominosDB",
+          perfil: "@@WOWPROFILE:PERSONAJE@@",
+          marcada: true,
+          generica: false,
+        },
+        { ...deAddon, id: "addon-dominos-cuenta", tipo: "fichero", deCuenta: true, marcada: false, generica: true },
+      ],
+    };
+    const conflicto = { entrada: "addon-dominos-perfil", perfil: "Default", propuesto: "Default (2)", usadoPor: ["Otro Pj"] };
+    const vista: VistaPrevia = {
+      ...VISTA,
+      juegoAbierto: false,
+      plan: {
+        incompatibles: [],
+        personajes: [
+          {
+            ...VISTA.plan.personajes[0],
+            conflictos: [],
+            conflictosPerfil: [conflicto],
+            noAplicables: [{ entrada: "addon-dominos-perfil", motivo: "sinNombre" }],
+            ficheros: [
+              {
+                ...VISTA.plan.personajes[0].ficheros[0],
+                entrada: "addon-dominos-perfil",
+                entradas: ["addon-dominos-perfil"],
+                categoria: "config-addon",
+                destino: "cuenta/SavedVariables/Dominos.lua",
+                elementos: [{ nombre: "Goldberg Joestar", cambio: "cambiado", antes: "Default", despues: "Tanque", clase: "perfilDe" }],
+                avisos: [{ tipo: "faltaAddon", addon: "Dominos" }],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const { llamadas } = pintar({
+      abrir_paquete: () => ({ resultado: "abierta", resumen }),
+      plan_importacion: () => vista,
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Goldberg Joestar/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+
+    const dominos = screen.getByRole("group", { name: "Dominos" });
+    const perfil = within(dominos).getByRole<HTMLInputElement>("checkbox", { name: /Perfil con el nombre del personaje/ });
+    const fichero = within(dominos).getByRole<HTMLInputElement>("checkbox", { name: /Fichero de la cuenta/ });
+    expect({ perfil: perfil.checked, fichero: fichero.checked }).toEqual({ perfil: true, fichero: false });
+    // El aviso del fichero entero está ligado a su casilla para el lector de pantalla.
+    expect(fichero.getAttribute("aria-describedby")).toBeTruthy();
+    expect(within(dominos).getByText(/Fichero entero/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+
+    expect(await screen.findByText(/ya hay un perfil «Default» distinto/)).toBeTruthy();
+    expect(screen.getByText(/También lo usan Otro Pj/)).toBeTruthy();
+    // Sobrescribir lleva el aviso de quién más lo usa como descripción para el lector de pantalla.
+    expect(screen.getByRole("radio", { name: "Sobrescribir «Default»", description: /También lo usan Otro Pj/ })).toBeTruthy();
+    expect(screen.getByText("Perfil de Goldberg Joestar")).toBeTruthy();
+    expect(screen.getByText(/Dominos no está instalado aquí/)).toBeTruthy();
+    expect(screen.getByText(/no se sabe cómo se llama este personaje/)).toBeTruthy();
+    expect(screen.getByText(/Decide antes lo que falta/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("radio", { name: "Importarlo como «Default (2)»" }));
+    await waitFor(() => expect(llamadas.filter((l) => l.comando === "plan_importacion")).toHaveLength(2));
+    const planes = llamadas.filter((l) => l.comando === "plan_importacion");
+    const ultimo = planes[planes.length - 1];
+    expect((ultimo?.argumentos as { pedido: unknown }).pedido).toEqual({
+      seleccion: ["macros", "addon-dominos-perfil"],
+      cuentas: [],
+      perfiles: [{ cuenta: "1#1", entrada: "addon-dominos-perfil", accion: "renombrar" }],
+    });
   });
 });

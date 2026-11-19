@@ -3,8 +3,9 @@
 import { useTranslation } from "react-i18next";
 import type { ResumenPaquete } from "../nucleo";
 import { tamanoLegible } from "../textos/formato";
-import { etiquetaDeCategoria } from "./etiquetas";
+import { etiquetaDeCategoria, etiquetaDePieza } from "./etiquetas";
 import QueTrae from "./QueTrae";
+import SeleccionAddons from "./SeleccionAddons";
 import { claveDeDecision, decisionesPendientes, type Destino } from "./importacion";
 import css from "./Importar.module.css";
 
@@ -28,11 +29,15 @@ export default function PasoSeleccion(props: Props) {
     cambiarSeleccion(siguiente);
   };
   const teclas = resumen.entradas.some((e) => e.categoria === "teclas" && seleccion.has(e.id));
+  // La configuración de addons que se puede importar va agrupada por addon; la que no, con el resto y su motivo.
+  const esDeAddon = (e: (typeof resumen.entradas)[number]) => e.categoria === "config-addon" && e.incompatible === undefined;
+  const deAddons = resumen.entradas.filter(esDeAddon);
+  const resto = resumen.entradas.filter((e) => !esDeAddon(e));
   return (
     <div className={css.columna}>
       <fieldset className={css.entradas}>
         <legend>{t("importar.queSeImporta")}</legend>
-        {resumen.entradas.map((entrada) => (
+        {resto.map((entrada) => (
           <div key={entrada.id}>
             <label className={css.entrada} data-incompatible={entrada.incompatible !== undefined}>
               <input
@@ -51,6 +56,7 @@ export default function PasoSeleccion(props: Props) {
           </div>
         ))}
       </fieldset>
+      <SeleccionAddons entradas={deAddons} seleccion={seleccion} alternar={alternar} />
       <DecisionesDeCuenta {...props} />
       <p className={css.nota}>{t("exportar.barras")}</p>
       {teclas && <p className={css.nota}>{t("importar.teclasSinComprobar")}</p>}
@@ -73,13 +79,17 @@ function DecisionesDeCuenta({ resumen, destinos, seleccion, decisiones, cambiarD
         const clave = claveDeDecision(cuenta, entrada);
         const datos = resumen.entradas.find((e) => e.id === entrada);
         const categoria = datos?.categoria ?? entrada;
+        const nombre =
+          datos?.categoria === "config-addon"
+            ? `${datos.addon ?? ""}: ${etiquetaDePieza(t, datos)}`
+            : etiquetaDeCategoria(t, categoria, true);
         const personajes = destinos.filter((d) => d.pedido.cuenta === cuenta).map((d) => d.nombre);
         const decidida = decisiones.get(clave);
         return (
           <fieldset key={clave} className={css.decision}>
             <legend>
               {t("importar.enCuenta", {
-                categoria: etiquetaDeCategoria(t, categoria, true),
+                categoria: nombre,
                 cuenta,
                 personajes: personajes.join(", "),
               })}

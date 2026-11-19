@@ -12,6 +12,7 @@ import {
   type NoExportable,
   type PiezaPropuesta,
 } from "../nucleo";
+import { porAddon } from "../comun/porAddon";
 import { tamanoLegible } from "../textos/formato";
 import css from "./ExportarPersonaje.module.css";
 
@@ -55,16 +56,6 @@ export default function ConfigAddons({ piezas, noExportables, marcadas, alternar
       )}
     </section>
   );
-}
-
-/** Las piezas por addon, en el orden en que llegan. */
-function porAddon(piezas: readonly PiezaPropuesta[]): [string, PiezaPropuesta[]][] {
-  const grupos = new Map<string, PiezaPropuesta[]>();
-  for (const pieza of piezas) {
-    const addon = pieza.addon ?? "";
-    grupos.set(addon, [...(grupos.get(addon) ?? []), pieza]);
-  }
-  return [...grupos];
 }
 
 /** «Marcar» por regla genérica, sin las piezas con pistas: esas se marcan una a una, viendo su aviso. */

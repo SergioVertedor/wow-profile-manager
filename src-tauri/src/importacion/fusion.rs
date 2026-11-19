@@ -157,6 +157,7 @@ fn fusionar(
             cambio: Cambio::Anadido,
             antes: None,
             despues: Some(nueva.valor.clone()),
+            clase: None,
         });
     }
     Fusion {

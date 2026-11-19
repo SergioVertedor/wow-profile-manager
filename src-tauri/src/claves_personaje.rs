@@ -6,6 +6,7 @@
 
 use crate::disco::ficheros_con_extension;
 use crate::error::ErrorNucleo;
+use crate::lua::{CLAVE_PERFILES, CLAVE_PERSONAJES};
 use full_moon::ast::{Expression, Field, TableConstructor};
 use full_moon::tokenizer::{TokenReference, TokenType};
 use full_moon::visitors::Visitor;
@@ -13,8 +14,6 @@ use std::collections::HashSet;
 use std::path::Path;
 
 const EXTENSION_LUA: &str = "lua";
-const CLAVE_PERSONAJES: &str = "profileKeys";
-const CLAVE_PERFILES: &str = "profiles";
 
 /// Claves de personaje de todos los `.lua` de `carpeta_sv` (`<cuenta>/SavedVariables`).
 pub fn claves_de_personaje(carpeta_sv: &Path) -> Result<HashSet<String>, ErrorNucleo> {

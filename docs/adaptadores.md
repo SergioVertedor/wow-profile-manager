@@ -136,10 +136,17 @@ No marca las piezas con pistas: esas se marcan una a una, viendo su aviso.
 
 - Se **fusiona por clave**: en el fichero del destino solo se sustituyen las claves que viajan. El resto del
   fichero del destino no se toca.
+  - Lo aplica la regla del catálogo de la app, no lo que diga la pieza: una clave que la regla no nombra no llega
+    aunque venga en el paquete.
+  - Lo que la regla deja pasar pero la pieza no trae se queda como está en el destino: nada se borra. `entera` sustituye
+    la variable entera.
+  - En `soloPersonaje`, la entrada del marcador se escribe con la clave del personaje destino; las de los demás
+    personajes del destino no cambian.
 - Las reglas de `ambito: "cuenta"` cambian un fichero que comparten todos los personajes del destino. Si solo
   llevan `soloPersonaje`, solo cambian la entrada del personaje destino y no hace falta confirmar. Si llevan
   más, la app enseña qué sobrescribe y pide confirmación.
-- Si la versión instalada del addon no está en `versionesAddon`, la entrada se ofrece desmarcada y con aviso.
+- Si la versión instalada del addon no está en `versionesAddon` y la regla usa `entera` o `excluir`, la vista previa
+  lo avisa.
 - Los ficheros se leen y se escriben como datos (Lua sin ejecutar), con cambios mínimos.
 
 ## Adaptadores escritos (excepciones medidas)

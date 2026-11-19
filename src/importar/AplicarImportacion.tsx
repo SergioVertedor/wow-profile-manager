@@ -35,7 +35,7 @@ function bloqueo(vista: VistaPrevia): "juegoAbierto" | "conflictos" | "nada" | n
   if (vista.juegoAbierto) {
     return "juegoAbierto";
   }
-  if (personajes.some((p) => p.conflictos.length > 0)) {
+  if (personajes.some((p) => p.conflictos.length > 0 || p.conflictosPerfil.length > 0)) {
     return "conflictos";
   }
   return personajes.some((p) => aEscribir(p).length > 0) ? null : "nada";
