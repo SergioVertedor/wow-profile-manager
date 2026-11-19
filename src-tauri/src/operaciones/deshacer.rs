@@ -5,8 +5,10 @@
 //! - Una **eliminación** (spec 022) deja la carpeta del personaje exactamente como estaba: también quita lo que el juego
 //!   volvió a crear y antes no estaba.
 //! - Una **importación** (spec 025) solo devuelve sus ficheros: quita los que creó y restaura los demás desde su copia.
-//!   No toca ningún otro.
+//!   No toca ningún otro. Las carpetas de addons que instaló (spec 036) se quitan al final, solo lo que sigue como se
+//!   instaló: lo que cambió después se queda.
 
+use super::carpetas::{self, CarpetaInstalada};
 use super::{
     Accion, Antes, Cambio, Despues, Destino, Diario, ESQUEMA, Estado, MAXIMO_CAMBIOS, Operaciones,
     Tipo, ahora_rfc3339, base_de, comprobar, comprobar_bases, contenido, copia_n, ejecutar,
@@ -33,6 +35,10 @@ pub struct PlanDeshacer {
     pub cambian: Vec<String>,
     /// Los de la cuenta: cambian para todos los personajes de esa cuenta.
     pub de_cuenta: Vec<String>,
+    /// Carpetas de addons que instaló la importación: se quitan.
+    pub addons: Vec<String>,
+    /// Ficheros de esos addons que cambiaron desde que se instalaron: se quedan.
+    pub addons_cambiados: Vec<String>,
     /// Huella del estado actual de esos ficheros: deshacer solo sigue si no ha cambiado desde que se enseñó.
     pub huella: String,
 }
@@ -43,6 +49,9 @@ struct Preparado {
     cambios: Vec<Cambio>,
     /// Por cada cambio, la copia de la original de la que sale (`restaurar`) o `None` (`borrar`).
     fuentes: Vec<Option<PathBuf>>,
+    /// Las carpetas de addons de la importación y sus ficheros que ya no están como se instalaron.
+    carpetas: Vec<CarpetaInstalada>,
+    addons_cambiados: Vec<String>,
 }
 
 impl Preparado {
@@ -66,8 +75,15 @@ impl Preparado {
                 .filter(|c| c.de_cuenta)
                 .map(|c| c.ruta.clone())
                 .collect(),
-            huella: huella(&self.cambios),
+            addons: self.carpetas.iter().map(|c| c.ruta.clone()).collect(),
+            addons_cambiados: self.addons_cambiados.clone(),
+            huella: self.huella(),
         }
+    }
+
+    /// La de los cambios y la de los ficheros de addons que cambiaron: si cambia alguno más, deshacer no sigue.
+    fn huella(&self) -> String {
+        huella(&self.cambios, &self.addons_cambiados)
     }
 }
 
@@ -92,7 +108,7 @@ impl Operaciones {
         self.recuperar_sin_cerrojo(&juego_en_marcha);
         self.sin_operacion_por_resolver()?;
         let preparado = self.preparar_deshacer(id)?;
-        if huella(&preparado.cambios) != huella_vista {
+        if preparado.huella() != huella_vista {
             return Err(ErrorNucleo::PlanCaducado {});
         }
         let (nuevo, dir) = self.nueva_carpeta()?;
@@ -109,6 +125,7 @@ impl Operaciones {
             error: None,
             destino: preparado.original.destino,
             cambios: preparado.cambios,
+            carpetas: preparado.carpetas,
         };
         if let Err(error) = guardar(&dir, &diario) {
             // Aún no hay copias ni se ha tocado el `WTF`.
@@ -117,7 +134,13 @@ impl Operaciones {
         }
         let fuentes = preparado.fuentes;
         let hecho = ejecutar(&dir, diario, &juego_en_marcha, |diario| {
-            aplicar(diario, &fuentes)
+            aplicar(diario, &fuentes)?;
+            // Al final y sin copia (decisión 5 de la spec 036): lo que no se puede quitar se queda.
+            let quedan = carpetas::quitar(&diario.destino.raiz_version, id, &diario.carpetas);
+            if !quedan.is_empty() {
+                log::warn!("deshacer {id}: se quedan {}", quedan.join("; "));
+            }
+            Ok(())
         })?;
         // Si se corta aquí, el siguiente arranque la marca (`recuperar`).
         self.marcar_deshecha(id, &hecho)?;
@@ -156,6 +179,7 @@ impl Operaciones {
             .cambios
             .iter()
             .map(|c| c.ruta.to_lowercase())
+            .chain(original.carpetas.iter().map(|c| c.ruta.to_lowercase()))
             .collect();
         let raiz = clave_de_ruta(&original.destino.raiz_version);
         Ok(subcarpetas(&self.dir)?
@@ -168,7 +192,9 @@ impl Operaciones {
                     && clave_de_ruta(&d.destino.raiz_version) == raiz
                     && d.cambios
                         .iter()
-                        .any(|c| rutas.contains(&c.ruta.to_lowercase()))
+                        .map(|c| &c.ruta)
+                        .chain(d.carpetas.iter().map(|c| &c.ruta))
+                        .any(|ruta| rutas.contains(&ruta.to_lowercase()))
             })
             .map(|(nombre, _)| nombre))
     }
@@ -228,6 +254,8 @@ fn construir(
     let mut cambios = Vec::new();
     let mut fuentes = Vec::new();
     let mut copias = 0;
+    let carpetas = original.carpetas.clone();
+    let addons_cambiados = carpetas::cambiados(&original.destino.raiz_version, &carpetas);
     for cambio in &original.cambios {
         actuales.remove(&cambio.ruta.to_lowercase());
         let actual = contenido(&en_disco(&original, cambio)?)?;
@@ -291,6 +319,8 @@ fn construir(
         original,
         cambios,
         fuentes,
+        carpetas,
+        addons_cambiados,
     })
 }
 
@@ -330,12 +360,16 @@ fn aplicar(diario: &Diario, fuentes: &[Option<PathBuf>]) -> Result<(), ErrorNucl
     Ok(())
 }
 
-/// SHA-256 de la lista de cambios (ruta y hash de lo que hay ahora): si algo cambia entre el plan y la escritura, cambia.
-fn huella(cambios: &[Cambio]) -> String {
-    let texto: String = cambios
+/// SHA-256 de la lista de cambios (ruta y hash de lo que hay ahora) y de los ficheros de addons que cambiaron: si algo
+/// cambia entre el plan y la escritura, cambia.
+fn huella(cambios: &[Cambio], addons_cambiados: &[String]) -> String {
+    let mut texto: String = cambios
         .iter()
         .map(|c| format!("{}\0{}\n", c.ruta, c.antes.sha256.as_deref().unwrap_or("-")))
         .collect();
+    for cambiado in addons_cambiados {
+        texto.push_str(&format!("~{cambiado}\n"));
+    }
     sha256(texto.as_bytes())
 }
 

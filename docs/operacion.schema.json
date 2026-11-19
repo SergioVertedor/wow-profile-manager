@@ -124,6 +124,14 @@
       "items": {
         "$ref": "#/$defs/cambio"
       }
+    },
+    "carpetas": {
+      "description": "Solo en importacion y en el deshacer de una: las carpetas de addons que instaló (spec 036). Sin copia: la lista de ficheros con su hash sirve para quitar solo lo que sigue como se instaló.",
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "$ref": "#/$defs/carpeta"
+      }
     }
   },
   "allOf": [
@@ -549,6 +557,72 @@
           }
         }
       ]
+    },
+    "carpeta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ruta",
+        "entrada",
+        "ficheros"
+      ],
+      "properties": {
+        "ruta": {
+          "description": "Interface/AddOns/<carpeta>, relativa a raizVersion; la carpeta cumple segmento.",
+          "type": "string",
+          "maxLength": 1024,
+          "pattern": "^Interface/AddOns/[^/\\:*?\"<>|]+$",
+          "not": {
+            "anyOf": [
+              {
+                "pattern": "(^|/)[^/]*[. ](/|$)"
+              },
+              {
+                "pattern": "(^|/)([Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][0-9]|[Ll][Pp][Tt][0-9])(\\.[^/]*)?(/|$)"
+              }
+            ]
+          }
+        },
+        "entrada": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+        },
+        "ficheros": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ruta",
+              "sha256"
+            ],
+            "properties": {
+              "ruta": {
+                "description": "Relativa a la carpeta del addon, con /. Mismas reglas que segmento en cada segmento; sin . ni ..; como mucho 33 segmentos.",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024,
+                "pattern": "^[^/\\:*?\"<>|]+(/[^/\\:*?\"<>|]+){0,32}$",
+                "not": {
+                  "anyOf": [
+                    {
+                      "pattern": "(^|/)[^/]*[. ](/|$)"
+                    },
+                    {
+                      "pattern": "(^|/)([Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][0-9]|[Ll][Pp][Tt][0-9])(\\.[^/]*)?(/|$)"
+                    }
+                  ]
+                }
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

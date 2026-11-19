@@ -455,6 +455,17 @@ export interface PlanPersonaje {
   conflictosPerfil: ConflictoPerfil[];
   /** Entradas que no se pueden aplicar en este personaje. */
   noAplicables: { entrada: string; motivo: MotivoNoAplicable }[];
+  /** Carpetas de addons (spec 036): son de la instalación, solo vienen en el primer personaje. */
+  addons: AddonPlan[];
+}
+
+/** Una carpeta de addon del plan (`AddonPlan` en `src-tauri/src/importacion.rs`). */
+export interface AddonPlan {
+  entrada: string;
+  addon: string;
+  /** Ya hay algo con ese nombre en `Interface/AddOns`: no se toca. */
+  yaInstalado: boolean;
+  bytes: number;
 }
 
 export interface ConflictoPerfil {
@@ -490,7 +501,7 @@ export function pedirPlanImportacion(
 
 /** Qué pasó en un personaje al aplicar (`ResultadoPersonaje` en `src-tauri/src/importacion/aplicar.rs`). */
 export type ResultadoImportacion = { cuenta: string; reino: string; personaje: string } & (
-  | { resultado: "completa"; operacion: string; ficheros: number }
+  | { resultado: "completa"; operacion: string; ficheros: number; addons: number }
   | { resultado: "sinCambios" }
   | { resultado: "fallida"; error: ErrorNucleo }
   | { resultado: "noAplicada" }
@@ -597,6 +608,10 @@ export interface PlanDeshacer {
   cambian: string[];
   /** Los de la cuenta: cambian para todos sus personajes. */
   deCuenta: string[];
+  /** Carpetas de addons que instaló la importación: se quitan. */
+  addons: string[];
+  /** Ficheros de esos addons que cambiaron desde que se instalaron: se quedan. */
+  addonsCambiados: string[];
   huella: string;
 }
 

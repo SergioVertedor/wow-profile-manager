@@ -3,7 +3,9 @@
 
 use super::{Accion, Destino, FicheroPlan, Grupo, Plan, PlanPersonaje};
 use crate::error::ErrorNucleo;
-use crate::operaciones::{AccionImportar, Escritura, Operaciones, PaqueteImportado, sha256};
+use crate::operaciones::{
+    AccionImportar, Cargar, Escritura, InstalarCarpeta, Operaciones, PaqueteImportado, sha256,
+};
 use serde::Serialize;
 
 /// Qué pasó en un personaje.
@@ -20,8 +22,12 @@ pub struct ResultadoPersonaje {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "resultado", rename_all = "camelCase")]
 pub enum Resultado {
-    /// Se escribió todo: `operacion` es su id en el historial.
-    Completa { operacion: String, ficheros: usize },
+    /// Se escribió todo: `operacion` es su id en el historial; `addons`, las carpetas instaladas.
+    Completa {
+        operacion: String,
+        ficheros: usize,
+        addons: usize,
+    },
     /// No había nada que escribir: no se creó operación.
     SinCambios,
     /// Falló. Si `error` es `operacionFallida`, dice si se restauró y en qué operación están las copias.
@@ -51,6 +57,12 @@ pub fn huella(plan: &Plan) -> String {
                 sha256(&fichero.contenido)
             ));
         }
+        for addon in &personaje.addons {
+            texto.push_str(&format!(
+                "+{}\0{}\0{}\n",
+                addon.entrada, addon.addon, addon.ya_instalado
+            ));
+        }
         for conflicto in &personaje.conflictos {
             texto.push_str(&format!("?{}/{conflicto}\n", personaje.cuenta));
         }
@@ -71,6 +83,7 @@ pub fn aplicar(
     destinos: &[Destino],
     paquete: &PaqueteImportado,
     operaciones: &Operaciones,
+    cargar: &Cargar,
     juego_en_marcha: impl Fn() -> bool + Copy,
 ) -> Result<Vec<ResultadoPersonaje>, ErrorNucleo> {
     if plan
@@ -94,6 +107,7 @@ pub fn aplicar(
                     destino,
                     paquete,
                     operaciones,
+                    cargar,
                     juego_en_marcha,
                 );
                 parar = matches!(resultado, Resultado::Fallida { .. });
@@ -115,22 +129,35 @@ fn aplicar_uno(
     destino: &Destino,
     paquete: &PaqueteImportado,
     operaciones: &Operaciones,
+    cargar: &Cargar,
     juego_en_marcha: impl Fn() -> bool,
 ) -> Resultado {
     let escrituras: Vec<Escritura> = a_escribir(plan).map(escritura).collect();
-    if escrituras.is_empty() {
+    let carpetas: Vec<InstalarCarpeta> = plan
+        .addons
+        .iter()
+        .filter(|a| !a.ya_instalado)
+        .map(|a| InstalarCarpeta {
+            carpeta: a.addon.clone(),
+            entrada: a.entrada.clone(),
+        })
+        .collect();
+    if escrituras.is_empty() && carpetas.is_empty() {
         return Resultado::SinCambios;
     }
-    let ficheros = escrituras.len();
+    let (ficheros, addons) = (escrituras.len(), carpetas.len());
     match operaciones.importar(
         &destino.personaje,
         paquete.clone(),
         escrituras,
+        carpetas,
+        cargar,
         juego_en_marcha,
     ) {
         Ok(operacion) => Resultado::Completa {
             operacion,
             ficheros,
+            addons,
         },
         Err(error) => Resultado::Fallida { error },
     }
@@ -153,5 +180,7 @@ fn escritura(fichero: &FicheroPlan) -> Escritura {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_carpetas;
 #[cfg(test)]
 mod tests_modo_edicion;

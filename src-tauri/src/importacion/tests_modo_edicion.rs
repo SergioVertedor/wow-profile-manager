@@ -62,6 +62,7 @@ fn destino(cuenta: &str, carpeta: &str, actuales: &[(&str, &str)]) -> Destino {
             .map(|(d, t)| ((*d).to_owned(), Some(t.as_bytes().to_vec())))
             .collect(),
         instalados: HashSet::new(),
+        en_addons: HashSet::new(),
         versiones: HashMap::new(),
     }
 }

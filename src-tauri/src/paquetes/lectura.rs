@@ -8,7 +8,7 @@ use super::{
     MAX_BYTES_TOTAL, MAX_CLAVES_QUITADAS, MAX_DEPENDENCIAS, MAX_ENLACE, MAX_PIEZAS, MAX_TITULO,
     MAX_VERSION, NOMBRE_FORMATO, PREFIJO_DESTINO_ADDONS, Tipo, id_de_addon_valido,
 };
-use crate::addon_zip::{self, MAX_BYTES_ADDON};
+use crate::addon_zip::{self, FicheroAddon, MAX_BYTES_ADDON};
 use crate::error::{ErrorNucleo, MotivoPaquete};
 use crate::operaciones::{sha256, sha256_de};
 use serde::de::IntoDeserializer;
@@ -715,6 +715,24 @@ fn leer_piezas<R: Read + Seek>(
         piezas.insert(entrada.id.clone(), contenido);
     }
     Ok(piezas)
+}
+
+/// Los ficheros de una pieza de addon, leídos otra vez del `.wowprofile` al instalarla: con su tamaño, su hash y las
+/// reglas del ZIP de addon comprobados de nuevo, porque el fichero pudo cambiar desde que se abrió.
+pub fn leer_carpeta(ruta: &Path, entrada: &EntradaLeida) -> Result<Vec<FicheroAddon>, ErrorNucleo> {
+    if !es_de_addon(entrada) {
+        return Err(invalido(MotivoPaquete::AddonNoValido, entrada.id.clone()));
+    }
+    let fichero = std::fs::File::open(ruta).map_err(|e| ErrorNucleo::lectura(ruta, &e))?;
+    let mut zip = ZipArchive::new(BufReader::new(fichero))
+        .map_err(|e| invalido(MotivoPaquete::NoEsZip, e.to_string()))?;
+    let contenido = leer_pieza(&mut zip, entrada)?;
+    addon_zip::leer(&contenido).map_err(|e| {
+        invalido(
+            MotivoPaquete::AddonNoValido,
+            format!("{CARPETA_DATOS}{}: {e}", entrada.id),
+        )
+    })
 }
 
 /// Una pieza sin pasar de sus `bytes` + 1, con su tamaño y su hash comprobados.

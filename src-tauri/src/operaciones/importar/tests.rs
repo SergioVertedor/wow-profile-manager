@@ -42,7 +42,14 @@ fn tres() -> Vec<Escritura> {
 
 fn importar(e: &Escenario) -> String {
     e.operaciones
-        .importar(&e.personaje, paquete(), tres(), || false)
+        .importar(
+            &e.personaje,
+            paquete(),
+            tres(),
+            Vec::new(),
+            &sin_carpetas,
+            || false,
+        )
         .unwrap()
 }
 
@@ -113,9 +120,14 @@ fn si_el_disco_no_es_el_del_plan_no_crea_nada() {
     let e = escenario();
     write(e.personaje.carpeta().join("AddOns.txt"), "cambiado").unwrap();
 
-    let resultado = e
-        .operaciones
-        .importar(&e.personaje, paquete(), tres(), || false);
+    let resultado = e.operaciones.importar(
+        &e.personaje,
+        paquete(),
+        tres(),
+        Vec::new(),
+        &sin_carpetas,
+        || false,
+    );
 
     assert_eq!(resultado, Err(ErrorNucleo::PlanCaducado {}));
     assert!(sin_operaciones(&e.datos));
@@ -128,9 +140,14 @@ fn un_fichero_que_aparecio_desde_el_plan_no_se_pisa() {
     let macros = e.personaje.carpeta().join("macros-cache.txt");
     write(&macros, "del jugador").unwrap();
 
-    let resultado = e
-        .operaciones
-        .importar(&e.personaje, paquete(), tres(), || false);
+    let resultado = e.operaciones.importar(
+        &e.personaje,
+        paquete(),
+        tres(),
+        Vec::new(),
+        &sin_carpetas,
+        || false,
+    );
 
     assert_eq!(resultado, Err(ErrorNucleo::PlanCaducado {}));
     assert_eq!(texto(&macros), "del jugador");
@@ -148,6 +165,8 @@ fn una_ruta_fuera_de_su_carpeta_se_rechaza() {
             &e.personaje,
             paquete(),
             vec![escritura(fichero, false, "y", None)],
+            Vec::new(),
+            &sin_carpetas,
             || false,
         );
         assert!(
@@ -177,6 +196,8 @@ fn una_union_en_la_cuenta_se_rechaza_sin_tocar_nada() {
         &e.personaje,
         paquete(),
         vec![escritura("SavedVariables/X.lua", true, "x", None)],
+        Vec::new(),
+        &sin_carpetas,
         || false,
     );
 
@@ -193,8 +214,14 @@ fn una_union_en_la_cuenta_se_rechaza_sin_tocar_nada() {
 fn con_el_juego_abierto_no_hace_nada() {
     let e = escenario();
     assert_eq!(
-        e.operaciones
-            .importar(&e.personaje, paquete(), tres(), || true),
+        e.operaciones.importar(
+            &e.personaje,
+            paquete(),
+            tres(),
+            Vec::new(),
+            &sin_carpetas,
+            || true
+        ),
         Err(ErrorNucleo::JuegoAbierto {})
     );
     assert!(sin_operaciones(&e.datos));
@@ -218,9 +245,14 @@ fn si_falla_a_mitad_restaura_lo_escrito() {
         .open(&config)
         .unwrap();
 
-    let resultado = e
-        .operaciones
-        .importar(&e.personaje, paquete(), escrituras, || false);
+    let resultado = e.operaciones.importar(
+        &e.personaje,
+        paquete(),
+        escrituras,
+        Vec::new(),
+        &sin_carpetas,
+        || false,
+    );
     drop(abierto);
 
     let Err(ErrorNucleo::OperacionFallida { id, restaurada, .. }) = resultado else {
@@ -275,8 +307,14 @@ fn una_importacion_a_medias_bloquea_las_demas_operaciones() {
         bloqueo
     );
     assert_eq!(
-        e.operaciones
-            .importar(&e.personaje, paquete(), tres(), || false),
+        e.operaciones.importar(
+            &e.personaje,
+            paquete(),
+            tres(),
+            Vec::new(),
+            &sin_carpetas,
+            || false
+        ),
         bloqueo
     );
     assert!(e.personaje.carpeta().join("AddOns.txt").is_file());
@@ -466,6 +504,8 @@ fn una_importacion_posterior_en_otro_personaje_de_la_cuenta_bloquea_deshacer() {
                 "SET b \"1\"\r\n",
                 Some(CONFIG_CUENTA),
             )],
+            Vec::new(),
+            &sin_carpetas,
             || false,
         )
         .unwrap();
@@ -493,4 +533,9 @@ fn el_historial_dice_el_perfil_y_si_esta_a_medias() {
     assert_eq!(cortada["aMedias"], true);
     assert_eq!(cortada["deshacible"], false);
     assert_eq!(cortada["sinDevolver"].as_array().unwrap().len(), 1);
+}
+
+/// Una importación sin carpetas de addons no carga ninguna.
+fn sin_carpetas(_: &str) -> Result<Vec<crate::addon_zip::FicheroAddon>, ErrorNucleo> {
+    unreachable!("sin carpetas no se carga nada")
 }
