@@ -342,9 +342,11 @@ Una eliminación se deshace desde el [historial](#historial) (#54). Si la app no
 
 Deshacer devuelve los ficheros de una operación `completa` a como estaban antes.
 
-1. **De la más nueva a la más antigua.** Si una operación posterior `completa` tocó alguno de los mismos ficheros,
-   no se puede deshacer esta hasta deshacer aquella, y la app dice cuál. Así nunca se pisa en silencio una
-   importación más reciente.
+1. **De la más nueva a la más antigua.** Si una operación posterior `completa` depende de esta, no se puede deshacer
+   esta hasta deshacer aquella, y la app dice cuál. Depende si tocó alguno de los mismos ficheros o, cuando esta
+   añadió diseños del Modo Edición a la cuenta, si cambió el diseño que usa un personaje de esa cuenta: el personaje
+   apunta al diseño por su posición, y quitarlo lo dejaría apuntando a uno que no existe o a otro (#85). Así nunca
+   se pisa en silencio una importación más reciente.
 2. **Mismo juego.** Se comprueba que la raíz de la versión existe y que su producto (`.flavor.info`) es el del
    `destino`. Si no (instalación movida, borrada o reinstalada con otra versión), no se escribe nada y se dice
    dónde están las copias.

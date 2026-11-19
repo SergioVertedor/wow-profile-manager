@@ -81,7 +81,7 @@
     "enlaceNoAdmitido": "Hay un enlace o una unión de carpetas en {{ruta}}. No se sigue, porque podría llevar fuera de WTF. Quítalo a mano para continuar.",
     "operacionNoEncontrada": "Esa operación ya no está en el historial. Vuelve a cargarlo.",
     "noDeshacible": "Esta operación ya no se puede deshacer: solo se deshace una eliminación o una importación terminada que no esté deshecha.",
-    "operacionPosterior": "Antes hay que deshacer la operación {{id}}: es más reciente y tocó los mismos ficheros.",
+    "operacionPosterior": "Antes hay que deshacer la operación {{id}}: es más reciente y depende de esta (tocó los mismos ficheros o usa un diseño del Modo Edición que esta añadió).",
     "juegoDistinto": "En {{raiz}} ya no está la misma versión del juego (se movió, se borró o se reinstaló). No se ha escrito nada y la copia sigue en la operación.",
     "planCaducado": "Algún fichero ha cambiado desde que se mostró qué iba a pasar. No se ha escrito nada: vuelve a intentarlo para verlo de nuevo.",
     "operacionEnCurso": "La operación está a medias: no se puede borrar hasta que termine.",

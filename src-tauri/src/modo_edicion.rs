@@ -17,6 +17,8 @@ use std::ops::Range;
 /// Nombre del adaptador interno en el manifiesto (`docs/adaptadores.md`).
 pub const ADAPTADOR: &str = "modo-edicion";
 pub const VERSION_ADAPTADOR: u32 = 1;
+/// El fichero de la cuenta: los diseños propios.
+pub const FICHERO_CUENTA: &str = "edit-mode-cache-account.txt";
 /// El fichero del personaje: dice qué diseño usa. No viaja; se recalcula en el destino.
 pub const FICHERO_PERSONAJE: &str = "edit-mode-cache-character.txt";
 /// Su ruta lógica, como las de las piezas.

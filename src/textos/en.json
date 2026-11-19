@@ -81,7 +81,7 @@
     "enlaceNoAdmitido": "There is a link or folder junction at {{ruta}}. It is not followed, because it could lead outside WTF. Remove it by hand to continue.",
     "operacionNoEncontrada": "That operation is no longer in the history. Reload it.",
     "noDeshacible": "This operation can no longer be undone: only a finished deletion or import that has not been undone can be.",
-    "operacionPosterior": "Undo operation {{id}} first: it is more recent and touched the same files.",
+    "operacionPosterior": "Undo operation {{id}} first: it is more recent and depends on this one (it touched the same files or uses an Edit Mode layout this one added).",
     "juegoDistinto": "{{raiz}} no longer holds the same game version (it was moved, deleted or reinstalled). Nothing was written and the copy is still in the operation.",
     "planCaducado": "A file changed since you were shown what would happen. Nothing was written: try again to see it anew.",
     "operacionEnCurso": "The operation is unfinished: it can't be deleted until it ends.",
