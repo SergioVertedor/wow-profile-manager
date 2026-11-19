@@ -300,20 +300,20 @@ fn lo_que_no_parsea_o_trae_el_marcador_se_dice_y_lo_desinstalado_no_aparece() {
 fn ids_en_el_alfabeto_del_formato_cortos_y_unicos() {
     let mut usados = HashSet::new();
     assert_eq!(
-        id_unico(&mut usados, "Prat-3.0", "cuenta"),
+        id_unico(&mut usados, PREFIJO_ID, "Prat-3.0", "cuenta"),
         "addon-prat-3-0-cuenta"
     );
     assert_eq!(
-        id_unico(&mut usados, "prat_3.0", "cuenta"),
+        id_unico(&mut usados, PREFIJO_ID, "prat_3.0", "cuenta"),
         "addon-prat-3-0-cuenta-2"
     );
     assert_eq!(
-        id_unico(&mut usados, "!BugGrabber", "perfil-X"),
+        id_unico(&mut usados, PREFIJO_ID, "!BugGrabber", "perfil-X"),
         "addon-buggrabber-perfil-x"
     );
-    let largo = id_unico(&mut usados, &"A".repeat(80), "cuenta");
+    let largo = id_unico(&mut usados, PREFIJO_ID, &"A".repeat(80), "cuenta");
     assert!(largo.len() <= MAX_ID && !largo.ends_with('-'));
-    let otro = id_unico(&mut usados, &"A".repeat(80), "cuenta");
+    let otro = id_unico(&mut usados, PREFIJO_ID, &"A".repeat(80), "cuenta");
     assert!(otro.len() <= MAX_ID && otro != largo);
 }
 

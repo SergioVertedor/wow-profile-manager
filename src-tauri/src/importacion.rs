@@ -14,7 +14,7 @@ use crate::error::{ErrorNucleo, MotivoPaquete};
 use crate::modo_edicion;
 use crate::operaciones::{Operaciones, PaqueteImportado, sha256};
 use crate::paquetes::{
-    Ambito, Categoria, EntradaLeida, ManifiestoLeido, PaqueteLeido, Tipo, leer_fichero,
+    AmbitoEntrada, Categoria, EntradaLeida, ManifiestoLeido, PaqueteLeido, Tipo, leer_fichero,
 };
 use crate::piezas::{Filtro, Fuente, Quitadas, fuente_de_destino};
 pub use aplicar::ResultadoPersonaje;
@@ -45,7 +45,7 @@ pub struct EntradaResumen {
     pub id: String,
     pub categoria: String,
     pub tipo: String,
-    pub ambito: Ambito,
+    pub ambito: AmbitoEntrada,
     /// Afecta a todos los personajes de la cuenta: hay que decidirla en cada cuenta (spec 028, decisión 6).
     pub de_cuenta: bool,
     pub bytes: u64,

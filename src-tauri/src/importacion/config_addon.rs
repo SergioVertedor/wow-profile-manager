@@ -102,6 +102,8 @@ pub(super) fn clasificar<'a>(
             }
             Forma::Generico
         }
+        // Una carpeta de addon es su propia categoría, no configuración.
+        Tipo::Carpeta => return Err(MotivoIncompatible::NoSeImporta),
     };
     Ok(EntradaAddon {
         entrada,

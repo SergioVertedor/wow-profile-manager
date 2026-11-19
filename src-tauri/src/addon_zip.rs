@@ -3,9 +3,10 @@
 //! sale de aquí se escribe en `Interface/AddOns` del que importa.
 
 use crate::operaciones::segmento_literal;
+use serde::Serialize;
 use std::fmt;
 use std::io::{Cursor, Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
@@ -16,8 +17,9 @@ pub const MAX_FICHEROS_ADDON: usize = 4096;
 /// Profundidad de carpetas dentro del addon. Ninguno real se acerca; corta recorridos absurdos.
 const MAX_PROFUNDIDAD: usize = 32;
 
-/// Por qué una carpeta no se empaqueta o un ZIP de addon no se acepta.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Por qué una carpeta no se empaqueta o un ZIP de addon no se acepta. Va a la interfaz como `{ codigo, detalle }`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "codigo", content = "detalle", rename_all = "camelCase")]
 pub enum ErrorAddon {
     DemasiadoGrande,
     DemasiadosFicheros,
@@ -48,74 +50,125 @@ pub struct FicheroAddon {
     pub contenido: Vec<u8>,
 }
 
+/// Lo que ocupa la carpeta de un addon, sin comprimir.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Medida {
+    pub bytes: u64,
+    pub ficheros: usize,
+}
+
+/// Un fichero encontrado al recorrer la carpeta: su ruta en el ZIP y en disco.
+struct Encontrado {
+    ruta: String,
+    origen: PathBuf,
+}
+
+/// Recorre `carpeta` con las mismas comprobaciones que `empaquetar`, sin leer los ficheros: sirve para ofrecer el
+/// addon (o decir por qué no viaja) sin comprimir nada.
+pub fn medir(carpeta: &Path) -> Result<Medida, ErrorAddon> {
+    let mut recorrido = Recorrido::default();
+    recorrido.recorrer(carpeta, "", 0)?;
+    Ok(Medida {
+        bytes: recorrido.bytes,
+        ficheros: recorrido.ficheros.len(),
+    })
+}
+
 /// Empaqueta `carpeta` en un ZIP. Los enlaces y uniones no se siguen: hacen fallar, porque podrían sacar ficheros de
-/// fuera del addon.
+/// fuera del addon. El ZIP tampoco puede pasar de `MAX_BYTES_ADDON`: es lo que el formato admite por pieza.
 pub fn empaquetar(carpeta: &Path) -> Result<Vec<u8>, ErrorAddon> {
-    let mut ficheros = Vec::new();
-    recorrer(carpeta, "", 0, &mut ficheros)?;
+    let mut recorrido = Recorrido::default();
+    recorrido.recorrer(carpeta, "", 0)?;
     let opciones = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
     let mut zip = ZipWriter::new(Cursor::new(Vec::new()));
-    for fichero in &ficheros {
+    let mut total: u64 = 0;
+    for fichero in &recorrido.ficheros {
+        // El fichero puede haber crecido desde que se midió: no se lee más de lo que cabe.
+        let mut contenido = Vec::new();
+        std::fs::File::open(&fichero.origen)
+            .and_then(|f| {
+                f.take(MAX_BYTES_ADDON - total + 1)
+                    .read_to_end(&mut contenido)
+            })
+            .map_err(|e| ErrorAddon::NoSeLee(e.to_string()))?;
+        total += contenido.len() as u64;
+        if total > MAX_BYTES_ADDON {
+            return Err(ErrorAddon::DemasiadoGrande);
+        }
         zip.start_file(fichero.ruta.as_str(), opciones)
-            .and_then(|()| zip.write_all(&fichero.contenido).map_err(Into::into))
+            .and_then(|()| zip.write_all(&contenido).map_err(Into::into))
             .map_err(|e| ErrorAddon::NoSeLee(e.to_string()))?;
     }
-    zip.finish()
+    let bytes = zip
+        .finish()
         .map(Cursor::into_inner)
-        .map_err(|e| ErrorAddon::NoSeLee(e.to_string()))
-}
-
-fn recorrer(
-    carpeta: &Path,
-    prefijo: &str,
-    profundidad: usize,
-    ficheros: &mut Vec<FicheroAddon>,
-) -> Result<(), ErrorAddon> {
-    if profundidad > MAX_PROFUNDIDAD {
-        return Err(ErrorAddon::RutaNoValida(prefijo.to_owned()));
-    }
-    let mut entradas: Vec<_> = std::fs::read_dir(carpeta)
-        .and_then(|d| d.collect::<Result<Vec<_>, _>>())
         .map_err(|e| ErrorAddon::NoSeLee(e.to_string()))?;
-    // Mismo orden en cualquier equipo: el paquete sale igual.
-    entradas.sort_by_key(std::fs::DirEntry::file_name);
-    for entrada in entradas {
-        let nombre = entrada.file_name().to_string_lossy().into_owned();
-        let ruta = format!("{prefijo}{nombre}");
-        if !segmento_literal(&nombre) {
-            return Err(ErrorAddon::RutaNoValida(ruta));
-        }
-        let tipo = entrada
-            .file_type()
-            .map_err(|e| ErrorAddon::NoSeLee(e.to_string()))?;
-        if tipo.is_symlink() {
-            return Err(ErrorAddon::Enlace(ruta));
-        }
-        if tipo.is_dir() {
-            recorrer(
-                &entrada.path(),
-                &format!("{ruta}/"),
-                profundidad + 1,
-                ficheros,
-            )?;
-        } else {
-            anadir(ficheros, ruta, &entrada.path())?;
-        }
-    }
-    Ok(())
-}
-
-fn anadir(ficheros: &mut Vec<FicheroAddon>, ruta: String, origen: &Path) -> Result<(), ErrorAddon> {
-    if ficheros.len() >= MAX_FICHEROS_ADDON {
-        return Err(ErrorAddon::DemasiadosFicheros);
-    }
-    let contenido = std::fs::read(origen).map_err(|e| ErrorAddon::NoSeLee(e.to_string()))?;
-    let total: u64 = ficheros.iter().map(|f| f.contenido.len() as u64).sum();
-    if total + contenido.len() as u64 > MAX_BYTES_ADDON {
+    if bytes.len() as u64 > MAX_BYTES_ADDON {
         return Err(ErrorAddon::DemasiadoGrande);
     }
-    ficheros.push(FicheroAddon { ruta, contenido });
-    Ok(())
+    Ok(bytes)
+}
+
+/// Lo encontrado al recorrer una carpeta, con los límites ya comprobados.
+#[derive(Default)]
+struct Recorrido {
+    ficheros: Vec<Encontrado>,
+    bytes: u64,
+}
+
+impl Recorrido {
+    fn recorrer(
+        &mut self,
+        carpeta: &Path,
+        prefijo: &str,
+        profundidad: usize,
+    ) -> Result<(), ErrorAddon> {
+        if profundidad > MAX_PROFUNDIDAD {
+            return Err(ErrorAddon::RutaNoValida(prefijo.to_owned()));
+        }
+        let mut entradas: Vec<_> = std::fs::read_dir(carpeta)
+            .and_then(|d| d.collect::<Result<Vec<_>, _>>())
+            .map_err(|e| ErrorAddon::NoSeLee(e.to_string()))?;
+        // Mismo orden en cualquier equipo: el paquete sale igual.
+        entradas.sort_by_key(std::fs::DirEntry::file_name);
+        for entrada in entradas {
+            let nombre = entrada.file_name().into_string().map_err(|nombre| {
+                ErrorAddon::RutaNoValida(format!("{prefijo}{}", nombre.to_string_lossy()))
+            })?;
+            let ruta = format!("{prefijo}{nombre}");
+            if !segmento_literal(&nombre) {
+                return Err(ErrorAddon::RutaNoValida(ruta));
+            }
+            let tipo = entrada
+                .file_type()
+                .map_err(|e| ErrorAddon::NoSeLee(e.to_string()))?;
+            if tipo.is_symlink() {
+                return Err(ErrorAddon::Enlace(ruta));
+            }
+            if tipo.is_dir() {
+                self.recorrer(&entrada.path(), &format!("{ruta}/"), profundidad + 1)?;
+            } else {
+                let bytes = entrada
+                    .metadata()
+                    .map_err(|e| ErrorAddon::NoSeLee(e.to_string()))?
+                    .len();
+                self.anadir(ruta, entrada.path(), bytes)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn anadir(&mut self, ruta: String, origen: PathBuf, bytes: u64) -> Result<(), ErrorAddon> {
+        if self.ficheros.len() >= MAX_FICHEROS_ADDON {
+            return Err(ErrorAddon::DemasiadosFicheros);
+        }
+        self.bytes += bytes;
+        if self.bytes > MAX_BYTES_ADDON {
+            return Err(ErrorAddon::DemasiadoGrande);
+        }
+        self.ficheros.push(Encontrado { ruta, origen });
+        Ok(())
+    }
 }
 
 /// Lee un ZIP de addon con todas las comprobaciones: cada nombre es una ruta relativa de segmentos válidos en Windows,
@@ -137,11 +190,16 @@ pub fn leer(zip: &[u8]) -> Result<Vec<FicheroAddon>, ErrorAddon> {
             .name()
             .map_err(|e| ErrorAddon::NoSeLee(e.to_string()))?
             .into_owned();
-        if entrada.is_dir() {
-            continue;
-        }
         if entrada.is_symlink() {
             return Err(ErrorAddon::Enlace(ruta));
+        }
+        if entrada.is_dir() {
+            // Una carpeta no se escribe (salen de las rutas de sus ficheros), pero su nombre tampoco puede salirse.
+            let carpeta = ruta.strip_suffix('/').unwrap_or(&ruta);
+            if !ruta_relativa_valida(carpeta) {
+                return Err(ErrorAddon::RutaNoValida(ruta));
+            }
+            continue;
         }
         if !ruta_relativa_valida(&ruta) || !vistas.insert(ruta.to_lowercase()) {
             return Err(ErrorAddon::RutaNoValida(ruta));

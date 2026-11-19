@@ -67,6 +67,7 @@ const PROPUESTA: PropuestaExportacion = {
   ],
   apartadas: [],
   noExportables: [],
+  carpetasNoExportables: [],
   juegoAbierto: false,
 };
 
@@ -243,6 +244,38 @@ describe("ExportarPersonaje", () => {
     expect(llamadas[llamadas.length - 1].argumentos).toMatchObject({
       seleccion: ["macros", "dominos-perfil", "nodes-pj"],
     });
+  });
+
+  it("las carpetas de addons salen marcadas con el aviso de riesgos y licencia, y se pueden desmarcar todas", async () => {
+    const carpeta = (addon: string) =>
+      pieza({ id: `carpeta-${addon.toLowerCase()}`, categoria: "addon", tipo: "carpeta", ambito: "instalacion", addon });
+    const llamadas = pintar({
+      propuesta_exportacion: () => ({
+        ...PROPUESTA,
+        piezas: [pieza({ id: "macros", categoria: "macros" }), carpeta("Dominos"), carpeta("Details")],
+        carpetasNoExportables: [{ addon: "Enorme", motivo: { codigo: "demasiadoGrande" } }],
+      }),
+      exportar_personaje: () => ({ resultado: "exportada", fichero: "Druida.wowprofile" }),
+    });
+    const dialogo = await abrir();
+
+    const addons = within(dialogo).getByRole("region", { name: "Addons" });
+    const casilla = within(addons).getByRole("checkbox", { name: /Dominos/ });
+    expect((casilla as HTMLInputElement).checked).toBe(true);
+    const aviso = document.getElementById(casilla.getAttribute("aria-describedby") ?? "")?.textContent;
+    expect(aviso).toMatch(/El juego lo ejecuta/);
+    expect(aviso).toMatch(/redistribuyan/);
+    fireEvent.click(within(addons).getByText(/1 addon no se puede llevar/));
+    expect(within(addons).getByText("Enorme: ocupa más de 64 MiB.")).toBeTruthy();
+
+    fireEvent.click(within(addons).getByRole("button", { name: "Desmarcar todos" }));
+    fireEvent.change(within(dialogo).getByRole("textbox", { name: "Nombre del perfil" }), {
+      target: { value: "Druida" },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Guardar…" }));
+
+    await within(dialogo).findByText("Guardado como Druida.wowprofile.");
+    expect(llamadas[llamadas.length - 1].argumentos).toMatchObject({ seleccion: ["macros"] });
   });
 
   it("dice qué no se puede exportar de cada addon y por qué", async () => {

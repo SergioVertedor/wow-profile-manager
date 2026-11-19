@@ -499,7 +499,7 @@ impl Contexto<'_> {
             );
             return;
         }
-        let id = id_unico(&mut self.ids, &addon.carpeta, &sufijo);
+        let id = id_unico(&mut self.ids, PREFIJO_ID, &addon.carpeta, &sufijo);
         let carpeta = match ambito {
             Ambito::Personaje => "personaje",
             Ambito::Cuenta => "cuenta",
@@ -638,8 +638,14 @@ fn es_nombre_reino(clave: &str) -> bool {
 }
 
 /// `addon-<carpeta>-<sufijo>` en el alfabeto de los ids del formato, recortado y sin repetir.
-fn id_unico(usados: &mut HashSet<String>, carpeta: &str, sufijo: &str) -> String {
-    let base = format!("{PREFIJO_ID}{}-{}", slug(carpeta), slug(sufijo));
+/// `<prefijo><carpeta>-<sufijo>` en forma de `id` de entrada, sin repetir ninguno de `usados`.
+pub(crate) fn id_unico(
+    usados: &mut HashSet<String>,
+    prefijo: &str,
+    carpeta: &str,
+    sufijo: &str,
+) -> String {
+    let base = format!("{prefijo}{}-{}", slug(carpeta), slug(sufijo));
     let recortar = |texto: &str, largo: usize| {
         texto[..texto.len().min(largo)]
             .trim_end_matches('-')

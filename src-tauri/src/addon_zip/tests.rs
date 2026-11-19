@@ -116,3 +116,63 @@ fn lo_que_no_es_un_zip_no_se_lee() {
         Err(ErrorAddon::NoSeLee(_))
     ));
 }
+
+#[test]
+fn medir_cuenta_lo_que_se_empaquetaria_sin_leerlo() {
+    let tmp = tempfile::tempdir().unwrap();
+    let addon = tmp.path().join("MiAddon");
+    create_dir_all(addon.join("Media")).unwrap();
+    write(addon.join("MiAddon.toc"), "12345").unwrap();
+    write(addon.join("Media/a.tga"), [0u8; 10]).unwrap();
+
+    assert_eq!(
+        medir(&addon),
+        Ok(Medida {
+            bytes: 15,
+            ficheros: 2
+        })
+    );
+    write(addon.join("CON.lua"), "x").unwrap();
+    assert_eq!(
+        medir(&addon),
+        Err(ErrorAddon::RutaNoValida("CON.lua".to_owned()))
+    );
+}
+
+/// Una unión de Windows (`mklink /J`, sin permisos de administrador) dentro del addon no se sigue: sacaría ficheros
+/// de fuera de su carpeta.
+#[cfg(windows)]
+#[test]
+fn una_union_dentro_del_addon_no_se_sigue() {
+    let tmp = tempfile::tempdir().unwrap();
+    let addon = tmp.path().join("MiAddon");
+    let fuera = tmp.path().join("Fuera");
+    create_dir_all(&addon).unwrap();
+    create_dir_all(&fuera).unwrap();
+    write(fuera.join("secreto.txt"), "no viaja").unwrap();
+    let creada = std::process::Command::new("cmd")
+        .args(["/C", "mklink", "/J"])
+        .arg(addon.join("Libs"))
+        .arg(&fuera)
+        .output()
+        .unwrap();
+    assert!(creada.status.success(), "{creada:?}");
+
+    assert_eq!(medir(&addon), Err(ErrorAddon::Enlace("Libs".to_owned())));
+    assert_eq!(
+        empaquetar(&addon),
+        Err(ErrorAddon::Enlace("Libs".to_owned()))
+    );
+}
+
+#[test]
+fn una_carpeta_del_zip_tampoco_puede_salirse() {
+    for mala in ["../", "a/../../", "CON/"] {
+        assert_eq!(
+            leer(&zip_con(&[(mala, b"")])),
+            Err(ErrorAddon::RutaNoValida(mala.to_owned())),
+            "{mala}"
+        );
+    }
+    assert!(leer(&zip_con(&[("Media/", b""), ("Media/a.tga", b"x")])).is_ok());
+}

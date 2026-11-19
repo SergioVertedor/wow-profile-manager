@@ -354,10 +354,12 @@ fn interfaz_de(config_wtf: &str) -> Option<u32> {
 
 /// Los addons instalados de una carpeta de versión (`<raíz>/<versión>`).
 pub fn addons_de(raiz_version: &Path, producto: Producto) -> Result<Addons, ErrorNucleo> {
-    descubrir_addons(
-        &raiz_version.join(CARPETA_INTERFACE).join(CARPETA_ADDONS),
-        producto,
-    )
+    descubrir_addons(&carpeta_addons(raiz_version), producto)
+}
+
+/// `<versión>/Interface/AddOns`: donde están las carpetas de los addons.
+pub fn carpeta_addons(raiz_version: &Path) -> PathBuf {
+    raiz_version.join(CARPETA_INTERFACE).join(CARPETA_ADDONS)
 }
 
 /// Build e interfaz de una carpeta de versión (`<raíz>/<versión>`), para el `origen` de un paquete.

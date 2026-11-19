@@ -18,9 +18,9 @@ const CATEGORIAS: readonly CategoriaFichero[] = [
   "addons-activos",
 ];
 
-/** Del formato 1.0 sin nombre propio de fichero: solo se nombran. */
-const OTRAS: readonly string[] = ["config-addon"];
-type Otra = "config-addon";
+/** Sin nombre propio de fichero: solo se nombran. `addon` es la carpeta de un addon (formato 1.1). */
+const OTRAS: readonly string[] = ["config-addon", "addon"];
+type Otra = "config-addon" | "addon";
 
 export function esCategoria(texto: string): texto is CategoriaFichero {
   return (CATEGORIAS as readonly string[]).includes(texto);

@@ -90,7 +90,8 @@
     "exportacionSinVersion": "No se sabe la versión del juego o su número de interfaz (.build.info o WTF/Config.wtf): entra una vez en el juego y vuelve a intentarlo.",
     "perfilNoValido": "El nombre es obligatorio y puede tener hasta 80 caracteres; la descripción, hasta 500.",
     "seleccionVacia": "Marca al menos una cosa que exportar.",
-    "paqueteDemasiadoGrande": "Es demasiado grande para un .wowprofile (como mucho 256 piezas, 32 MiB cada una y 128 MiB en total).",
+    "paqueteDemasiadoGrande": "Es demasiado grande para un .wowprofile (como mucho 256 piezas, 32 MiB cada una y 128 MiB en total; 64 MiB por addon y 512 MiB de addons).",
+    "addonNoEmpaquetado": "La carpeta del addon {{addon}} no se pudo empaquetar: puede haber cambiado desde que se abrió el diálogo.",
     "paqueteInvalido": "El fichero no es un perfil válido: {{motivo}}",
     "versionPaquete": "Este perfil es de una versión más nueva del formato ({{version}}). Actualiza la app para importarlo.",
     "paqueteNoAbierto": "El perfil ya no está abierto. Vuelve a abrirlo.",
@@ -240,7 +241,8 @@
       "modo-edicion": "Modo Edición",
       "marcos-banda": "Marcos de banda",
       "addons-activos": "Addons activos",
-      "config-addon": "Configuración de addons"
+      "config-addon": "Configuración de addons",
+      "addon": "Addon"
     },
     "nada": "Este personaje no tiene nada que exportar todavía.",
     "barras": "El contenido de los botones de las barras de acción no viaja: lo guarda el servidor. Sí viajan las teclas, las macros y la lista de addons activos.",
@@ -291,6 +293,21 @@
         "cuenta": "de la cuenta",
         "personaje": "del personaje"
       }
+    },
+    "carpetas": {
+      "titulo": "Addons",
+      "aviso": "Se lleva el código de los addons, no solo su configuración. El juego lo ejecuta: quien importe el perfil tiene que fiarse de ti. Muchos addons no permiten que se redistribuyan: compartirlos es responsabilidad tuya.",
+      "marcarTodas": "Marcar todos",
+      "desmarcarTodas": "Desmarcar todos",
+      "noExportables_one": "{{count}} addon no se puede llevar: quien importe verá que le falta",
+      "noExportables_other": "{{count}} addons no se pueden llevar: quien importe verá que le faltan",
+      "motivo": {
+        "demasiadoGrande": "ocupa más de 64 MiB.",
+        "demasiadosFicheros": "tiene más de 4.096 ficheros.",
+        "rutaNoValida": "tiene un nombre que Windows no admite o que no se puede llevar ({{detalle}}).",
+        "enlace": "tiene un enlace o una unión de Windows ({{detalle}}).",
+        "noSeLee": "no se puede leer."
+      }
     }
   },
   "motivosPaquete": {
@@ -303,7 +320,8 @@
     "piezaIlegible": "uno de sus ficheros no se puede leer.",
     "piezaDemasiadoGrande": "uno de sus ficheros ocupa más de lo que dice.",
     "totalDemasiadoGrande": "sus ficheros ocupan demasiado en total.",
-    "piezaDanada": "uno de sus ficheros está dañado o se ha modificado."
+    "piezaDanada": "uno de sus ficheros está dañado o se ha modificado.",
+    "addonNoValido": "uno de sus addons trae ficheros que se saldrían de su carpeta, nombres que Windows no admite o demasiado contenido."
   },
   "importar": {
     "titulo": "Importar",
@@ -363,7 +381,8 @@
       "quitado": "Se quita"
     },
     "otrasCategorias": {
-      "config-addon": "Configuración de addons"
+      "config-addon": "Configuración de addons",
+      "addon": "Carpeta de addon"
     },
     "aplicarImportacion": "Aplicar…",
     "noSePuedeAplicar": {

@@ -1,4 +1,4 @@
-// «Exportar» del personaje elegido (specs 023 y 027). Pide al núcleo qué se puede llevar, lo enseña en un diálogo con lo
+// «Exportar» del personaje elegido (specs 023, 027 y 036). Pide al núcleo qué se puede llevar, lo enseña en un diálogo con lo
 // que el núcleo marca por defecto, y con el nombre del perfil le pide que arme el `.wowprofile`. El diálogo de guardar lo abre el núcleo: la
 // interfaz solo pasa la identidad del personaje y lo marcado, nunca una ruta. Exportar no escribe en el WTF.
 import { useId, useRef, useState } from "react";
@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { PackageOpen, TriangleAlert } from "lucide-react";
 import Desplegable from "../comun/Desplegable";
 import ListaQuitadas from "../comun/ListaQuitadas";
+import CarpetasAddons from "./CarpetasAddons";
 import ConfigAddons from "./ConfigAddons";
 import {
   exportarPersonaje,
@@ -88,6 +89,8 @@ export default function ExportarPersonaje({ pedido, nombre, donde }: Props) {
       return nuevas;
     });
   const marcar = (ids: readonly string[]) => setMarcadas((antes) => new Set([...antes, ...ids]));
+  const desmarcar = (ids: readonly string[]) =>
+    setMarcadas((antes) => new Set([...antes].filter((id) => !ids.includes(id))));
   const cerrar = () => dialogo.current?.close();
 
   return (
@@ -119,6 +122,7 @@ export default function ExportarPersonaje({ pedido, nombre, donde }: Props) {
             marcadas={marcadas}
             alternar={alternar}
             marcar={marcar}
+            desmarcar={desmarcar}
             perfil={perfil}
             setPerfil={setPerfil}
             descripcion={descripcion}
@@ -167,6 +171,7 @@ type PropsFormulario = Readonly<{
   marcadas: ReadonlySet<string>;
   alternar: (id: string) => void;
   marcar: (ids: readonly string[]) => void;
+  desmarcar: (ids: readonly string[]) => void;
   perfil: string;
   setPerfil: (valor: string) => void;
   descripcion: string;
@@ -179,6 +184,7 @@ function Formulario({
   marcadas,
   alternar,
   marcar,
+  desmarcar,
   perfil,
   setPerfil,
   descripcion,
@@ -187,8 +193,9 @@ function Formulario({
 }: PropsFormulario) {
   const { t, i18n } = useTranslation();
   const idPiezas = useId();
-  const ficheros = propuesta.piezas.filter((p) => p.categoria !== "config-addon");
+  const ficheros = propuesta.piezas.filter((p) => p.categoria !== "config-addon" && p.categoria !== "addon");
   const deAddons = propuesta.piezas.filter((p) => p.categoria === "config-addon");
+  const carpetas = propuesta.piezas.filter((p) => p.categoria === "addon");
   return (
     <>
       {propuesta.juegoAbierto && (
@@ -206,6 +213,14 @@ function Formulario({
             marcadas={marcadas}
             alternar={alternar}
             marcar={marcar}
+          />
+          <CarpetasAddons
+            piezas={[]}
+            noExportables={propuesta.carpetasNoExportables}
+            marcadas={marcadas}
+            alternar={alternar}
+            marcar={marcar}
+            desmarcar={desmarcar}
           />
         </>
       ) : (
@@ -237,6 +252,14 @@ function Formulario({
             marcadas={marcadas}
             alternar={alternar}
             marcar={marcar}
+          />
+          <CarpetasAddons
+            piezas={carpetas}
+            noExportables={propuesta.carpetasNoExportables}
+            marcadas={marcadas}
+            alternar={alternar}
+            marcar={marcar}
+            desmarcar={desmarcar}
           />
         </fieldset>
       )}
