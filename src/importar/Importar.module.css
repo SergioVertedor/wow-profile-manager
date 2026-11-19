@@ -246,6 +246,13 @@
 }
 
 /* Configuración de addons: un bloque por addon (spec 028). */
+/* Marcar o desmarcar todas las carpetas de addons (spec 036). */
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+}
+
 .addons {
   display: flex;
   flex-direction: column;

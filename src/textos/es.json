@@ -211,7 +211,10 @@
     "hecho": "Hecho: todo vuelve a estar como antes (operación {{id}}).",
     "sobran_one": "Se quita {{count}} fichero que antes no estaba.",
     "sobran_other": "Se quitan {{count}} ficheros que antes no estaban.",
-    "deCuenta": "Estos son de la cuenta: cambian para todos sus personajes:"
+    "deCuenta": "Estos son de la cuenta: cambian para todos sus personajes:",
+    "addons_one": "Se quita {{count}} addon que se instaló.",
+    "addons_other": "Se quitan {{count}} addons que se instalaron.",
+    "addonsCambiados": "Estos ficheros de esos addons cambiaron o se añadieron después: se quedan."
   },
   "borrar": {
     "titulo": "¿Borrar la operación {{id}}?",
@@ -368,7 +371,8 @@
       "sinCambios": "Sin cambios",
       "conflictos": "Sin decidir",
       "incompatibles": "No se importan",
-      "noAplicables": "No se aplican en este personaje"
+      "noAplicables": "No se aplican en este personaje",
+      "addons": "Addons"
     },
     "sinDecidir": "{{entrada}}: decide si se aplica en esta cuenta.",
     "nadaQueImportar": "Nada que importar en este personaje.",
@@ -406,7 +410,9 @@
       "sinCambios": "Nada que escribir: ya estaba igual.",
       "fallida": "No se aplicó.",
       "noAplicada": "No se aplicó: falló un personaje anterior.",
-      "deshecha": "Deshecha."
+      "deshecha": "Deshecha.",
+      "addons_one": "{{count}} addon instalado.",
+      "addons_other": "{{count}} addons instalados."
     },
     "siguientePaso": "Entra al juego con cada personaje y comprueba que todo está bien. Las habilidades de los botones las colocas tú: el perfil trae la disposición y las teclas, no lo que hay en cada botón.",
     "verHistorial": "Ver historial",
@@ -460,7 +466,16 @@
       "perfilDe": "Perfil de {{nombre}}",
       "diseno": "Diseño «{{nombre}}» del Modo Edición",
       "disenoActivo": "Pasa a usar el diseño «{{nombre}}»"
-    }
+    },
+    "carpetas": {
+      "titulo": "Addons",
+      "aviso": "El paquete trae addons: es código que el juego ejecuta. Impórtalos solo si te fías de quien te pasó el perfil. Solo se instalan los que no tienes; los que ya tienes no se tocan, aunque sean de otra versión.",
+      "lista": "Addons que trae el paquete",
+      "marcarTodas": "Marcar todos",
+      "desmarcarTodas": "Desmarcar todos"
+    },
+    "addonSeInstala": "— se instala",
+    "addonYaInstalado": "— ya lo tienes: no se toca"
   },
   "restaurar": {
     "titulo": "¿Restaurar lo que cambió en {{nombre}}?",

@@ -115,12 +115,15 @@ export default function DeshacerOperacion({ id, tipo, nombre, donde, alTerminar 
 
 /** Lo que vuelve y lo que se quita, o que no hay nada que escribir. */
 function resumenDelPlan(t: TFunction, plan: PlanDeshacer): string {
-  if (plan.vuelven + plan.sobran === 0) {
+  if (plan.vuelven + plan.sobran + plan.addons.length === 0) {
     return t("deshacer.nada");
   }
   const partes = plan.vuelven > 0 ? [t("deshacer.contenido", { count: plan.vuelven })] : [];
   if (plan.sobran > 0) {
     partes.push(t("deshacer.sobran", { count: plan.sobran }));
+  }
+  if (plan.addons.length > 0) {
+    partes.push(t("deshacer.addons", { count: plan.addons.length }));
   }
   return partes.join(" ");
 }
@@ -154,6 +157,9 @@ function Contenido({ paso }: Readonly<{ paso: Paso }>) {
             <ListaDeAviso texto={t("deshacer.aviso")} rutas={paso.plan.cambian} />
           )}
           {paso.plan.deCuenta.length > 0 && <ListaDeAviso texto={t("deshacer.deCuenta")} rutas={paso.plan.deCuenta} />}
+          {paso.plan.addonsCambiados.length > 0 && (
+            <ListaDeAviso texto={t("deshacer.addonsCambiados")} rutas={paso.plan.addonsCambiados} />
+          )}
           {escribe && <p>{t("deshacer.copia")}</p>}
         </>
       );

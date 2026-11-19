@@ -162,6 +162,8 @@ describe("Historial", () => {
         sobran: 1,
         cambian: ["WTF/Account/1#1/93/Goldberg-Soulreaper/AddOns.txt"],
         deCuenta: [],
+        addons: [],
+        addonsCambiados: [],
         huella: "h1",
       }),
       deshacer_operacion: () => "20261118-100000-00000002",
@@ -188,10 +190,31 @@ describe("Historial", () => {
     await waitFor(() => expect(veces(llamadas, "listar_operaciones")).toBe(2));
   });
 
+  it("deshacer una importación con addons dice cuántos se quitan y qué se queda", async () => {
+    pintar({
+      listar_operaciones: () => historial([IMPORTACION]),
+      plan_deshacer: () => ({
+        vuelven: 0,
+        sobran: 0,
+        cambian: [],
+        deCuenta: [],
+        addons: ["Interface/AddOns/Dominos"],
+        addonsCambiados: ["C:/WoW/_forever_/Interface/AddOns/Dominos/Dominos.toc"],
+        huella: "h1",
+      }),
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Deshacer" }));
+
+    const dialogo = await screen.findByRole("dialog");
+    expect(within(dialogo).getByText("Se quita 1 addon que se instaló.")).toBeTruthy();
+    expect(within(dialogo).getByText(/cambiaron o se añadieron después: se quedan/)).toBeTruthy();
+    expect(within(dialogo).getByText("C:/WoW/_forever_/Interface/AddOns/Dominos/Dominos.toc")).toBeTruthy();
+  });
+
   it("si el plan ya no vale, lo dice en el diálogo", async () => {
     pintar({
       listar_operaciones: () => historial([ELIMINACION]),
-      plan_deshacer: () => ({ vuelven: 2, sobran: 0, cambian: [], deCuenta: [], huella: "h1" }),
+      plan_deshacer: () => ({ vuelven: 2, sobran: 0, cambian: [], deCuenta: [], addons: [], addonsCambiados: [], huella: "h1" }),
       deshacer_operacion: () => Promise.reject({ codigo: "planCaducado", datos: {} }),
     });
     fireEvent.click(await screen.findByRole("button", { name: "Deshacer" }));
@@ -209,6 +232,8 @@ describe("Historial", () => {
         sobran: 1,
         cambian: ["WTF/Account/1#1/config-cache.wtf"],
         deCuenta: ["WTF/Account/1#1/config-cache.wtf"],
+        addons: [],
+        addonsCambiados: [],
         huella: "h1",
       }),
     });

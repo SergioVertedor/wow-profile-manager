@@ -55,13 +55,19 @@ export default function Resultado({ resultados, producto, nombreDe, irAHistorial
   );
 }
 
+/** Los ficheros escritos y, si hubo, los addons instalados. */
+function textoCompleta(t: ReturnType<typeof useTranslation>["t"], ficheros: number, addons: number): string {
+  const escritos = t("importar.resultado.completa", { count: ficheros });
+  return addons === 0 ? escritos : `${escritos} ${t("importar.resultado.addons", { count: addons })}`;
+}
+
 function Estado({ resultado, deshecha }: Readonly<{ resultado: ResultadoImportacion; deshecha: boolean }>) {
   const { t } = useTranslation();
   switch (resultado.resultado) {
     case "completa":
       return (
         <p role="status" className={css.nota}>
-          {deshecha ? t("importar.resultado.deshecha") : t("importar.resultado.completa", { count: resultado.ficheros })}
+          {deshecha ? t("importar.resultado.deshecha") : textoCompleta(t, resultado.ficheros, resultado.addons)}
         </p>
       );
     case "fallida":
