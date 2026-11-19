@@ -1,4 +1,4 @@
-// «Eliminar carpeta» del personaje elegido (spec 021). Pide al núcleo cuánto hay en la carpeta, lo enseña en un
+// «Eliminar carpeta» del personaje elegido (#49). Pide al núcleo cuánto hay en la carpeta, lo enseña en un
 // diálogo con el aviso medido (el juego vuelve a crear la carpeta si el personaje existe) y, si se confirma, el núcleo
 // la saca del WTF guardando antes una copia. La interfaz solo pasa la identidad del personaje, nunca una ruta.
 import { useId, useRef, useState } from "react";

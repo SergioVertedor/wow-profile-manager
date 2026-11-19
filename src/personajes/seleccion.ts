@@ -1,4 +1,4 @@
-// Qué versión, cuenta y personaje están elegidos (spec 017). Se guarda solo lo que el jugador eligió; lo que falta o
+// Qué versión, cuenta y personaje están elegidos (#45). Se guarda solo lo que el jugador eligió; lo que falta o
 // ya no existe se completa con el primero disponible, como en la selección de personaje del juego: mientras haya
 // personajes, siempre hay uno elegido.
 import type { Cuenta, Instalacion, Personaje, VersionJuego } from "../nucleo";

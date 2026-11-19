@@ -1,4 +1,4 @@
-// La configuración de addons en el diálogo de exportar (spec 027): una lista por addon con cada pieza, por qué va
+// La configuración de addons en el diálogo de exportar (#56): una lista por addon con cada pieza, por qué va
 // marcada o no y sus avisos, «marcar» por regla genérica y lo que no se puede exportar. Marcar lo decide el diálogo.
 import { useId } from "react";
 import { useTranslation } from "react-i18next";

@@ -1,4 +1,4 @@
-// Textos de la interfaz (R-04) con i18next. El inglés es la referencia: define las claves (ver `i18next.d.ts`) y es
+// Textos de la interfaz (#9) con i18next. El inglés es la referencia: define las claves (ver `i18next.d.ts`) y es
 // el idioma de reserva. Si al español le falta una clave, se ve la inglesa, nunca la clave.
 import i18next, { type i18n, type Resource } from "i18next";
 import { initReactI18next } from "react-i18next";

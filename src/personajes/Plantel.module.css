@@ -91,7 +91,7 @@
   font-size: var(--texto-control);
 }
 
-/* Cabecera de reino: se queda fija mientras se recorren sus personajes y es el botón que los pliega (spec 019). */
+/* Cabecera de reino: se queda fija mientras se recorren sus personajes y es el botón que los pliega (#48). */
 .reino {
   position: sticky;
   top: calc(-1 * var(--espacio-2));

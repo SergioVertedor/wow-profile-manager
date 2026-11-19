@@ -1,4 +1,4 @@
-//! Carpetas de addons que instala una importación (spec 036). Van aparte de los `cambios` del diario: una carpeta son
+//! Carpetas de addons que instala una importación (#73). Van aparte de los `cambios` del diario: una carpeta son
 //! muchos ficheros que no existían, así que no hay nada que copiar antes. El diario guarda la lista de ficheros con su
 //! hash; con ella se quita lo instalado (al fallar, al recuperar o al deshacer) sin tocar lo que alguien cambió después.
 //!

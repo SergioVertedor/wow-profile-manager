@@ -1,4 +1,4 @@
-// «Abrir carpeta» del personaje elegido (spec 026): el núcleo la busca y la abre en el explorador. La interfaz solo
+// «Abrir carpeta» del personaje elegido (#65): el núcleo la busca y la abre en el explorador. La interfaz solo
 // pasa la identidad del personaje, nunca una ruta. Solo lee.
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

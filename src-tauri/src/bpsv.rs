@@ -1,4 +1,4 @@
-//! Formato de `.build.info` y `.flavor.info` (BPSV de Blizzard), medido en la instalación de Sergio:
+//! Formato de `.build.info` y `.flavor.info` (BPSV de Blizzard), medido en una instalación real:
 //!
 //! ```text
 //! Branch!STRING:0|Active!DEC:1|…|Version!STRING:0|KeyRing!HEX:16|Product!STRING:0

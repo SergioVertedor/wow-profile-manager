@@ -1,4 +1,4 @@
-//! Qué trae cada entrada del paquete, en palabras del jugador (spec 026, decisión 5). Solo sirve para enseñar: se
+//! Qué trae cada entrada del paquete, en palabras del jugador (#65, decisión 5). Solo sirve para enseñar: se
 //! calcula desde la pieza tal como viene en el paquete y no decide nada de lo que se escribe.
 
 use super::elementos::{bind, etiquetas_macros, lineas};

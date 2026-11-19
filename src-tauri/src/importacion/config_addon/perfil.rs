@@ -1,4 +1,4 @@
-//! El perfil AceDB al importar (spec 028, decisiones 7 y 11): el perfil y el de cada módulo, a qué perfil apunta el
+//! El perfil AceDB al importar (#72): el perfil y el de cada módulo, a qué perfil apunta el
 //! personaje destino y qué pasa si ya hay uno con ese nombre.
 
 use super::{AccionPerfil, Aplicacion, ConflictoPerfil, MotivoNoAplicable, elemento};
@@ -32,7 +32,7 @@ enum Estado {
     Distinto,
 }
 
-/// Perfil AceDB (decisiones 7 y 11): el perfil, el de cada módulo y `profileKeys` del personaje.
+/// Perfil AceDB: el perfil, el de cada módulo y `profileKeys` del personaje.
 pub(super) fn perfil_acedb(
     destino: &Documento,
     pieza: &[u8],

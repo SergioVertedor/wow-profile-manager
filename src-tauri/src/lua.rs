@@ -1,6 +1,6 @@
 //! Un `.lua` de `SavedVariables` como dato (D-02, `docs/formato-wowprofile.md`: «Lua es dato»). Se parsea con
 //! `full_moon` sin ejecutar nada y todo lo que sale es **byte a byte** el original: solo se escriben de nuevo las
-//! llaves de las tablas que se recortan (spec 027).
+//! llaves de las tablas que se recortan (#56).
 //!
 //! El fichero guarda bytes, no texto UTF-8: se lee como Latin-1 (1 byte = 1 `char`) para que el parser lo acepte
 //! entero, y cada trozo que se copia vuelve a ser sus bytes al deshacer esa lectura.
@@ -78,7 +78,7 @@ impl Documento {
         self.variable(VARIABLE_SUELTA)
     }
 
-    /// Solo hay `Nombre = <dato>`: tablas, cadenas, números, `true`, `false` y `nil` (spec 028, decisión 1). El juego
+    /// Solo hay `Nombre = <dato>`: tablas, cadenas, números, `true`, `false` y `nil` (#72, decisión 1). El juego
     /// ejecuta los `SavedVariables`: una llamada, una variable o una función de un paquete ajeno sería código.
     pub fn solo_datos(&self) -> bool {
         let bloque = self.ast.nodes();
@@ -515,7 +515,7 @@ pub fn a_latin1(texto: &str) -> String {
     texto.bytes().map(char::from).collect()
 }
 
-/// Un texto UTF-8 tal como va entre comillas en un fichero, en Latin-1 (spec 028, decisión 12): `\`, `"` y los
+/// Un texto UTF-8 tal como va entre comillas en un fichero, en Latin-1 (#72, decisión 12): `\`, `"` y los
 /// caracteres de control escapados (`\ddd`), para que un nombre con un salto de línea no rompa el fichero.
 pub fn literal_latin1(texto: &str) -> String {
     let mut escapado = String::with_capacity(texto.len());

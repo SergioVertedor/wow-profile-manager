@@ -103,7 +103,7 @@ mod tests {
             .collect()
     }
 
-    /// Árbol con las formas medidas en la instalación de Sergio (spec 014).
+    /// Árbol con las formas medidas en una instalación real (#36).
     fn addons_medidos(raiz: &Path) {
         addon(
             raiz,

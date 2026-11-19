@@ -1,4 +1,4 @@
-//! Carpeta de datos portable (#3, R-02): todo lo que la app guarda vive en una carpeta junto al `.exe`, sin
+//! Carpeta de datos portable (#3): todo lo que la app guarda vive en una carpeta junto al `.exe`, sin
 //! `%APPDATA%` ni registro de Windows. Se mueve el `.exe` con su carpeta y la app se viene entera. La regla es pura y
 //! se prueba con carpetas temporales; solo `run` pregunta al sistema dónde está el `.exe`.
 

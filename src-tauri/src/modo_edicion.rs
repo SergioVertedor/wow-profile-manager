@@ -1,4 +1,4 @@
-//! Modo Edición de Blizzard (spec 034, #71): el adaptador interno `modo-edicion` (`docs/adaptadores.md`). Lógica pura
+//! Modo Edición de Blizzard (#71): el adaptador interno `modo-edicion` (`docs/adaptadores.md`). Lógica pura
 //! sobre el texto de los dos ficheros; quien lee y escribe en disco es Exportación e Importación.
 //!
 //! Medido en WoW Forever 1.60.1 (comentario en #71):

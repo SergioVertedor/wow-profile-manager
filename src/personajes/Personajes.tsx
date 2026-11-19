@@ -1,6 +1,6 @@
-// Pantalla «Personajes» (spec 017), al estilo de la selección de personaje del juego: selector de versión arriba, el
+// Pantalla «Personajes» (#45), al estilo de la selección de personaje del juego: selector de versión arriba, el
 // personaje elegido en el centro y la lista de la cuenta a la derecha. Solo enseña lo que devuelve el núcleo. Con más
-// de una instalación, cada versión lleva el nombre de la suya (spec 018).
+// de una instalación, cada versión lleva el nombre de la suya (#34).
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TriangleAlert } from "lucide-react";

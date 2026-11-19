@@ -1,5 +1,5 @@
 //! Piezas: qué fichero de `WTF` es cada pieza del formato y cómo se recorta. La comparten Exportación (de dónde se lee,
-//! spec 023) e Importación (dónde se puede escribir, spec 024): una pieza solo va a **su** fichero.
+//! #56) e Importación (dónde se puede escribir, #63): una pieza solo va a **su** fichero.
 
 use crate::paquetes::{Ambito, Categoria};
 use serde::Serialize;
@@ -37,7 +37,7 @@ pub struct Fuente {
 const PERSONAJE: &[Ambito] = &[Ambito::Personaje];
 const CUENTA: &[Ambito] = &[Ambito::Cuenta];
 
-/// Las piezas de la entrega 1 de #56. Qué no viaja y por qué está en `docs/formato-wowprofile.md`.
+/// Las piezas del personaje y de la cuenta (#56). Qué no viaja y por qué está en `docs/formato-wowprofile.md`.
 pub const FUENTES: [Fuente; 11] = [
     fuente(
         "macros",
@@ -151,7 +151,7 @@ const fn filtrada(fuente: Fuente) -> Fuente {
 }
 
 /// La fuente cuya categoría y `destino` son exactamente esos. Al importar, una entrada que no tiene ninguna no se
-/// escribe: el paquete no puede mandar un fichero a un sitio que su categoría no explica (spec 024, decisión 7).
+/// escribe: el paquete no puede mandar un fichero a un sitio que su categoría no explica (#63, decisión 7).
 pub fn fuente_de_destino(categoria: Categoria, destino: &str) -> Option<&'static Fuente> {
     FUENTES
         .iter()
@@ -168,7 +168,7 @@ pub enum Motivo {
     Estado,
     /// Un addon que no está instalado.
     AddonNoInstalado,
-    /// Una variable AceDB: viaja aparte, como su perfil (spec 027).
+    /// Una variable AceDB: viaja aparte, como su perfil (#56).
     ViajaComoPerfil,
 }
 

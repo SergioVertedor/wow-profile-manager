@@ -1,4 +1,4 @@
-//! Configuración de addons para exportar (spec 027, entrega 2 de #56): qué viaja de cada addon instalado, decidido
+//! Configuración de addons para exportar (#56): qué viaja de cada addon instalado, decidido
 //! pieza a pieza con el orden de `docs/adaptadores.md` («Orden de decisión»). Solo lee.
 
 use crate::adaptadores::{self, Adaptador, ClavePersonaje, Regla as ReglaAdaptador};
@@ -411,7 +411,7 @@ impl Contexto<'_> {
         );
     }
 
-    /// Regla 2: el perfil que usa el personaje, con el de cada namespace (spec 027, decisión 2).
+    /// Regla 2: el perfil que usa el personaje, con el de cada namespace (#56, decisión 2).
     fn perfil_acedb(
         &mut self,
         addon: &Addon,
@@ -580,7 +580,7 @@ fn extraer_perfil(
     Some((nombre, contenido))
 }
 
-/// Pistas de otros jugadores (spec 027, decisión 12).
+/// Pistas de otros jugadores (#56, decisión 12).
 fn pistas<'a>(
     bytes: &[u8],
     valores: impl Iterator<Item = &'a full_moon::ast::Expression>,

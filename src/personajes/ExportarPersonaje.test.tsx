@@ -30,7 +30,7 @@ const PEDIDO: PersonajePedido = {
   personaje: "Goldberg-Joestar",
 };
 
-/** Una pieza de la entrega 1: marcada y sin datos de addon. */
+/** Una pieza del personaje o de la cuenta: marcada y sin datos de addon. */
 function pieza(campos: Pick<PiezaPropuesta, "id" | "categoria"> & Partial<PiezaPropuesta>): PiezaPropuesta {
   return {
     tipo: "fichero",

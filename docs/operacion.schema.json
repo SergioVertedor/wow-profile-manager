@@ -126,7 +126,7 @@
       }
     },
     "carpetas": {
-      "description": "Solo en importacion y en el deshacer de una: las carpetas de addons que instaló (spec 036). Sin copia: la lista de ficheros con su hash sirve para quitar solo lo que sigue como se instaló.",
+      "description": "Solo en importacion y en el deshacer de una: las carpetas de addons que instaló (#73). Sin copia: la lista de ficheros con su hash sirve para quitar solo lo que sigue como se instaló.",
       "type": "array",
       "maxItems": 256,
       "items": {

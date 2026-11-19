@@ -1,4 +1,4 @@
-//! Agente de Battle.net (spec 020): las raíces de WoW que el agente apunta en `product.db`. Es una pista para
+//! Agente de Battle.net (#35): las raíces de WoW que el agente apunta en `product.db`. Es una pista para
 //! Detección, que no da ninguna por buena sin `.build.info` en disco. Solo lee.
 //!
 //! El fichero es protobuf sin esquema publicado. Medido en un equipo real: el campo `1`, repetido, es un producto

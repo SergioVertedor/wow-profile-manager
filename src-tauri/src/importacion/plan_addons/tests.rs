@@ -1,4 +1,4 @@
-//! La configuración de addons de punta a punta (spec 028): plan, aplicar y deshacer sobre una instalación en una carpeta
+//! La configuración de addons de punta a punta (#72): plan, aplicar y deshacer sobre una instalación en una carpeta
 //! temporal, con dos destinos de una misma cuenta y un tercer personaje que no se toca.
 
 use super::super::{AccionPerfil, AvisoFichero, ResultadoPersonaje};

@@ -26,7 +26,7 @@ pub struct Cuentas {
 #[serde(rename_all = "camelCase")]
 pub struct Cuenta {
     pub carpeta: String,
-    /// Nombre propio que le ha puesto el usuario (spec 018). Lo rellena Detección con las preferencias.
+    /// Nombre propio que le ha puesto el usuario (#34). Lo rellena Detección con las preferencias.
     pub nombre: Option<String>,
     pub personajes: Vec<Personaje>,
     /// Carpetas de reino de la otra versión del juego: no se listan.
@@ -110,7 +110,7 @@ fn leer_cuenta(carpeta: String, ruta: &Path, producto: Producto) -> Result<Cuent
     })
 }
 
-/// Cómo se llamaría en los datos cada personaje de la cuenta `ruta_cuenta`, según su carpeta (spec 027: saber si un
+/// Cómo se llamaría en los datos cada personaje de la cuenta `ruta_cuenta`, según su carpeta (#56: saber si un
 /// fichero de la cuenta menciona a sus personajes).
 pub fn nombres_de_carpetas(
     ruta_cuenta: &Path,

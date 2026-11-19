@@ -1,4 +1,4 @@
-// «Exportar» del personaje elegido (specs 023, 027 y 036). Pide al núcleo qué se puede llevar, lo enseña en un diálogo con lo
+// «Exportar» del personaje elegido (#56 y #73). Pide al núcleo qué se puede llevar, lo enseña en un diálogo con lo
 // que el núcleo marca por defecto, y con el nombre del perfil le pide que arme el `.wowprofile`. El diálogo de guardar lo abre el núcleo: la
 // interfaz solo pasa la identidad del personaje y lo marcado, nunca una ruta. Exportar no escribe en el WTF.
 import { useId, useRef, useState } from "react";

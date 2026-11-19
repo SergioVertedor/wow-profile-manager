@@ -1,4 +1,4 @@
-// Paso «Seleccionar» (spec 024): qué entradas se importan y, para las de cuenta, si se aplican en cada cuenta de los
+// Paso «Seleccionar» (#63): qué entradas se importan y, para las de cuenta, si se aplican en cada cuenta de los
 // destinos. Una entrada de cuenta sin decidir llega a la vista previa como conflicto.
 import { useTranslation } from "react-i18next";
 import type { ResumenPaquete } from "../nucleo";
@@ -32,7 +32,7 @@ export default function PasoSeleccion(props: Props) {
   const teclas = resumen.entradas.some((e) => e.categoria === "teclas" && seleccion.has(e.id));
   // La configuración de addons que se puede importar va agrupada por addon; la que no, con el resto y su motivo.
   const esDeAddon = (e: (typeof resumen.entradas)[number]) => e.categoria === "config-addon" && e.incompatible === undefined;
-  // Las carpetas de addons (spec 036), aparte y con su aviso.
+  // Las carpetas de addons (#73), aparte y con su aviso.
   const esCarpeta = (e: (typeof resumen.entradas)[number]) => e.categoria === "addon" && e.incompatible === undefined;
   const deAddons = resumen.entradas.filter(esDeAddon);
   const carpetas = resumen.entradas.filter(esCarpeta);

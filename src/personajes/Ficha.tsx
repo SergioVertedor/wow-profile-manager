@@ -1,4 +1,4 @@
-// El personaje elegido, en el centro y con un foco de luz: la pieza llamativa de la app (spec 017). El retrato es un
+// El personaje elegido, en el centro y con un foco de luz: la pieza llamativa de la app (#45). El retrato es un
 // monograma: el de la API de Blizzard se descartó (#50), porque sus condiciones piden una clave secreta que no cabe en
 // una app de repositorio público.
 import type { TFunction } from "i18next";
