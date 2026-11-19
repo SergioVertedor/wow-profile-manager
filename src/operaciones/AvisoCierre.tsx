@@ -1,4 +1,4 @@
-// Aviso al cerrar la ventana con una operación escribiendo en el WTF (spec 029). Quien decide si hay que preguntar es
+// Aviso al cerrar la ventana con una operación escribiendo en el WTF (#60). Quien decide si hay que preguntar es
 // el núcleo: mira el cerrojo de las operaciones, impide el cierre y manda el evento. Aquí solo se pregunta.
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";

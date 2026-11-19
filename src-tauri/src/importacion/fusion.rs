@@ -1,4 +1,4 @@
-//! Fusiones línea a línea (spec 024, decisión 1 de Sergio): cambian solo las claves o los addons que trae el paquete y
+//! Fusiones línea a línea (#63): para no pisar lo que el destino ya tiene, cambian solo las claves o los addons que trae el paquete y
 //! el resto del fichero del destino se conserva byte a byte.
 
 use super::elementos::{Cambio, Elemento};
@@ -61,7 +61,7 @@ pub fn fusionar_opciones(destino: &[u8], paquete: &[u8]) -> Fusion {
 }
 
 /// `AddOns.txt`: por carpeta, sin distinguir mayúsculas. Se conserva cómo escribe el destino la carpeta y solo cambia
-/// el valor. Las carpetas que el destino no tiene instaladas se escriben igual (spec 024, decisión 9) y se dicen. Una
+/// el valor. Las carpetas que el destino no tiene instaladas se escriben igual (#63, decisión 9) y se dicen. Una
 /// línea con un valor que no sea `enabled` o `disabled` no se escribe: el juego no escribe otros [V].
 pub fn fusionar_addons(destino: &[u8], paquete: &[u8], instalados: &HashSet<String>) -> Fusion {
     let lineas: Vec<Linea> = texto_lineas(paquete)

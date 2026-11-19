@@ -1,4 +1,4 @@
-//! Modo Edición de punta a punta (spec 034): el diseño del origen se lleva en un `.wowprofile` real, se aplica en dos
+//! Modo Edición de punta a punta (#71): el diseño del origen se lleva en un `.wowprofile` real, se aplica en dos
 //! personajes de la misma cuenta y deshacer devuelve los ficheros como estaban.
 
 use super::super::{PaquetesAbiertos, Pedido};

@@ -1,4 +1,4 @@
-//! Registro de diagnóstico (spec 029). El núcleo escribe con la fachada `log` (`log::info!`, `log::warn!`…) sin saber
+//! Registro de diagnóstico (#60). El núcleo escribe con la fachada `log` (`log::info!`, `log::warn!`…) sin saber
 //! adónde va la línea; este módulo es el único logger: guarda las últimas líneas de la sesión en memoria, las emite a
 //! la interfaz y, si el usuario lo ha encendido, las añade a un `.txt` acotado en la carpeta de datos de la app.
 //!

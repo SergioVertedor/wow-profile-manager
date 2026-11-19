@@ -1,5 +1,5 @@
 //! Catálogo de adaptadores (`docs/adaptadores.md`): un JSON por addon en `src-tauri/adaptadores/`, dentro del
-//! ejecutable. Son las excepciones medidas a las reglas genéricas (spec 027).
+//! ejecutable. Son las excepciones medidas a las reglas genéricas (#56).
 
 use crate::paquetes::Ambito;
 use serde::Deserialize;

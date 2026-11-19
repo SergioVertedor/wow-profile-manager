@@ -161,7 +161,7 @@ en el nombre y otra con el nombre en ASCII y un sufijo hexadecimal (`…8D31D`).
 **Reinos de otra versión.** Dentro del `WTF` de una versión puede haber carpetas de reino copiadas a mano de la
 otra [V: medido una vez]. Retail y Forever no se mezclan, así que esas carpetas no se listan; se dice cuántas se
 ignoran. Las carpetas de `WTF/Account` sin forma de cuenta y las de `Interface/AddOns` sin `.toc` cargable salen en la
-pestaña Diagnóstico, una a una y con su motivo (spec 029).
+pestaña Diagnóstico, una a una y con su motivo (#60).
 - En Forever, los personajes están en carpetas de reino numéricas (`93`) [V en una instalación; H como regla
   general]. En Retail, la carpeta de reino es el nombre del reino [V].
 - Como la regla de Forever es [H], el recuento de carpetas ignoradas está siempre a la vista: si la regla se

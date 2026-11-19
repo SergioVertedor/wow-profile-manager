@@ -1,5 +1,5 @@
 //! Paquetes (`docs/arquitectura.md`): el `.wowprofile` según `docs/formato-wowprofile.md` (formato 1.0, y 1.1 si
-//! lleva addons, spec 036). Lo escribe (spec 023) y lo lee con las comprobaciones del formato (`lectura`, spec 024).
+//! lleva addons, #73). Lo escribe (#56) y lo lee con las comprobaciones del formato (`lectura`, #63).
 //! Solo escribe el `.wowprofile`.
 
 mod lectura;
@@ -48,12 +48,12 @@ pub enum Categoria {
     Opciones,
     Chat,
     Ventanas,
-    /// El diseño del Modo Edición que usa el personaje (spec 034).
+    /// El diseño del Modo Edición que usa el personaje (#71).
     ModoEdicion,
     MarcosBanda,
     AddonsActivos,
     ConfigAddon,
-    /// La carpeta de un addon, con su código (formato 1.1, spec 036).
+    /// La carpeta de un addon, con su código (formato 1.1, #73).
     Addon,
 }
 
@@ -158,7 +158,7 @@ pub struct Perfil {
     pub creado: String,
 }
 
-/// Sin `clase`: no se puede leer de forma fiable de los ficheros (spec 023, decisión 5).
+/// Sin `clase`: no se puede leer de forma fiable de los ficheros (#56, decisión 5).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Origen {
     pub producto: &'static str,

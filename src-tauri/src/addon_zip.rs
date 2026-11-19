@@ -1,4 +1,4 @@
-//! La carpeta de un addon como pieza del paquete (spec 036, #73): un ZIP con sus ficheros, con rutas relativas a la
+//! La carpeta de un addon como pieza del paquete (#73): un ZIP con sus ficheros, con rutas relativas a la
 //! carpeta. Empaquetar no sigue enlaces; leer comprueba cada nombre y los límites antes de devolver nada, porque lo que
 //! sale de aquí se escribe en `Interface/AddOns` del que importa.
 

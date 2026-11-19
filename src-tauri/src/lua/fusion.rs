@@ -1,4 +1,4 @@
-//! Fusionar al importar (spec 028, decisión 3): un valor del paquete dentro del mismo valor del destino, con las rutas de
+//! Fusionar al importar (#72, decisión 3): un valor del paquete dentro del mismo valor del destino, con las rutas de
 //! una regla. En el destino solo cambia lo que trae el paquete y deja pasar la regla; lo demás queda byte a byte y nada
 //! se borra. Solo se escriben de nuevo las llaves de las tablas en las que algo cambia.
 

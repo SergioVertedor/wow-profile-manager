@@ -63,14 +63,14 @@ flowchart LR
 | Operaciones | ejecuta un plan o una eliminación: diario, copias, escritura segura, restauración, historial | **única que escribe en `WTF`** |
 | Sistema | si hay un `Wow.exe` en marcha (con `tasklist.exe`: el núcleo prohíbe `unsafe`); idioma de Windows | consulta procesos |
 | Preferencias | carpetas añadidas a mano, nombres propios de instalaciones y cuentas, e interruptor del registro | lee y escribe solo `preferencias.json` en la carpeta de datos de la app |
-| Actualización | busca la última release de GitHub, comprueba la firma minisign con la clave pública que lleva la app y sustituye el `.exe` (spec 035) | la **única que sale a la red**, y solo con el interruptor encendido; escribe el `.exe` nuevo en la carpeta de datos y lo borra |
-| Diagnóstico | único logger de la fachada `log`: líneas de la sesión en memoria, a la interfaz y, si se enciende, a un `.txt` acotado (spec 029) | escribe solo en `registros/` de la carpeta de datos de la app, y solo encendido |
+| Actualización | busca la última release de GitHub, comprueba la firma minisign con la clave pública que lleva la app y sustituye el `.exe` (#3) | la **única que sale a la red**, y solo con el interruptor encendido; escribe el `.exe` nuevo en la carpeta de datos y lo borra |
+| Diagnóstico | único logger de la fachada `log`: líneas de la sesión en memoria, a la interfaz y, si se enciende, a un `.txt` acotado (#60) | escribe solo en `registros/` de la carpeta de datos de la app, y solo encendido |
 
 La **carpeta de datos de la app** es `wow-profile-manager-datos/`, junto al `.exe` (`portable.rs`, #3): preferencias,
 `operaciones/`, `registros/` y los datos de WebView2 (`webview/`). Nada en `%APPDATA%`, `%LOCALAPPDATA%` ni el registro
 de Windows. Si no se puede escribir en ella, la app lo dice con un mensaje nativo y no arranca.
 
-Criterios de diseño (míos):
+Criterios de diseño:
 - El catálogo de adaptadores va **dentro del ejecutable**: importar no necesita red.
 - Red: solo Actualización, por HTTPS con el TLS de Windows, y nunca con «Buscar actualizaciones al arrancar» apagado
   ni en desarrollo. Solo se instala un `.exe` con la firma de la app; la clave privada no está en el repo.
@@ -140,7 +140,7 @@ sequenceDiagram
 ```
 
 Si la huella no es la misma (el disco o el paquete cambiaron desde la vista previa), no se escribe nada. Si falla un
-personaje, se restaura y los siguientes no se aplican (spec 025).
+personaje, se restaura y los siguientes no se aplican (#63).
 
 ## Invariantes
 

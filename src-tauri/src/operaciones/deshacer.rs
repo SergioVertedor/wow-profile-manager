@@ -2,10 +2,10 @@
 //! de tipo `deshacer`, con el mismo orden de escritura: primero copia lo que haya ahora y después restaura. La original
 //! pasa a `deshecha`.
 //!
-//! - Una **eliminación** (spec 022) deja la carpeta del personaje exactamente como estaba: también quita lo que el juego
+//! - Una **eliminación** (#54) deja la carpeta del personaje exactamente como estaba: también quita lo que el juego
 //!   volvió a crear y antes no estaba.
-//! - Una **importación** (spec 025) solo devuelve sus ficheros: quita los que creó y restaura los demás desde su copia.
-//!   No toca ningún otro. Las carpetas de addons que instaló (spec 036) se quitan al final, solo lo que sigue como se
+//! - Una **importación** (#63) solo devuelve sus ficheros: quita los que creó y restaura los demás desde su copia.
+//!   No toca ningún otro. Las carpetas de addons que instaló (#73) se quitan al final, solo lo que sigue como se
 //!   instaló: lo que cambió después se queda.
 
 use super::carpetas::{self, CarpetaInstalada};
@@ -135,7 +135,7 @@ impl Operaciones {
         let fuentes = preparado.fuentes;
         let hecho = ejecutar(&dir, diario, &juego_en_marcha, |diario| {
             aplicar(diario, &fuentes)?;
-            // Al final y sin copia (decisión 5 de la spec 036): lo que no se puede quitar se queda.
+            // Al final y sin copia (#73): un addon se quita solo si sigue intacto; lo demás se queda.
             let quedan = carpetas::quitar(&diario.destino.raiz_version, id, &diario.carpetas);
             if !quedan.is_empty() {
                 log::warn!("deshacer {id}: se quedan {}", quedan.join("; "));

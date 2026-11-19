@@ -1,4 +1,4 @@
-// Vista «Importar» (specs 024 y 025): abrir un `.wowprofile`, elegir uno o varios personajes destino, elegir qué se
+// Vista «Importar» (#63): abrir un `.wowprofile`, elegir uno o varios personajes destino, elegir qué se
 // importa, ver la vista previa, aplicar y ver el resultado, con «Deshacer» por personaje.
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,7 +30,7 @@ export default function Importar({ estado, irAHistorial }: Props) {
   const [abriendo, setAbriendo] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
-  // Al salir de la vista, el núcleo olvida el paquete (spec 024, decisión 10). Si falla, no hay nada que hacer: el
+  // Al salir de la vista, el núcleo olvida el paquete (#63, decisión 10). Si falla, no hay nada que hacer: el
   // siguiente que se abra lo sustituye igual.
   useEffect(
     () => () => {

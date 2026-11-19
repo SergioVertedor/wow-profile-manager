@@ -1,4 +1,4 @@
-// Las carpetas de los addons en el diálogo de exportar (spec 036): salen marcadas, con el aviso de que son código que
+// Las carpetas de los addons en el diálogo de exportar (#73): salen marcadas, con el aviso de que son código que
 // el juego ejecuta y de que muchos addons no permiten redistribuirse. Las que no se pueden llevar se dicen aparte, con
 // su motivo: quien importe verá que le faltan. Marcar lo decide el diálogo.
 import { useId } from "react";

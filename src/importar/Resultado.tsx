@@ -1,4 +1,4 @@
-// Paso «Resultado» (spec 025): qué pasó en cada personaje al aplicar, con «Deshacer» en los que se escribieron y el
+// Paso «Resultado» (#63): qué pasó en cada personaje al aplicar, con «Deshacer» en los que se escribieron y el
 // siguiente paso, entrar al juego y comprobarlo.
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

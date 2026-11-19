@@ -1,4 +1,4 @@
-//! Idioma de la interfaz (R-04): español si Windows tiene la interfaz en cualquier `es-*`, inglés en otro caso.
+//! Idioma de la interfaz (#9): español si Windows tiene la interfaz en cualquier `es-*`, inglés en otro caso.
 //! La regla es pura y se prueba sin Windows; solo `idioma_sistema` pregunta al sistema.
 
 use serde::Serialize;

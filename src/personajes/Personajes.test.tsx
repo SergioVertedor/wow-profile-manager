@@ -254,7 +254,7 @@ describe("Personajes", () => {
 
     await screen.findByRole("heading", { name: "Goldberg Joestar" });
     expect(screen.getByText("2 carpetas de reino son de la otra versión del juego y se han saltado.")).toBeDefined();
-    // Spec 029: el pie de diagnóstico ya no está, aunque haya carpetas saltadas.
+    // #60: el pie de diagnóstico ya no está, aunque haya carpetas saltadas.
     expect(screen.queryByText(/WTF\/Account/)).toBeNull();
     expect(screen.queryByText(/Interface\/AddOns/)).toBeNull();
     expect(screen.queryByText(/C:\\Juegos\\World of Warcraft/)).toBeNull();

@@ -1,4 +1,4 @@
-// Vista «Historial» (specs 022 y 025): las operaciones de la app, de la más nueva a la más antigua, con lo que ocupan.
+// Vista «Historial» (#54 y #63): las operaciones de la app, de la más nueva a la más antigua, con lo que ocupan.
 // Desde aquí se deshace una eliminación o una importación, se restaura una importación que se cortó a mitad, se abre la
 // carpeta de una operación y se borra una para liberar espacio. Nada se borra solo (D-04). Una que no se pudo restaurar
 // se señala mientras exista, con lo que falta y dónde está su copia.

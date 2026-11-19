@@ -1,4 +1,4 @@
-//! Autoactualización (spec 035, #3 R-03). La lógica es pura y se prueba sin red: comparar versiones, leer la última
+//! Autoactualización (#3). La lógica es pura y se prueba sin red: comparar versiones, leer la última
 //! release de GitHub y comprobar la firma. La red está en `red.rs`; sustituir el `.exe` y reiniciar, en `lib.rs`.
 //!
 //! Solo se instala un `.exe` cuya firma minisign (la de `tauri signer`) cuadra con [`CLAVE_PUBLICA`]. La privada no

@@ -1,4 +1,4 @@
-//! La configuración de addons al importar (spec 028): qué entradas `config-addon` se pueden aplicar y cómo queda el
+//! La configuración de addons al importar (#72): qué entradas `config-addon` se pueden aplicar y cómo queda el
 //! fichero del destino con cada una. Puro: recibe los bytes y devuelve los bytes.
 //!
 //! Toda pieza tiene que ser solo datos (decisión 1): el juego ejecuta los `SavedVariables` al cargarlos. Un adaptador lo

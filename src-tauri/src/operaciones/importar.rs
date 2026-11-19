@@ -1,9 +1,9 @@
-//! Importar (spec 025, `docs/flujos.md`, «Aplicar»): escribir en el `WTF` de un personaje los ficheros del plan de
+//! Importar (#63, `docs/flujos.md`, «Aplicar»): escribir en el `WTF` de un personaje los ficheros del plan de
 //! importación, con el mismo orden de escritura que las demás operaciones. Una operación por personaje: las entradas de
 //! su cuenta van en la del primer personaje de esa cuenta (eso lo decide el plan, no este módulo).
 //!
 //! Aquí no se planifica nada: se escriben exactamente los bytes del plan, y solo si cada fichero sigue como estaba al
-//! planificar. Las carpetas de addons (spec 036) se instalan después de los ficheros (`carpetas.rs`).
+//! planificar. Las carpetas de addons (#73) se instalan después de los ficheros (`carpetas.rs`).
 
 use super::carpetas::{self, Cargar, InstalarCarpeta};
 use super::{

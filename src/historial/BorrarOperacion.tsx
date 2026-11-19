@@ -1,4 +1,4 @@
-// «Borrar» una operación terminada del historial (spec 022): libera su espacio y quita la posibilidad de deshacerla, y la
+// «Borrar» una operación terminada del historial (#54): libera su espacio y quita la posibilidad de deshacerla, y la
 // confirmación lo dice así. Una que no se pudo restaurar del todo exige además marcar que ya se restauró a mano.
 import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";

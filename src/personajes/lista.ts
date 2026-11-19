@@ -1,4 +1,4 @@
-// Lógica de la lista de personajes (spec 017): cómo se llama cada cuenta, cuándo hay reinos, cómo se agrupa y cómo se
+// Lógica de la lista de personajes (#45): cómo se llama cada cuenta, cuándo hay reinos, cómo se agrupa y cómo se
 // busca. Funciones puras: los componentes solo pintan lo que devuelven.
 import type { Personaje } from "../nucleo";
 

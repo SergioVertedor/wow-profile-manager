@@ -4,7 +4,7 @@
 use serde::Serialize;
 use std::collections::HashMap;
 
-/// Lo que la app usa de un `.toc`. Medido sobre 226 `.toc` reales (spec 014).
+/// Lo que la app usa de un `.toc`. Medido sobre 226 `.toc` reales (#36).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Toc {

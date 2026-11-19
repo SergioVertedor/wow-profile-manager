@@ -97,7 +97,7 @@
   resize: vertical;
 }
 
-/* Configuración de addons (spec 027): un bloque por addon, con sus avisos bajo cada pieza. */
+/* Configuración de addons (#56): un bloque por addon, con sus avisos bajo cada pieza. */
 .addons {
   margin-top: var(--espacio-5);
 }

@@ -71,7 +71,7 @@ function EnlaceExterno({
   );
 }
 
-/** El interruptor «Buscar actualizaciones al arrancar» (spec 035). Hasta saber cómo está, desactivado. */
+/** El interruptor «Buscar actualizaciones al arrancar» (#3). Hasta saber cómo está, desactivado. */
 function Actualizaciones({ alFallar }: Readonly<{ alFallar: (error: unknown) => void }>) {
   const { t } = useTranslation();
   const idAyuda = useId();

@@ -1,4 +1,4 @@
-// Paso «Destino» (spec 024): uno o varios personajes de una misma instalación de la versión del juego del paquete,
+// Paso «Destino» (#63): uno o varios personajes de una misma instalación de la versión del juego del paquete,
 // aunque sean de cuentas distintas. Se reutiliza la lista de la vista «Personajes» con casillas.
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

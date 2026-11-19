@@ -1,4 +1,4 @@
-// La detección de instalaciones, compartida por «Personajes» e «Instalaciones» (spec 018). Vive en `App` para que
+// La detección de instalaciones, compartida por «Personajes» e «Instalaciones» (#34). Vive en `App` para que
 // cambiar de vista no vuelva a leer el disco.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { pedirDeteccion, type Deteccion } from "../nucleo";

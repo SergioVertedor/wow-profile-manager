@@ -1,4 +1,4 @@
-// «Deshacer» una eliminación (spec 022) o una importación (spec 025). Pide al núcleo el plan (qué vuelve, qué se quita y
+// «Deshacer» una eliminación (#54) o una importación (#63). Pide al núcleo el plan (qué vuelve, qué se quita y
 // qué se pisa), lo enseña en un diálogo y, si se confirma, deshace con la huella del plan: si el disco cambió entre
 // medias, el núcleo no escribe nada. La interfaz solo manda el id de la operación. Lo usan el Historial y el resultado de
 // importar.

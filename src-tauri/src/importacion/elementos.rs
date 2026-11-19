@@ -18,7 +18,7 @@ pub enum Cambio {
     Quitado,
 }
 
-/// Qué es un elemento de la configuración de un addon (spec 028). Sin clase, es una macro, una tecla, una opción o un
+/// Qué es un elemento de la configuración de un addon (#72). Sin clase, es una macro, una tecla, una opción o un
 /// addon.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]

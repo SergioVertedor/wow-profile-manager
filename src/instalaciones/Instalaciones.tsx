@@ -1,4 +1,4 @@
-// Vista «Instalaciones» (spec 018): las instalaciones de WoW que conoce la app, de dónde salieron y sus versiones.
+// Vista «Instalaciones» (#34): las instalaciones de WoW que conoce la app, de dónde salieron y sus versiones.
 // Aquí se añade una carpeta a mano, se pone nombre a cada instalación y se quitan las añadidas a mano. El selector de
 // carpetas lo abre el núcleo: la interfaz no elige rutas.
 import { useState, type ReactNode } from "react";

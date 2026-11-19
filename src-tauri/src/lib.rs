@@ -41,16 +41,16 @@ pub const CARPETA_OPERACIONES: &str = "operaciones";
 
 /// Etiqueta de la ventana de `tauri.conf.json`; el selector de carpetas se abre como hijo suyo.
 const VENTANA_PRINCIPAL: &str = "main";
-/// Evento con cada línea nueva del registro de diagnóstico (spec 029).
+/// Evento con cada línea nueva del registro de diagnóstico (#60).
 const EVENTO_LINEA: &str = "diagnostico://linea";
-/// Evento que avisa a la interfaz de que se pidió cerrar la ventana con una operación en marcha (spec 029).
+/// Evento que avisa a la interfaz de que se pidió cerrar la ventana con una operación en marcha (#60).
 const EVENTO_CIERRE_BLOQUEADO: &str = "cierre://bloqueado";
 
 use std::path::PathBuf;
 use tauri::{Emitter, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
-/// Deja en el registro el error de un comando que falla, con su código y sus datos (spec 029).
+/// Deja en el registro el error de un comando que falla, con su código y sus datos (#60).
 fn con_error_registrado<T>(
     comando: &str,
     resultado: Result<T, error::ErrorNucleo>,
@@ -203,7 +203,7 @@ async fn resumen_eliminacion(
     )
 }
 
-/// Saca la carpeta de un personaje del `WTF` y la guarda como una operación con copia (spec 021). Devuelve su id.
+/// Saca la carpeta de un personaje del `WTF` y la guarda como una operación con copia (#49). Devuelve su id.
 #[tauri::command]
 async fn eliminar_personaje(
     personaje: deteccion::PersonajePedido,
@@ -223,7 +223,7 @@ async fn recuperar_operaciones(
     Ok(operaciones.recuperar(sistema::juego_en_marcha))
 }
 
-/// Las operaciones de la app, de la más nueva a la más antigua, con lo que ocupan (spec 022). Solo lee.
+/// Las operaciones de la app, de la más nueva a la más antigua, con lo que ocupan (#54). Solo lee.
 #[tauri::command]
 async fn listar_operaciones(
     operaciones: State<'_, Operaciones>,
@@ -253,7 +253,7 @@ async fn deshacer_operacion(
     )
 }
 
-/// Restaura una importación que se cortó a mitad, cuando el usuario lo pide (spec 025).
+/// Restaura una importación que se cortó a mitad, cuando el usuario lo pide (#63).
 #[tauri::command]
 async fn restaurar_operacion(
     id: String,
@@ -292,7 +292,7 @@ async fn abrir_carpeta_operacion(
     )
 }
 
-/// Abre en el explorador la carpeta de un personaje (spec 026). Con un enlace en el camino no se abre nada.
+/// Abre en el explorador la carpeta de un personaje (#65). Con un enlace en el camino no se abre nada.
 #[tauri::command]
 async fn abrir_carpeta_personaje(
     personaje: deteccion::PersonajePedido,
@@ -305,7 +305,7 @@ async fn abrir_carpeta_personaje(
     con_error_registrado("abrir_carpeta_personaje", resultado)
 }
 
-/// Qué se puede exportar de un personaje ahora mismo (spec 023). Solo lee.
+/// Qué se puede exportar de un personaje ahora mismo (#56). Solo lee.
 #[tauri::command]
 async fn propuesta_exportacion(
     personaje: deteccion::PersonajePedido,
@@ -399,7 +399,7 @@ enum Apertura {
     Abierta { resumen: Box<importacion::Resumen> },
 }
 
-/// Abre el diálogo de Windows para elegir un `.wowprofile` y lo lee con todas las comprobaciones del formato (spec 024).
+/// Abre el diálogo de Windows para elegir un `.wowprofile` y lo lee con todas las comprobaciones del formato (#63).
 /// El diálogo se abre desde aquí: la interfaz no elige rutas. No escribe nada.
 #[tauri::command]
 async fn abrir_paquete<R: tauri::Runtime>(
@@ -448,7 +448,7 @@ fn ubicar_todos(
 }
 
 /// Aplica el paquete abierto (`sha256`) en esos personajes, si el plan sigue siendo el que se enseñó (`huella`): una
-/// operación por personaje (spec 025). Devuelve qué pasó en cada uno.
+/// operación por personaje (#63). Devuelve qué pasó en cada uno.
 #[tauri::command]
 async fn aplicar_importacion(
     sha256: String,
@@ -478,7 +478,7 @@ fn abrir_enlace(enlace: enlaces::Enlace) -> Result<(), error::ErrorNucleo> {
     con_error_registrado("abrir_enlace", enlaces::abrir(enlace))
 }
 
-/// Lo que enseña la pestaña Diagnóstico al abrirse (spec 029).
+/// Lo que enseña la pestaña Diagnóstico al abrirse (#60).
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 struct EstadoDiagnostico {

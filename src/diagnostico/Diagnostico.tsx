@@ -1,4 +1,4 @@
-// Pestaña «Diagnóstico» (spec 029): lo que la app va haciendo, en vivo, y el interruptor que lo guarda además en un
+// Pestaña «Diagnóstico» (#60): lo que la app va haciendo, en vivo, y el interruptor que lo guarda además en un
 // `.txt`. Es para encontrar fallos, no para el uso normal: por eso vive aparte de las vistas del jugador.
 import { useEffect, useId, useRef, useState, type UIEvent } from "react";
 import { useTranslation } from "react-i18next";

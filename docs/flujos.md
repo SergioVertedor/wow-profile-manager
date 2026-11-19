@@ -80,7 +80,7 @@ categorías y addons trae.
 ### 2. Elegir el destino
 
 Uno o varios personajes, **solo de la versión del juego del paquete** (`origen.producto`) y **de una misma
-instalación**, aunque sean de cuentas distintas (spec 024). Retail y Forever no se mezclan: un paquete de Forever solo
+instalación**, aunque sean de cuentas distintas (#63). Retail y Forever no se mezclan: un paquete de Forever solo
 ofrece personajes de Forever, y uno de Retail, de Retail.
 
 Con varios personajes, al aplicar hay **una operación por personaje**, una detrás de otra: cada uno sale en su línea del
@@ -142,7 +142,7 @@ escribirán: aplicar escribe esos bytes y no otros, y no escribe nada si el disc
 
 ### Cómo se escribe cada categoría
 
-Decisión de Sergio (2026-11-18, #63), para las categorías de fichero:
+Para las categorías de fichero (#63):
 
 | categoría | cómo |
 |---|---|
@@ -151,7 +151,7 @@ Decisión de Sergio (2026-11-18, #63), para las categorías de fichero:
 | `macros` | **sobrescribe** el fichero, con el detalle macro a macro |
 | `teclas`, `teclas-clic`, `chat`, `ventanas`, `marcos-banda` | **sobrescribe** el fichero |
 
-Para la configuración de addons (spec 028, #72):
+Para la configuración de addons (#72):
 
 | tipo | cómo |
 |---|---|
@@ -319,7 +319,7 @@ al arrancar.
 
 ## Eliminar la carpeta de un personaje
 
-Para limpiar las carpetas que dejan los personajes borrados en el juego (spec 021). Es una operación de tipo
+Para limpiar las carpetas que dejan los personajes borrados en el juego (#49). Es una operación de tipo
 `eliminacion` con un cambio `borrar` por fichero de la carpeta, y sigue el mismo [orden de escritura](#orden-de-escritura):
 primero las copias verificadas y después quitar. Al terminar se quitan también las carpetas que quedaron vacías.
 
@@ -335,7 +335,7 @@ primero las copias verificadas y después quitar. Al terminar se quitan también
   (con el juego abierto se espera al siguiente arranque). Restaurarla solo devuelve ficheros desde copias verificadas a
   una carpeta que vació la app, sin pisar nada que exista. Así no hay nada del jugador que se pueda perder.
 
-Una eliminación se deshace desde el [historial](#historial) (spec 022). Si la app no está, también a mano: copiar cada
+Una eliminación se deshace desde el [historial](#historial) (#54). Si la app no está, también a mano: copiar cada
 `copias/<n>` a su `ruta`.
 
 ## Deshacer
@@ -361,7 +361,7 @@ Deshacer devuelve los ficheros de una operación `completa` a como estaban antes
 **Deshacer un deshacer** (en el diagrama, «rehacer») vuelve a dejar los ficheros como tras la importación. El `deshacer` pasa a `deshecha` y
 la importación original vuelve a `completa` (sin `deshechaPor`), así que se puede volver a deshacer.
 
-**Deshacer una eliminación** (spec 022) deja la carpeta del personaje exactamente como estaba: cada fichero que hoy no
+**Deshacer una eliminación** (#54) deja la carpeta del personaje exactamente como estaba: cada fichero que hoy no
 está como antes se devuelve desde su copia, y los que hay ahora y antes no estaban (el juego volvió a crear la carpeta)
 se quitan; todos con copia previa en el `deshacer`. Los que ya están como antes no se tocan. El plan que se enseña lleva
 una huella (SHA-256 de cada fichero afectado tal como está): si al confirmar el disco ya no es el del plan, no se
@@ -370,7 +370,7 @@ devolvió un estado anterior, y lo que se pisaría sale en el plan. Al arrancar,
 restaura solo, igual que una eliminación: restaurar nunca pisa nada que no escribiera la propia operación. «Rehacer»
 una eliminación (deshacer su `deshacer`) aún no se ofrece: la copia de lo que se pisó queda en el `deshacer`.
 
-**Deshacer una importación** (spec 025) solo toca los ficheros que escribió: los que creó se quitan (si siguen ahí) y
+**Deshacer una importación** (#63) solo toca los ficheros que escribió: los que creó se quitan (si siguen ahí) y
 los demás vuelven desde su copia. Ningún otro fichero del personaje se toca. Como una importación posterior en otro
 personaje de la misma cuenta puede haber escrito el mismo fichero de cuenta, cuenta como operación posterior (paso 1).
 
@@ -394,7 +394,7 @@ tamaño de sus copias. Arriba, el total ocupado.
 
 ## Registro de diagnóstico
 
-La pestaña **Diagnóstico** enseña en vivo lo que la app va haciendo en la sesión (spec 029). Está siempre en la barra,
+La pestaña **Diagnóstico** enseña en vivo lo que la app va haciendo en la sesión (#60). Está siempre en la barra,
 también cuando la detección falla, que es cuando más falta hace. Cada línea lleva hora local con su desfase, nivel
 (`ERROR`, `WARN`, `INFO`), módulo y mensaje:
 

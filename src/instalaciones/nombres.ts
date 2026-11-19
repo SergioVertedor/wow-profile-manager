@@ -1,4 +1,4 @@
-// Nombres propios de instalaciones y cuentas (spec 018): qué etiqueta se enseña y cómo queda la detección tras
+// Nombres propios de instalaciones y cuentas (#34): qué etiqueta se enseña y cómo queda la detección tras
 // renombrar sin volver a leer el disco. Funciones puras: los componentes solo pintan lo que devuelven.
 import type { TFunction } from "i18next";
 import type { Deteccion, Instalacion } from "../nucleo";
