@@ -1,4 +1,4 @@
-//! Importación (`docs/arquitectura.md`, #63): del paquete leído y los personajes destino al plan que enseña
+//! Importación (`docs/architecture.md`, #63): del paquete leído y los personajes destino al plan que enseña
 //! la vista previa, y de ahí a las operaciones que lo escriben. Planificar es puro: no escribe en ningún sitio. Leer los
 //! ficheros actuales va aparte (`leer_destino`) y escribir es de Operaciones (`aplicar.rs`).
 

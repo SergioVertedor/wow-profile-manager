@@ -1,4 +1,4 @@
-//! Núcleo de WoW Profile Manager. Los módulos siguen `docs/arquitectura.md`; los comandos de Tauri son la única
+//! Núcleo de WoW Profile Manager. Los módulos siguen `docs/architecture.md`; los comandos de Tauri son la única
 //! puerta de entrada desde la interfaz y no contienen lógica: delegan en módulos que se prueban sin Tauri.
 
 mod actualizacion;
@@ -36,7 +36,7 @@ pub use info::NOMBRE_APP;
 pub use operaciones::Operaciones;
 pub use preferencias::Almacen;
 
-/// Carpeta de las operaciones dentro de la carpeta de datos de la app (`docs/flujos.md`).
+/// Carpeta de las operaciones dentro de la carpeta de datos de la app (`docs/flows.md`).
 pub const CARPETA_OPERACIONES: &str = "operaciones";
 
 /// Etiqueta de la ventana de `tauri.conf.json`; el selector de carpetas se abre como hijo suyo.
@@ -605,7 +605,7 @@ fn version_actual() -> actualizacion::Version {
 }
 
 /// Cierra la ventana aunque haya una operación en marcha: el usuario lo ha confirmado. Lo cortado se termina al
-/// volver a arrancar, como si se hubiera ido la luz (`docs/flujos.md`).
+/// volver a arrancar, como si se hubiera ido la luz (`docs/flows.md`).
 #[tauri::command]
 fn cerrar_ventana<R: tauri::Runtime>(ventana: tauri::WebviewWindow<R>) {
     log::warn!("se cierra la ventana con una operación en marcha");

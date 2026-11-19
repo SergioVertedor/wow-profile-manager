@@ -1,4 +1,4 @@
-//! Qué cambia dentro de un fichero, elemento a elemento, para la vista previa (`docs/flujos.md`, «Vista previa»). Solo
+//! Qué cambia dentro de un fichero, elemento a elemento, para la vista previa (`docs/flows.md`, «Preview»). Solo
 //! sirve para enseñar: los ficheros se escriben con los bytes del paquete o de la fusión, nunca reconstruidos desde aquí.
 
 use serde::Serialize;

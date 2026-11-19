@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/SergioVertedor/wow-profile-manager/blob/develop/docs/wowprofile.schema.json",
-  "title": "Manifiesto .wowprofile 1.x",
-  "description": "manifest.json de un paquete .wowprofile, versión mayor 1. Ver docs/formato-wowprofile.md.",
+  "title": ".wowprofile manifest 1.x",
+  "description": "manifest.json of a .wowprofile package, major version 1. See docs/wowprofile-format.md.",
   "type": "object",
   "additionalProperties": false,
   "required": ["formato", "perfil", "origen", "addons", "entradas"],
@@ -50,7 +50,7 @@
   },
   "$defs": {
     "idAddon": {
-      "description": "Nombre de la carpeta del addon en Interface/AddOns: sin nombres de dispositivo de Windows ni punto final.",
+      "description": "Name of the addon folder in Interface/AddOns: no Windows device names and no trailing dot.",
       "type": "string",
       "pattern": "^[A-Za-z0-9_!.\\-]{1,64}$",
       "not": {
@@ -91,7 +91,7 @@
         "tipo": { "enum": ["fichero", "fichero-filtrado", "perfil-acedb", "adaptador", "carpeta"] },
         "ambito": { "enum": ["personaje", "cuenta", "instalacion"] },
         "destino": {
-          "description": "Ruta lógica relativa al personaje destino, a su cuenta o, en una pieza addon, a Interface/AddOns. Nunca una ruta de disco.",
+          "description": "Logical path relative to the target character, to its account or, for an addon piece, to Interface/AddOns. Never a disk path.",
           "type": "string"
         },
         "addon": { "$ref": "#/$defs/idAddon" },
@@ -123,7 +123,7 @@
         {
           "if": { "properties": { "categoria": { "const": "addon" } } },
           "then": {
-            "description": "1.1: la carpeta de un addon. El destino es addons/<addon>: que coincidan lo comprueba la app.",
+            "description": "1.1: an addon's folder. The destino is addons/<addon>: the app checks that they match.",
             "required": ["addon"],
             "properties": {
               "tipo": { "const": "carpeta" },

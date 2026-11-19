@@ -38,7 +38,7 @@ pub struct Fuente {
 const PERSONAJE: &[Ambito] = &[Ambito::Personaje];
 const CUENTA: &[Ambito] = &[Ambito::Cuenta];
 
-/// Las piezas del personaje y de la cuenta (#56). Qué no viaja y por qué está en `docs/formato-wowprofile.md`.
+/// Las piezas del personaje y de la cuenta (#56). Qué no viaja y por qué está en `docs/wowprofile-format.md`.
 pub const FUENTES: [Fuente; 11] = [
     fuente(
         "macros",

@@ -1,5 +1,5 @@
-//! Descubrimiento de addons (ver `docs/arquitectura.md`): los addons instalados de una versión del juego, según
-//! `docs/modelo-de-datos.md` («Addon instalado»). Solo lee. Las carpetas sin `.toc` cargable no se listan, pero se
+//! Descubrimiento de addons (ver `docs/architecture.md`): los addons instalados de una versión del juego, según
+//! `docs/data-model.md` («Installed addon»). Solo lee. Las carpetas sin `.toc` cargable no se listan, pero se
 //! cuentan, para que un error de regla se note.
 
 use crate::deteccion::Producto;

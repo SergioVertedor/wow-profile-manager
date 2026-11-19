@@ -1,6 +1,6 @@
-//! Operaciones (ver `docs/arquitectura.md` y `docs/flujos.md`): el único módulo que escribe en `WTF`. Cada operación es
+//! Operaciones (ver `docs/architecture.md` y `docs/flows.md`): el único módulo que escribe en `WTF`. Cada operación es
 //! una carpeta en `<datos>/operaciones/<id>/` con su diario (`operacion.json`) y las copias de lo que había. Nada se
-//! quita del `WTF` sin una copia verificada, y nada de esta carpeta se borra solo (D-04).
+//! quita del `WTF` sin una copia verificada, y nada de esta carpeta se borra solo (#18).
 //!
 //! Hay tres tipos: `eliminacion` (#49), sacar la carpeta de un personaje; `importacion` (#63), escribir los
 //! ficheros de un perfil; y `deshacer` (#54), devolver lo que hizo una de las otras dos. El historial (listar,
@@ -252,7 +252,7 @@ impl Operaciones {
         })
     }
 
-    /// Saca la carpeta del personaje del `WTF` siguiendo el orden de escritura de `docs/flujos.md`. Devuelve el id de
+    /// Saca la carpeta del personaje del `WTF` siguiendo el orden de escritura de `docs/flows.md`. Devuelve el id de
     /// la operación.
     pub fn eliminar_personaje(
         &self,
@@ -287,7 +287,7 @@ impl Operaciones {
         })
     }
 
-    /// Al arrancar (`docs/flujos.md`, «Al arrancar»): las cortadas antes de tocar el `WTF` se cancelan; las cortadas a
+    /// Al arrancar (`docs/flows.md`, «On startup»): las cortadas antes de tocar el `WTF` se cancelan; las cortadas a
     /// mitad se restauran, salvo con el juego abierto o si son importaciones (esas se preguntan). Un diario que no se
     /// entiende no se toca.
     pub fn recuperar(&self, juego_en_marcha: impl Fn() -> bool) -> Recuperacion {

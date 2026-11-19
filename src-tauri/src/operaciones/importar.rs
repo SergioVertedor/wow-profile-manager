@@ -1,4 +1,4 @@
-//! Importar (#63, `docs/flujos.md`, «Aplicar»): escribir en el `WTF` de un personaje los ficheros del plan de
+//! Importar (#63, `docs/flows.md`, «Apply»): escribir en el `WTF` de un personaje los ficheros del plan de
 //! importación, con el mismo orden de escritura que las demás operaciones. Una operación por personaje: las entradas de
 //! su cuenta van en la del primer personaje de esa cuenta (eso lo decide el plan, no este módulo).
 //!

@@ -1,4 +1,4 @@
-//! Leer un `.wowprofile` según «Leer un paquete de forma segura» (`docs/formato-wowprofile.md`), pasos 1–5. El paso 6
+//! Leer un `.wowprofile` según «Leer un paquete de forma segura» (`docs/wowprofile-format.md`), pasos 1–5. El paso 6
 //! (cada `destino` a una ruta real) necesita el personaje destino y lo hace Importación. Nada de lo que trae el paquete
 //! se usa como ruta: el contenido queda en memoria, por `id`. Las piezas de addon (formato 1.1) no: se comprueban de una
 //! en una al leer y se sueltan; se vuelven a leer del fichero al instalarlas.
@@ -289,7 +289,7 @@ fn leer_manifiesto<R: Read + Seek>(
         return Err(invalido(MotivoPaquete::ManifiestoNoValido, "null"));
     }
     // En las versiones que conoce, nada que el schema no nombre. En una 1.x más nueva se ignora
-    // (`docs/formato-wowprofile.md`).
+    // (`docs/wowprofile-format.md`).
     if menor <= MENOR_CONOCIDA {
         campos_conocidos(&valor)
             .map_err(|campo| invalido(MotivoPaquete::ManifiestoNoValido, campo))?;
@@ -849,8 +849,8 @@ mod tests {
 
     #[test]
     fn el_ejemplo_del_formato_cumple_el_schema() {
-        let documento = include_str!("../../../docs/formato-wowprofile.md");
-        let ejemplo = documento.split("## Ejemplo").nth(1).unwrap();
+        let documento = include_str!("../../../docs/wowprofile-format.md");
+        let ejemplo = documento.split("## Example").nth(1).unwrap();
         let json = ejemplo
             .split("```json")
             .nth(1)

@@ -1,4 +1,4 @@
-//! Catálogo de adaptadores (`docs/adaptadores.md`): un JSON por addon en `src-tauri/adaptadores/`, dentro del
+//! Catálogo de adaptadores (`docs/adapters.md`): un JSON por addon en `src-tauri/adaptadores/`, dentro del
 //! ejecutable. Son las excepciones medidas a las reglas genéricas (#56).
 
 use crate::paquetes::Ambito;

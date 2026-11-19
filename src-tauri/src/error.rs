@@ -86,7 +86,7 @@ pub enum ErrorNucleo {
     DestinosNoValidos {},
 }
 
-/// Qué paso de «Leer un paquete de forma segura» (`docs/formato-wowprofile.md`) falló.
+/// Qué paso de «Leer un paquete de forma segura» (`docs/wowprofile-format.md`) falló.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum MotivoPaquete {

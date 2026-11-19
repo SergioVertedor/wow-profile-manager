@@ -1,5 +1,5 @@
-//! Detección (ver `docs/arquitectura.md`): encuentra las instalaciones de WoW y sus versiones del juego, según
-//! `docs/modelo-de-datos.md`. Solo lee. Fuentes: el registro de Windows y las carpetas elegidas a mano (#34,
+//! Detección (ver `docs/architecture.md`): encuentra las instalaciones de WoW y sus versiones del juego, según
+//! `docs/data-model.md`. Solo lee. Fuentes: el registro de Windows y las carpetas elegidas a mano (#34,
 //! guardadas en Preferencias); el agente de Battle.net llega con #35.
 
 use crate::addons::{Addons, descubrir_addons};
