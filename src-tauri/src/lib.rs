@@ -19,6 +19,7 @@ mod idioma;
 mod importacion;
 mod info;
 mod lua;
+mod modo_edicion;
 mod operaciones;
 mod paquetes;
 mod piezas;

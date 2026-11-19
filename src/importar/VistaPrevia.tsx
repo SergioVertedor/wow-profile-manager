@@ -305,6 +305,10 @@ function nombreDeElemento(t: TFunction, elemento: Elemento): string {
       return t("importar.elemento.perfil", { nombre: elemento.nombre });
     case "perfilDe":
       return t("importar.elemento.perfilDe", { nombre: elemento.nombre });
+    case "diseno":
+      return t("importar.elemento.diseno", { nombre: elemento.nombre });
+    case "disenoActivo":
+      return t("importar.elemento.disenoActivo", { nombre: elemento.nombre });
     default:
       return elemento.nombre;
   }

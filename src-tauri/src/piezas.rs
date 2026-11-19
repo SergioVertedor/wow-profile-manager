@@ -19,6 +19,8 @@ pub enum Filtro {
     Opciones,
     /// `AddOns.txt`: solo lo instalado y lo del cliente.
     Addons,
+    /// `edit-mode-cache-account.txt`: solo el diseño que usa el personaje (`modo_edicion.rs`).
+    ModoEdicion,
 }
 
 /// De dónde sale cada pieza. `origenes` en orden: vale el primero que exista.
@@ -36,7 +38,7 @@ const PERSONAJE: &[Ambito] = &[Ambito::Personaje];
 const CUENTA: &[Ambito] = &[Ambito::Cuenta];
 
 /// Las piezas de la entrega 1 de #56. Qué no viaja y por qué está en `docs/formato-wowprofile.md`.
-pub const FUENTES: [Fuente; 10] = [
+pub const FUENTES: [Fuente; 11] = [
     fuente(
         "macros",
         Categoria::Macros,
@@ -94,6 +96,17 @@ pub const FUENTES: [Fuente; 10] = [
         "layout-local.txt",
         "personaje/layout-local.txt",
     ),
+    // De los diseños de la cuenta viaja solo el que usa el personaje; al importar se añade, no se sustituye.
+    Fuente {
+        filtro: Filtro::ModoEdicion,
+        ..fuente(
+            "modo-edicion",
+            Categoria::ModoEdicion,
+            CUENTA,
+            "edit-mode-cache-account.txt",
+            "cuenta/edit-mode-cache-account.txt",
+        )
+    },
     fuente(
         "marcos-banda",
         Categoria::MarcosBanda,

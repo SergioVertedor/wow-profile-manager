@@ -30,7 +30,8 @@ abilities.
 - **Finds your installations, accounts, realms and characters** on its own (Windows registry and Battle.net), or from
   a folder you add.
 - **Exports a character** to a single `.wowprofile` file: macros, key bindings, click bindings, options, chat, windows,
-  raid frames, enabled add-ons and **add-on settings** (AceDB profiles and dedicated adapters).
+  raid frames, enabled add-ons, **add-on settings** (AceDB profiles and dedicated adapters) and the character's **Edit
+  Mode layout**, which is added to the destination account's layouts without replacing any.
 - **Leaves out what should not travel**: state, other players' data and options that only make sense on the original
   computer.
 - **Imports into any character**, even several at once and on another computer, choosing what to bring.
@@ -69,7 +70,7 @@ abilities.
 ## Status
 
 **Phase 3 (MVP), not released yet.** Detection, export, import, preview, backups and undo work today. Before the first
-release: the portable build with signed, optional auto-update, and support for Blizzard's Edit Mode layouts. The
+release: the portable build with signed, optional auto-update. The
 roadmap lives in the [issues](https://github.com/SergioVertedor/wow-profile-manager/issues).
 
 ## Documentation

@@ -28,7 +28,7 @@ const MAX_BYTES_TOTAL: usize = 128 * 1024 * 1024;
 /// El schema no admite más nombres en `claves_quitadas`.
 const MAX_CLAVES_QUITADAS: usize = 256;
 
-/// Lo que ve el usuario al elegir qué importa. Las que exporta la app; el formato tiene más (`modo-edicion`, #71).
+/// Lo que ve el usuario al elegir qué importa.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Categoria {
@@ -38,6 +38,8 @@ pub enum Categoria {
     Opciones,
     Chat,
     Ventanas,
+    /// El diseño del Modo Edición que usa el personaje (spec 034).
+    ModoEdicion,
     MarcosBanda,
     AddonsActivos,
     ConfigAddon,

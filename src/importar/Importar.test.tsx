@@ -394,6 +394,74 @@ describe("Importar", () => {
     expect(llamadas.some((l) => l.comando === "cerrar_paquete")).toBe(true);
   });
 
+  it("el Modo Edición se importa sin decidir la cuenta y la vista previa dice qué diseño se añade y se usa", async () => {
+    const resumen: ResumenPaquete = {
+      ...RESUMEN,
+      entradas: [
+        {
+          id: "modo-edicion",
+          categoria: "modo-edicion",
+          tipo: "adaptador",
+          ambito: "cuenta",
+          deCuenta: false,
+          bytes: 2_700,
+          marcada: true,
+          generica: false,
+          perfil: "Sanador",
+        },
+      ],
+    };
+    const fichero = VISTA.plan.personajes[0].ficheros[0];
+    const vista: VistaPrevia = {
+      ...VISTA,
+      juegoAbierto: false,
+      plan: {
+        incompatibles: [],
+        personajes: [
+          {
+            ...VISTA.plan.personajes[0],
+            conflictos: [],
+            ficheros: [
+              {
+                ...fichero,
+                entrada: "modo-edicion",
+                entradas: ["modo-edicion"],
+                categoria: "modo-edicion",
+                destino: "cuenta/edit-mode-cache-account.txt",
+                accion: "fusionar",
+                elementos: [{ nombre: "Sanador", cambio: "anadido", clase: "diseno" }],
+              },
+              {
+                ...fichero,
+                entrada: "modo-edicion",
+                entradas: ["modo-edicion"],
+                categoria: "modo-edicion",
+                destino: "personaje/edit-mode-cache-character.txt",
+                accion: "fusionar",
+                elementos: [{ nombre: "Sanador", cambio: "cambiado", clase: "disenoActivo" }],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    pintar({ abrir_paquete: () => ({ resultado: "abierta", resumen }), plan_importacion: () => vista });
+    fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Goldberg Joestar/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+
+    const casilla = screen.getByRole("checkbox", { name: /^Modo Edición/ });
+    expect(casilla.closest("label")?.textContent).not.toMatch(/de la cuenta/);
+    // No hay que decidir nada por cuenta: no sale ninguna decisión.
+    expect(screen.queryAllByRole("radio")).toHaveLength(0);
+    fireEvent.click(screen.getByText("Qué trae"));
+    expect(screen.getByText(/El diseño «Sanador» del Modo Edición/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+
+    expect(await screen.findByText("Diseño «Sanador» del Modo Edición")).toBeTruthy();
+    expect(screen.getByText("Pasa a usar el diseño «Sanador»")).toBeTruthy();
+  });
+
   it("la configuración de addons va por addon, con los genéricos desmarcados, y un perfil que existe se decide", async () => {
     const deAddon = { categoria: "config-addon", ambito: "cuenta", deCuenta: false, bytes: 50, addon: "Dominos" } as const;
     const resumen: ResumenPaquete = {

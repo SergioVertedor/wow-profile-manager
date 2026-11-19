@@ -13,13 +13,14 @@ const CATEGORIAS: readonly CategoriaFichero[] = [
   "opciones",
   "chat",
   "ventanas",
+  "modo-edicion",
   "marcos-banda",
   "addons-activos",
 ];
 
 /** Del formato 1.0 sin nombre propio de fichero: solo se nombran. */
-const OTRAS: readonly string[] = ["config-addon", "modo-edicion"];
-type Otra = "config-addon" | "modo-edicion";
+const OTRAS: readonly string[] = ["config-addon"];
+type Otra = "config-addon";
 
 export function esCategoria(texto: string): texto is CategoriaFichero {
   return (CATEGORIAS as readonly string[]).includes(texto);

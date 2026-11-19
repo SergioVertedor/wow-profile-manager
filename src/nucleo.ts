@@ -186,6 +186,7 @@ export type CategoriaFichero =
   | "opciones"
   | "chat"
   | "ventanas"
+  | "modo-edicion"
   | "marcos-banda"
   | "addons-activos";
 
@@ -380,8 +381,11 @@ export interface PedidoImportacion {
 
 export type Cambio = "anadido" | "cambiado" | "quitado";
 
-/** De la configuración de addons: un perfil, el perfil de un personaje, una variable o una clave (`variable.clave`). */
-export type ClaseElemento = "perfil" | "perfilDe" | "variable" | "clave";
+/**
+ * De la configuración de addons: un perfil, el perfil de un personaje, una variable o una clave (`variable.clave`).
+ * Del Modo Edición: un diseño que se añade o el diseño que pasa a usar el personaje.
+ */
+export type ClaseElemento = "perfil" | "perfilDe" | "variable" | "clave" | "diseno" | "disenoActivo";
 
 /** Una macro, tecla, opción o addon que cambia, o algo de la configuración de un addon (con `clase`). */
 export interface Elemento {

@@ -116,6 +116,22 @@ describe("ExportarPersonaje", () => {
     expect(within(dialogo).queryByText(/WoW está abierto/)).toBeNull();
   });
 
+  it("el Modo Edición dice qué diseño viaja, no que viene de la cuenta", async () => {
+    pintar({
+      propuesta_exportacion: () => ({
+        ...PROPUESTA,
+        piezas: [
+          pieza({ id: "modo-edicion", categoria: "modo-edicion", tipo: "adaptador", ambito: "cuenta", perfil: "Sanador" }),
+        ],
+      }),
+    });
+
+    const dialogo = await abrir();
+
+    expect(within(dialogo).getByText("diseño «Sanador»", { exact: false })).toBeTruthy();
+    expect(within(dialogo).queryByText("de la cuenta", { exact: false })).toBeNull();
+  });
+
   it("lo que no viaja se despliega agrupado por motivo, con su frase y sus claves", async () => {
     const quitadas = [
       { motivo: "seguridad" as const, claves: ["AllowDangerousScripts"] },
