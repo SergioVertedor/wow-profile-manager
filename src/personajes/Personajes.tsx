@@ -102,7 +102,6 @@ function Seleccion({ deteccion, actualizar, recargar }: PropsSeleccion) {
           renombrarCuenta={renombrarCuenta(cuenta.carpeta)}
         />
       )}
-      <Pie entrada={entrada} />
     </section>
   );
 }
@@ -204,23 +203,4 @@ function Avisos({ version }: Readonly<{ version: VersionJuego }>) {
       {aviso}
     </p>
   ));
-}
-
-/** De dónde sale la versión y lo que se ha saltado al leerla. */
-function Pie({ entrada }: Readonly<{ entrada: EntradaVersion }>) {
-  const { t } = useTranslation();
-  const { instalacion, version } = entrada;
-  return (
-    <footer className={css.pie}>
-      <p>
-        {instalacion.raiz} — {t(`personajes.fuente.${instalacion.fuente}`)}
-      </p>
-      {version.cuentas.ignoradas > 0 && (
-        <p>{t("personajes.cuentasIgnoradas", { count: version.cuentas.ignoradas })}</p>
-      )}
-      {version.soportada && version.addons.ignoradas > 0 && (
-        <p>{t("personajes.addonsIgnorados", { count: version.addons.ignoradas })}</p>
-      )}
-    </footer>
-  );
 }

@@ -5,30 +5,22 @@
   "nav": {
     "etiqueta": "Vistas",
     "personajes": "Personajes",
-    "acercaDe": "Acerca de",
     "instalaciones": "Instalaciones",
     "historial": "Historial",
-    "importar": "Importar"
+    "importar": "Importar",
+    "diagnostico": "Diagnóstico",
+    "acercaDe": "Acerca de"
   },
   "personajes": {
     "titulo": "Personajes",
     "buscando": "Buscando instalaciones de WoW…",
     "ninguna": "No se ha encontrado ninguna instalación de WoW en este equipo.",
     "versiones": "Versión del juego",
-    "fuente": {
-      "registro": "Encontrada en el registro de Windows",
-      "manual": "Añadida a mano",
-      "battlenet": "Encontrada por el agente de Battle.net"
-    },
     "build": "Build",
     "addons": "Addons",
     "noSoportada": "La app no es compatible con esta versión del juego.",
     "sinInterfaz": "Abre el juego una vez con esta versión: hasta entonces no se puede exportar.",
     "sinCuentas": "Todavía no hay cuentas: entra al juego una vez.",
-    "cuentasIgnoradas_one": "{{count}} carpeta de WTF/Account no es una cuenta y se ha saltado.",
-    "cuentasIgnoradas_other": "{{count}} carpetas de WTF/Account no son cuentas y se han saltado.",
-    "addonsIgnorados_one": "{{count}} carpeta de Interface/AddOns no tiene un .toc que el juego cargue y se ha saltado.",
-    "addonsIgnorados_other": "{{count}} carpetas de Interface/AddOns no tienen un .toc que el juego cargue y se han saltado.",
     "verAddons_one": "Ver el addon instalado",
     "verAddons_other": "Ver los {{count}} addons instalados",
     "addon": "{{titulo}} · {{version}}",
@@ -449,5 +441,20 @@
     "estado": "Son estado de la partida, no configuración: lo que sigues, lo que ya has visto o lo que tienes plegado.",
     "addonNoInstalado": "Addons que no están instalados en este equipo.",
     "viajaComoPerfil": "Van aparte, como su perfil: así solo viaja el de este personaje."
+  },
+  "diagnostico": {
+    "titulo": "Diagnóstico",
+    "explicacion": "Lo que la app va haciendo en esta sesión: dónde ha buscado el juego, qué carpetas se ha saltado y por qué, y cada operación con su resultado. Sirve para encontrar fallos.",
+    "guardar": "Guardar el registro en un fichero .txt",
+    "abrirCarpeta": "Abrir carpeta de registros",
+    "privacidad": "El registro no sale de este equipo. Lleva rutas de tus carpetas (con tu usuario de Windows), los nombres de las carpetas de tus cuentas y de tus addons, y los mensajes de error del sistema: si lo compartes para pedir ayuda, compartes también esos datos.",
+    "consola": "Registro de esta sesión",
+    "vacio": "Todavía no hay líneas en esta sesión."
+  },
+  "cierre": {
+    "titulo": "Hay una operación en marcha",
+    "explicacion": "La app está escribiendo en la carpeta del juego. Si cierras ahora, al volver a abrirla se deshará lo que quedó a medias; si era una importación, te preguntará si restaurarla.",
+    "seguir": "Esperar",
+    "cerrar": "Cerrar igualmente"
   }
 }

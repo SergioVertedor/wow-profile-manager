@@ -95,10 +95,3 @@
   flex: none;
   color: var(--color-aviso);
 }
-
-.pie {
-  margin-top: auto;
-  color: var(--color-texto-3);
-  font-size: var(--texto-pequeno);
-  overflow-wrap: anywhere;
-}

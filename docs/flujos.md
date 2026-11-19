@@ -178,7 +178,7 @@ vista previa.
 
 Después, una operación por personaje (ver [Operaciones en disco](#operaciones-en-disco)), una detrás de otra. En cada
 una solo entran los ficheros «nuevos» o «modificados»; un personaje sin nada que escribir no crea operación. Mientras
-dura, la app no deja cerrar la ventana sin avisar (pendiente: #66).
+dura, la app no deja cerrar la ventana sin avisar (ver [Cerrar con una operación en marcha](#cerrar-con-una-operación-en-marcha)).
 
 ### 6. Resultado
 
@@ -304,6 +304,19 @@ reescribiría los ficheros encima de la restauración.
 Además, si una operación `deshacer` está `completa` y la que deshace no está `deshecha`, la marca `deshecha`: el
 corte fue entre los dos pasos del deshacer.
 
+### Cerrar con una operación en marcha
+
+Toda escritura en el `WTF` (eliminar, deshacer, restaurar, importar y la recuperación al arrancar) se hace con el
+cerrojo de las operaciones tomado. Si se pide cerrar la ventana mientras alguien lo tiene, el núcleo impide el cierre y
+la app pregunta: «Esperar» la deja abierta y «Cerrar igualmente» la cierra. Lo que quede cortado se trata al volver a
+arrancar, como si se hubiera ido la luz (tabla de arriba). Fuera de una operación, la ventana se cierra sin preguntar.
+
+Guardar las preferencias y exportar un `.wowprofile` no bloquean el cierre: se escriben de forma atómica (ver
+[Escritura segura](#escritura-segura)) y un corte deja el fichero anterior o el nuevo.
+
+Cerrar la app desde el Administrador de tareas o un apagón no se pueden interceptar: también los cubre la recuperación
+al arrancar.
+
 ## Eliminar la carpeta de un personaje
 
 Para limpiar las carpetas que dejan los personajes borrados en el juego (spec 021). Es una operación de tipo
@@ -378,3 +391,30 @@ tamaño de sus copias. Arriba, el total ocupado.
     ser lo único que queda del estado anterior.
   - Si se borra una operación que otra `deshacer` referencia, esa otra muestra «operación borrada».
 - **Abrir la carpeta** de una operación en el explorador, para restaurar a mano si hiciera falta.
+
+## Registro de diagnóstico
+
+La pestaña **Diagnóstico** enseña en vivo lo que la app va haciendo en la sesión (spec 029). Está siempre en la barra,
+también cuando la detección falla, que es cuando más falta hace. Cada línea lleva hora local con su desfase, nivel
+(`ERROR`, `WARN`, `INFO`), módulo y mensaje:
+
+- **Detección:** cuántas raíces da cada fuente; cada raíz con su fuente y su resultado (instalación, repetida, sin
+  `.build.info`, no encontrada); cada versión con su producto y sus recuentos; y cada carpeta saltada, con su ruta y
+  su motivo (de `WTF/Account`, sin forma de cuenta; de `Interface/AddOns`, sin `.toc` que el juego cargue).
+- **Comandos:** los que escriben dejan si terminaron bien; cualquier comando que falla deja su código de error y sus
+  datos.
+- **Operaciones:** cada paso que se guarda en `operacion.json` (id, tipo, estado, número de cambios y error) y lo que
+  hizo la recuperación al arrancar.
+
+Las últimas 1.000 líneas de la sesión se guardan en memoria, haya o no registro en disco. Solo entran las de la app:
+las de Tauri y sus librerías no.
+
+**Guardar el registro en un fichero .txt** viene apagado. Encendido, cada línea se añade a
+`registros/diagnostico.txt` en la carpeta de datos de la app; al pasar de 1 MiB, ese fichero pasa a
+`diagnostico.1.txt` (pisando el anterior) y se empieza otro, así que el registro no ocupa más de unos 2 MiB. Apagado,
+la app no crea ni escribe nada en esa carpeta; lo que ya hubiera se queda. Un fallo al escribir el registro no corta
+nada.
+
+**Privacidad.** El registro no sale del equipo. Lleva rutas de carpetas del equipo (que pueden incluir el nombre de
+usuario de Windows) y los nombres de las carpetas de cuenta; la pestaña lo avisa, para que quien lo comparta al pedir
+ayuda sepa qué comparte.

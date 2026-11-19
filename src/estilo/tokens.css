@@ -60,6 +60,8 @@
 
   /* Tipografía: Commissioner, con terminales abocinados (FLAR) en títulos y nombres */
   --fuente: "Commissioner Variable", "Segoe UI", system-ui, sans-serif;
+  /* Consola de Diagnóstico: fuentes de Windows, sin descargar nada */
+  --fuente-mono: "Cascadia Mono", Consolas, monospace;
   --abocinado: "FLAR" 100;
   --liso: "FLAR" 0;
   --texto-pequeno: 0.8rem;

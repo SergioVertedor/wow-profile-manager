@@ -217,6 +217,16 @@ impl Operaciones {
         }
     }
 
+    /// Si alguna operación está escribiendo ahora mismo (spec 029: no se cierra la ventana sin avisar). Toda escritura
+    /// en el `WTF` toma el cerrojo, así que basta con mirarlo sin esperar. Envenenado no cuenta como ocupado: las
+    /// tomas siguen con `into_inner`.
+    pub fn ocupada(&self) -> bool {
+        matches!(
+            self.cerrojo.try_lock(),
+            Err(std::sync::TryLockError::WouldBlock)
+        )
+    }
+
     /// Cuántos ficheros y bytes tiene la carpeta del personaje. Solo lee.
     pub fn resumen_eliminacion(
         personaje: &PersonajeUbicado,
@@ -324,6 +334,9 @@ impl Operaciones {
         for (original, por) in deshechas {
             // Si no se puede guardar, se vuelve a intentar en el siguiente arranque.
             self.marcar_deshecha(&original, &por).ok();
+        }
+        if recuperacion != Recuperacion::default() {
+            log::warn!("recuperación de operaciones cortadas: {recuperacion:?}");
         }
         recuperacion
     }
@@ -800,10 +813,33 @@ fn relativa_con_barras(carpeta: &Path, fichero: &Path) -> String {
         .join("/")
 }
 
+/// Cada paso de una operación pasa por aquí: es el sitio único para dejarlo en el registro de diagnóstico.
 fn guardar(dir: &Path, diario: &Diario) -> Result<(), ErrorNucleo> {
     let ruta = dir.join(DIARIO);
     let json = serde_json::to_vec_pretty(diario).map_err(|e| ErrorNucleo::escritura(&ruta, &e))?;
-    escribir_atomico(&ruta, &json)
+    let resultado = escribir_atomico(&ruta, &json);
+    let paso = describir(diario);
+    match &resultado {
+        Ok(()) => log::info!("{paso}"),
+        Err(error) => log::error!("{paso}; no se pudo guardar el diario: {}", error.detalle()),
+    }
+    resultado
+}
+
+/// El paso de una operación en una línea del registro: id, tipo, estado, cambios y error.
+fn describir(diario: &Diario) -> String {
+    let error = diario
+        .error
+        .as_deref()
+        .map(|e| format!(", error: {e}"))
+        .unwrap_or_default();
+    format!(
+        "operación {} ({:?}): {:?}, {} cambios{error}",
+        diario.id,
+        diario.tipo,
+        diario.estado,
+        diario.cambios.len()
+    )
 }
 
 fn leer(dir: &Path) -> Option<Diario> {
@@ -877,6 +913,24 @@ pub(super) mod tests {
     pub(super) const ADDONS_TXT: &str = "Prat-3.0: enabled\r\n";
     pub(super) const FLAVOR_FOREVER: &str = "Product Flavor!STRING:0\r\nwowf\r\n";
     pub(super) const PRAT_LUA: &str = "Prat3DB = {}\r\n";
+
+    #[test]
+    fn ocupada_solo_mientras_alguien_tiene_el_cerrojo() {
+        let operaciones = Operaciones::en(PathBuf::from("no-se-usa"));
+        assert!(!operaciones.ocupada());
+        {
+            let _turno = operaciones.cerrojo.lock().unwrap();
+            assert!(operaciones.ocupada());
+        }
+        assert!(!operaciones.ocupada());
+        // Un `panic` con el cerrojo tomado lo envenena; las tomas siguen, así que no está ocupada.
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _turno = operaciones.cerrojo.lock().unwrap();
+            panic!("envenenar");
+        }));
+        assert!(operaciones.cerrojo.is_poisoned());
+        assert!(!operaciones.ocupada());
+    }
 
     pub(super) struct Escenario {
         pub(super) _tmp: tempfile::TempDir,

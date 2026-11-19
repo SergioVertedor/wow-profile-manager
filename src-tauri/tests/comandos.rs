@@ -6,7 +6,7 @@ use std::path::Path;
 use tauri::test::{INVOKE_KEY, get_ipc_response, mock_builder, mock_context, noop_assets};
 use tauri::webview::InvokeRequest;
 use wow_profile_manager_lib::{
-    Almacen, CARPETA_OPERACIONES, NOMBRE_APP, Operaciones, PaquetesAbiertos, con_comandos,
+    Almacen, CARPETA_OPERACIONES, NOMBRE_APP, Operaciones, PaquetesAbiertos, Registro, con_comandos,
 };
 
 fn invocar(comando: &str) -> Result<serde_json::Value, serde_json::Value> {
@@ -41,7 +41,12 @@ fn invocar_con_paquetes(
         mock_builder()
             .manage(Almacen::en(datos.to_path_buf()))
             .manage(Operaciones::en(datos.join(CARPETA_OPERACIONES)))
-            .manage(paquetes),
+            .manage(paquetes)
+            // La app instala uno solo para toda su vida; aquí, uno por test, que vive lo que dura el proceso.
+            .manage::<&'static Registro>(Box::leak(Box::new(Registro::en(
+                datos.join("registros"),
+                false,
+            )))),
     )
     .build(mock_context(noop_assets()))
     .unwrap();
@@ -82,6 +87,25 @@ fn abrir_enlace_rechaza_lo_que_no_es_un_enlace_conocido() {
             invocar_con("abrir_enlace", serde_json::json!({ "enlace": enlace })).unwrap_err();
         assert!(error.to_string().contains("unknown variant"), "{error}");
     }
+}
+
+#[test]
+fn el_interruptor_del_registro_se_guarda_en_las_preferencias() {
+    let tmp = tempfile::tempdir().unwrap();
+    let estado = invocar_en(tmp.path(), "estado_diagnostico", serde_json::json!({})).unwrap();
+    assert_eq!(estado["guarda"], false);
+    assert!(estado["lineas"].is_array());
+
+    invocar_en(
+        tmp.path(),
+        "cambiar_registro",
+        serde_json::json!({ "guardar": true }),
+    )
+    .unwrap();
+    let preferencias: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(tmp.path().join("preferencias.json")).unwrap())
+            .unwrap();
+    assert_eq!(preferencias["registro"], true);
 }
 
 #[test]

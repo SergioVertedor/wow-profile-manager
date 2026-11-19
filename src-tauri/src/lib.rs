@@ -9,6 +9,7 @@ mod claves_personaje;
 mod config_addons;
 mod descubrimiento;
 mod deteccion;
+mod diagnostico;
 mod disco;
 mod enlaces;
 mod error;
@@ -25,6 +26,7 @@ mod preferencias;
 mod sistema;
 mod toc;
 
+pub use diagnostico::Registro;
 pub use importacion::PaquetesAbiertos;
 pub use info::NOMBRE_APP;
 pub use operaciones::Operaciones;
@@ -35,10 +37,39 @@ pub const CARPETA_OPERACIONES: &str = "operaciones";
 
 /// Etiqueta de la ventana de `tauri.conf.json`; el selector de carpetas se abre como hijo suyo.
 const VENTANA_PRINCIPAL: &str = "main";
+/// Evento con cada línea nueva del registro de diagnóstico (spec 029).
+const EVENTO_LINEA: &str = "diagnostico://linea";
+/// Evento que avisa a la interfaz de que se pidió cerrar la ventana con una operación en marcha (spec 029).
+const EVENTO_CIERRE_BLOQUEADO: &str = "cierre://bloqueado";
 
 use std::path::PathBuf;
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 use tauri_plugin_dialog::DialogExt;
+
+/// Deja en el registro el error de un comando que falla, con su código y sus datos (spec 029).
+fn con_error_registrado<T>(
+    comando: &str,
+    resultado: Result<T, error::ErrorNucleo>,
+) -> Result<T, error::ErrorNucleo> {
+    if let Err(error) = &resultado {
+        log::warn!(
+            "{comando}: {}",
+            serde_json::to_string(error).unwrap_or_default()
+        );
+    }
+    resultado
+}
+
+/// Deja en el registro el resultado de un comando que escribe: que terminó bien o su error.
+fn con_resultado_registrado<T>(
+    comando: &str,
+    resultado: Result<T, error::ErrorNucleo>,
+) -> Result<T, error::ErrorNucleo> {
+    if resultado.is_ok() {
+        log::info!("{comando}: hecho");
+    }
+    con_error_registrado(comando, resultado)
+}
 
 /// Devuelve el nombre y la versión de la aplicación.
 #[tauri::command]
@@ -59,7 +90,10 @@ fn idioma_interfaz() -> idioma::Idioma {
 async fn detectar_instalaciones(
     almacen: State<'_, Almacen>,
 ) -> Result<deteccion::Deteccion, error::ErrorNucleo> {
-    deteccion::detectar_en_el_sistema(almacen.leer())
+    con_error_registrado(
+        "detectar_instalaciones",
+        deteccion::detectar_en_el_sistema(almacen.leer()),
+    )
 }
 
 /// Abre el selector de carpetas de Windows y, si la elegida es una instalación nueva, la recuerda. El selector se
@@ -81,7 +115,10 @@ async fn anadir_carpeta<R: tauri::Runtime>(
         return Ok(deteccion::Alta::Cancelada);
     };
     let conocidas = deteccion::rutas_automaticas();
-    almacen.cambiar(|p| Ok(deteccion::dar_de_alta(&raiz, &conocidas, p)))
+    con_resultado_registrado(
+        "anadir_carpeta",
+        almacen.cambiar(|p| Ok(deteccion::dar_de_alta(&raiz, &conocidas, p))),
+    )
 }
 
 /// Olvida una carpeta añadida a mano, con su nombre y los de sus cuentas. No toca la carpeta.
@@ -90,10 +127,13 @@ async fn quitar_carpeta(
     raiz: PathBuf,
     almacen: State<'_, Almacen>,
 ) -> Result<(), error::ErrorNucleo> {
-    almacen.cambiar(|p| {
-        p.quitar_carpeta(&raiz);
-        Ok(())
-    })
+    con_resultado_registrado(
+        "quitar_carpeta",
+        almacen.cambiar(|p| {
+            p.quitar_carpeta(&raiz);
+            Ok(())
+        }),
+    )
 }
 
 /// Pone, cambia o borra (texto vacío) el nombre propio de una instalación.
@@ -103,11 +143,13 @@ async fn nombrar_instalacion(
     nombre: String,
     almacen: State<'_, Almacen>,
 ) -> Result<(), error::ErrorNucleo> {
-    let nombre = preferencias::nombre_valido(&nombre)?;
-    almacen.cambiar(|p| {
-        p.nombrar_instalacion(&raiz, nombre);
-        Ok(())
-    })
+    let cambio = preferencias::nombre_valido(&nombre).and_then(|nombre| {
+        almacen.cambiar(|p| {
+            p.nombrar_instalacion(&raiz, nombre);
+            Ok(())
+        })
+    });
+    con_resultado_registrado("nombrar_instalacion", cambio)
 }
 
 /// Pone, cambia o borra (texto vacío) el nombre propio de una cuenta de una versión de una instalación.
@@ -119,11 +161,13 @@ async fn nombrar_cuenta(
     nombre: String,
     almacen: State<'_, Almacen>,
 ) -> Result<(), error::ErrorNucleo> {
-    let nombre = preferencias::nombre_valido(&nombre)?;
-    almacen.cambiar(|p| {
-        p.nombrar_cuenta(&raiz, &version, &cuenta, nombre);
-        Ok(())
-    })
+    let cambio = preferencias::nombre_valido(&nombre).and_then(|nombre| {
+        almacen.cambiar(|p| {
+            p.nombrar_cuenta(&raiz, &version, &cuenta, nombre);
+            Ok(())
+        })
+    });
+    con_resultado_registrado("nombrar_cuenta", cambio)
 }
 
 /// Busca en disco el personaje que pide la interfaz entre las instalaciones conocidas (registro, agente y a mano).
@@ -149,7 +193,10 @@ async fn resumen_eliminacion(
     personaje: deteccion::PersonajePedido,
     almacen: State<'_, Almacen>,
 ) -> Result<operaciones::ResumenEliminacion, error::ErrorNucleo> {
-    Operaciones::resumen_eliminacion(&ubicar(&personaje, &almacen)?)
+    con_error_registrado(
+        "resumen_eliminacion",
+        ubicar(&personaje, &almacen).and_then(|p| Operaciones::resumen_eliminacion(&p)),
+    )
 }
 
 /// Saca la carpeta de un personaje del `WTF` y la guarda como una operación con copia (spec 021). Devuelve su id.
@@ -159,7 +206,9 @@ async fn eliminar_personaje(
     almacen: State<'_, Almacen>,
     operaciones: State<'_, Operaciones>,
 ) -> Result<String, error::ErrorNucleo> {
-    operaciones.eliminar_personaje(&ubicar(&personaje, &almacen)?, sistema::juego_en_marcha)
+    let resultado = ubicar(&personaje, &almacen)
+        .and_then(|p| operaciones.eliminar_personaje(&p, sistema::juego_en_marcha));
+    con_resultado_registrado("eliminar_personaje", resultado)
 }
 
 /// Termina las operaciones que se cortaron (la app se cerró o se fue la luz). La interfaz lo llama al arrancar.
@@ -184,7 +233,7 @@ async fn plan_deshacer(
     id: String,
     operaciones: State<'_, Operaciones>,
 ) -> Result<operaciones::PlanDeshacer, error::ErrorNucleo> {
-    operaciones.plan_deshacer(&id)
+    con_error_registrado("plan_deshacer", operaciones.plan_deshacer(&id))
 }
 
 /// Deshace una operación si el disco sigue como en su plan (`huella`). Devuelve el id del deshacer.
@@ -194,7 +243,10 @@ async fn deshacer_operacion(
     huella: String,
     operaciones: State<'_, Operaciones>,
 ) -> Result<String, error::ErrorNucleo> {
-    operaciones.deshacer(&id, &huella, sistema::juego_en_marcha)
+    con_resultado_registrado(
+        "deshacer_operacion",
+        operaciones.deshacer(&id, &huella, sistema::juego_en_marcha),
+    )
 }
 
 /// Restaura una importación que se cortó a mitad, cuando el usuario lo pide (spec 025).
@@ -203,7 +255,10 @@ async fn restaurar_operacion(
     id: String,
     operaciones: State<'_, Operaciones>,
 ) -> Result<(), error::ErrorNucleo> {
-    operaciones.restaurar_operacion(&id, sistema::juego_en_marcha)
+    con_resultado_registrado(
+        "restaurar_operacion",
+        operaciones.restaurar_operacion(&id, sistema::juego_en_marcha),
+    )
 }
 
 /// Borra una operación terminada. `restaurada_a_mano`: el usuario confirma que ya devolvió a mano lo que faltaba.
@@ -213,7 +268,10 @@ async fn borrar_operacion(
     restaurada_a_mano: bool,
     operaciones: State<'_, Operaciones>,
 ) -> Result<(), error::ErrorNucleo> {
-    operaciones.borrar(&id, restaurada_a_mano)
+    con_resultado_registrado(
+        "borrar_operacion",
+        operaciones.borrar(&id, restaurada_a_mano),
+    )
 }
 
 /// Abre en el explorador la carpeta de una operación. La interfaz manda el id, nunca una ruta.
@@ -222,7 +280,12 @@ async fn abrir_carpeta_operacion(
     id: String,
     operaciones: State<'_, Operaciones>,
 ) -> Result<(), error::ErrorNucleo> {
-    sistema::abrir_carpeta(&operaciones.carpeta_de(&id)?)
+    con_error_registrado(
+        "abrir_carpeta_operacion",
+        operaciones
+            .carpeta_de(&id)
+            .and_then(|c| sistema::abrir_carpeta(&c)),
+    )
 }
 
 /// Abre en el explorador la carpeta de un personaje (spec 026). Con un enlace en el camino no se abre nada.
@@ -231,9 +294,11 @@ async fn abrir_carpeta_personaje(
     personaje: deteccion::PersonajePedido,
     almacen: State<'_, Almacen>,
 ) -> Result<(), error::ErrorNucleo> {
-    let ubicado = ubicar(&personaje, &almacen)?;
-    ubicado.comprobar_sin_enlaces()?;
-    sistema::abrir_carpeta(&ubicado.carpeta())
+    let resultado = ubicar(&personaje, &almacen).and_then(|ubicado| {
+        ubicado.comprobar_sin_enlaces()?;
+        sistema::abrir_carpeta(&ubicado.carpeta())
+    });
+    con_error_registrado("abrir_carpeta_personaje", resultado)
 }
 
 /// Qué se puede exportar de un personaje ahora mismo (spec 023). Solo lee.
@@ -242,7 +307,9 @@ async fn propuesta_exportacion(
     personaje: deteccion::PersonajePedido,
     almacen: State<'_, Almacen>,
 ) -> Result<exportacion::Propuesta, error::ErrorNucleo> {
-    exportacion::propuesta_de(&ubicar(&personaje, &almacen)?, sistema::juego_en_marcha())
+    let resultado = ubicar(&personaje, &almacen)
+        .and_then(|p| exportacion::propuesta_de(&p, sistema::juego_en_marcha()));
+    con_error_registrado("propuesta_exportacion", resultado)
 }
 
 /// Qué pasó al exportar.
@@ -271,8 +338,20 @@ async fn exportar_personaje<R: tauri::Runtime>(
         nombre,
         descripcion,
     };
-    let paquete = exportacion::paquete(&ubicar(&personaje, &almacen)?, &pedido)?;
-    let Some(ruta) = selector_de_paquetes(&app)
+    con_resultado_registrado(
+        "exportar_personaje",
+        exportar(&app, &personaje, &pedido, &almacen),
+    )
+}
+
+fn exportar<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    personaje: &deteccion::PersonajePedido,
+    pedido: &exportacion::Pedido,
+    almacen: &Almacen,
+) -> Result<Exportacion, error::ErrorNucleo> {
+    let paquete = exportacion::paquete(&ubicar(personaje, almacen)?, pedido)?;
+    let Some(ruta) = selector_de_paquetes(app)
         .set_file_name(exportacion::nombre_de_fichero(
             &paquete.manifiesto.perfil.nombre,
         ))
@@ -329,8 +408,10 @@ async fn abrir_paquete<R: tauri::Runtime>(
     else {
         return Ok(Apertura::Cancelada);
     };
-    let resumen = Box::new(paquetes.abrir(&ruta)?);
-    Ok(Apertura::Abierta { resumen })
+    let resumen = con_error_registrado("abrir_paquete", paquetes.abrir(&ruta))?;
+    Ok(Apertura::Abierta {
+        resumen: Box::new(resumen),
+    })
 }
 
 /// Olvida el paquete abierto.
@@ -349,11 +430,17 @@ async fn plan_importacion(
     almacen: State<'_, Almacen>,
     paquetes: State<'_, PaquetesAbiertos>,
 ) -> Result<importacion::VistaPrevia, error::ErrorNucleo> {
-    let ubicados = personajes
-        .iter()
-        .map(|p| ubicar(p, &almacen))
-        .collect::<Result<Vec<_>, _>>()?;
-    paquetes.vista_previa(&sha256, ubicados, &pedido, sistema::juego_en_marcha())
+    let resultado = ubicar_todos(&personajes, &almacen).and_then(|ubicados| {
+        paquetes.vista_previa(&sha256, ubicados, &pedido, sistema::juego_en_marcha())
+    });
+    con_error_registrado("plan_importacion", resultado)
+}
+
+fn ubicar_todos(
+    personajes: &[deteccion::PersonajePedido],
+    almacen: &Almacen,
+) -> Result<Vec<deteccion::PersonajeUbicado>, error::ErrorNucleo> {
+    personajes.iter().map(|p| ubicar(p, almacen)).collect()
 }
 
 /// Aplica el paquete abierto (`sha256`) en esos personajes, si el plan sigue siendo el que se enseñó (`huella`): una
@@ -368,24 +455,129 @@ async fn aplicar_importacion(
     paquetes: State<'_, PaquetesAbiertos>,
     operaciones: State<'_, Operaciones>,
 ) -> Result<Vec<importacion::ResultadoPersonaje>, error::ErrorNucleo> {
-    let ubicados = personajes
-        .iter()
-        .map(|p| ubicar(p, &almacen))
-        .collect::<Result<Vec<_>, _>>()?;
-    paquetes.aplicar(
-        &sha256,
-        &huella,
-        ubicados,
-        &pedido,
-        &operaciones,
-        sistema::juego_en_marcha,
-    )
+    let resultado = ubicar_todos(&personajes, &almacen).and_then(|ubicados| {
+        paquetes.aplicar(
+            &sha256,
+            &huella,
+            ubicados,
+            &pedido,
+            &operaciones,
+            sistema::juego_en_marcha,
+        )
+    });
+    con_resultado_registrado("aplicar_importacion", resultado)
 }
 
 /// Abre en el navegador uno de los enlaces conocidos. La interfaz no puede pasar una URL: solo el nombre del enlace.
 #[tauri::command]
 fn abrir_enlace(enlace: enlaces::Enlace) -> Result<(), error::ErrorNucleo> {
-    enlaces::abrir(enlace)
+    con_error_registrado("abrir_enlace", enlaces::abrir(enlace))
+}
+
+/// Lo que enseña la pestaña Diagnóstico al abrirse (spec 029).
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EstadoDiagnostico {
+    /// El interruptor «Guardar registro de diagnóstico».
+    guarda: bool,
+    /// Las líneas de la sesión que siguen en memoria; las nuevas llegan con el evento `diagnostico://linea`.
+    lineas: Vec<diagnostico::Linea>,
+    /// Cuántas guarda el núcleo: la interfaz no enseña más.
+    maximo: usize,
+}
+
+/// El estado del registro de diagnóstico. Solo lee.
+#[tauri::command]
+fn estado_diagnostico(registro: State<'_, &'static Registro>) -> EstadoDiagnostico {
+    EstadoDiagnostico {
+        guarda: registro.guarda(),
+        lineas: registro.lineas(),
+        maximo: diagnostico::MAXIMO_LINEAS,
+    }
+}
+
+/// Enciende o apaga el `.txt` del registro y lo recuerda en las preferencias.
+#[tauri::command]
+async fn cambiar_registro(
+    guardar: bool,
+    almacen: State<'_, Almacen>,
+    registro: State<'_, &'static Registro>,
+) -> Result<(), error::ErrorNucleo> {
+    let resultado = almacen.cambiar(|p| {
+        p.registro = guardar;
+        Ok(())
+    });
+    // La línea del cambio queda en el `.txt` en los dos sentidos: al encender, después de encender; al apagar, antes.
+    if resultado.is_ok() && guardar {
+        registro.cambiar(true);
+        log::info!("guardar el registro: sí");
+    } else if resultado.is_ok() {
+        log::info!("guardar el registro: no");
+        registro.cambiar(false);
+    }
+    con_error_registrado("cambiar_registro", resultado)
+}
+
+/// Abre en el explorador la carpeta de los registros. La interfaz solo lo ofrece con el registro encendido.
+#[tauri::command]
+async fn abrir_carpeta_registros(
+    registro: State<'_, &'static Registro>,
+) -> Result<(), error::ErrorNucleo> {
+    con_error_registrado(
+        "abrir_carpeta_registros",
+        sistema::abrir_carpeta(registro.carpeta()),
+    )
+}
+
+/// Cierra la ventana aunque haya una operación en marcha: el usuario lo ha confirmado. Lo cortado se termina al
+/// volver a arrancar, como si se hubiera ido la luz (`docs/flujos.md`).
+#[tauri::command]
+fn cerrar_ventana<R: tauri::Runtime>(ventana: tauri::WebviewWindow<R>) {
+    log::warn!("se cierra la ventana con una operación en marcha");
+    if let Err(error) = ventana.destroy() {
+        log::error!("no se pudo cerrar la ventana: {error}");
+    }
+}
+
+/// Con una operación escribiendo en el `WTF`, cerrar la ventana no la cierra: se avisa a la interfaz, que pregunta.
+fn al_pedir_cierre<R: tauri::Runtime>(ventana: &tauri::Window<R>, evento: &tauri::WindowEvent) {
+    let tauri::WindowEvent::CloseRequested { api, .. } = evento else {
+        return;
+    };
+    // `try_state`: si el cierre llegara antes de terminar `setup`, no hay operaciones y se cierra sin preguntar.
+    if ventana
+        .try_state::<Operaciones>()
+        .is_some_and(|operaciones| operaciones.ocupada())
+    {
+        api.prevent_close();
+        log::info!("cierre pedido con una operación en marcha: se pregunta");
+        if let Err(error) = ventana.emit(EVENTO_CIERRE_BLOQUEADO, ()) {
+            log::error!("no se pudo avisar del cierre: {error}");
+        }
+    }
+}
+
+/// Instala el registro de diagnóstico con el interruptor guardado y lo engancha a la interfaz.
+fn instalar_registro<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    datos: &std::path::Path,
+    almacen: &Almacen,
+) -> &'static Registro {
+    let guardar = almacen.leer().map(|p| p.registro).unwrap_or(false);
+    let registro = diagnostico::instalar(Registro::en(
+        datos.join(diagnostico::CARPETA_REGISTROS),
+        guardar,
+    ));
+    let app = app.clone();
+    registro.conectar(Box::new(move |linea| {
+        // Sin ventana todavía no hay a quién avisar: la línea ya está en memoria y llega con la carga inicial.
+        let _ = app.emit(EVENTO_LINEA, linea);
+    }));
+    log::info!(
+        "{NOMBRE_APP} {} arranca; guardar el registro: {guardar}",
+        env!("CARGO_PKG_VERSION")
+    );
+    registro
 }
 
 /// Registra los comandos que puede llamar la interfaz. Es genérico sobre el runtime para que los tests de
@@ -417,7 +609,11 @@ pub fn con_comandos<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Bui
         cerrar_paquete,
         plan_importacion,
         aplicar_importacion,
-        abrir_enlace
+        abrir_enlace,
+        estado_diagnostico,
+        cambiar_registro,
+        abrir_carpeta_registros,
+        cerrar_ventana
     ])
 }
 
@@ -428,11 +624,14 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let datos = app.path().app_data_dir()?;
+            let almacen = Almacen::en(datos.clone());
+            app.manage(instalar_registro(app.handle(), &datos, &almacen));
             app.manage(Operaciones::en(datos.join(CARPETA_OPERACIONES)));
-            app.manage(Almacen::en(datos));
+            app.manage(almacen);
             app.manage(PaquetesAbiertos::default());
             Ok(())
         })
+        .on_window_event(al_pedir_cierre)
         .run(tauri::generate_context!());
     if let Err(error) = resultado {
         eprintln!("{NOMBRE_APP}: no se pudo arrancar: {error}");

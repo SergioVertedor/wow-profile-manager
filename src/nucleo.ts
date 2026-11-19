@@ -613,3 +613,45 @@ export function abrirEnlace(enlace: Enlace): Promise<void> {
 export function pedirIdioma(): Promise<Idioma> {
   return invoke<Idioma>("idioma_interfaz").catch((): Idioma => "en");
 }
+
+/** Una línea del registro de diagnóstico (`src-tauri/src/diagnostico.rs`). `n` ordena las líneas de la sesión. */
+export interface LineaDiagnostico {
+  n: number;
+  instante: string;
+  nivel: "ERROR" | "WARN" | "INFO";
+  modulo: string;
+  mensaje: string;
+}
+
+/** Estado del registro al abrir la pestaña. Las líneas nuevas llegan con `EVENTO_LINEA`. */
+export interface EstadoDiagnostico {
+  /** El interruptor «Guardar registro de diagnóstico». */
+  guarda: boolean;
+  lineas: LineaDiagnostico[];
+  /** Cuántas líneas guarda el núcleo: la pestaña no enseña más. */
+  maximo: number;
+}
+
+/** Evento con cada línea nueva del registro; trae una `LineaDiagnostico`. */
+export const EVENTO_LINEA = "diagnostico://linea";
+
+/** Evento que avisa de que se pidió cerrar la ventana con una operación escribiendo en el WTF. */
+export const EVENTO_CIERRE_BLOQUEADO = "cierre://bloqueado";
+
+export function pedirDiagnostico(): Promise<EstadoDiagnostico> {
+  return invoke<EstadoDiagnostico>("estado_diagnostico");
+}
+
+/** Enciende o apaga el `.txt` del registro y lo recuerda. */
+export function cambiarRegistro(guardar: boolean): Promise<void> {
+  return invoke("cambiar_registro", { guardar });
+}
+
+export function abrirCarpetaRegistros(): Promise<void> {
+  return invoke("abrir_carpeta_registros");
+}
+
+/** Cierra la ventana aunque haya una operación en marcha: el usuario ya lo ha confirmado. */
+export function cerrarVentana(): Promise<void> {
+  return invoke("cerrar_ventana");
+}

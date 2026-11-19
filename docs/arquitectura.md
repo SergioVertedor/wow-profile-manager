@@ -62,13 +62,15 @@ flowchart LR
 | Importación | calcula el plan: cambios, avisos, bloqueos | no |
 | Operaciones | ejecuta un plan o una eliminación: diario, copias, escritura segura, restauración, historial | **única que escribe en `WTF`** |
 | Sistema | si hay un `Wow.exe` en marcha (con `tasklist.exe`: el núcleo prohíbe `unsafe`); idioma de Windows | consulta procesos |
-| Preferencias | carpetas añadidas a mano y nombres propios de instalaciones y cuentas | lee y escribe solo `preferencias.json` en la carpeta de datos de la app |
+| Preferencias | carpetas añadidas a mano, nombres propios de instalaciones y cuentas, e interruptor del registro | lee y escribe solo `preferencias.json` en la carpeta de datos de la app |
+| Diagnóstico | único logger de la fachada `log`: líneas de la sesión en memoria, a la interfaz y, si se enciende, a un `.txt` acotado (spec 029) | escribe solo en `registros/` de la carpeta de datos de la app, y solo encendido |
 
 Criterios de diseño (míos):
 - El catálogo de adaptadores va **dentro del ejecutable**: importar no necesita red.
 - Detección y Descubrimiento no escriben nada nunca, ni cachés, dentro de la instalación.
 - El selector de carpetas lo abre el núcleo (`tauri-plugin-dialog` desde Rust): la interfaz pide «añadir carpeta» y no tiene permiso para abrir diálogos ni para elegir rutas.
 - `preferencias.json` se escribe de forma atómica (temporal y renombrar) y bajo un cerrojo. Si no se entiende, la app sigue sin él y no lo sobrescribe.
+- El cierre de la ventana lo decide el núcleo: con el cerrojo de Operaciones tomado, lo impide y avisa a la interfaz, que pregunta (`docs/flujos.md`, «Cerrar con una operación en marcha»).
 
 ## Exportar
 
