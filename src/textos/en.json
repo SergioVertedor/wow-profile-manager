@@ -90,7 +90,8 @@
     "exportacionSinVersion": "The game version or its interface number is unknown (.build.info or WTF/Config.wtf): log into the game once and try again.",
     "perfilNoValido": "The name is required and can be up to 80 characters; the description, up to 500.",
     "seleccionVacia": "Tick at least one thing to export.",
-    "paqueteDemasiadoGrande": "It is too large for a .wowprofile (at most 256 pieces, 32 MiB each and 128 MiB in total).",
+    "paqueteDemasiadoGrande": "It is too large for a .wowprofile (at most 256 pieces, 32 MiB each and 128 MiB in total; 64 MiB per add-on and 512 MiB of add-ons).",
+    "addonNoEmpaquetado": "The {{addon}} add-on folder couldn't be packed: it may have changed since the dialog was opened.",
     "paqueteInvalido": "The file is not a valid profile: {{motivo}}",
     "versionPaquete": "This profile uses a newer version of the format ({{version}}). Update the app to import it.",
     "paqueteNoAbierto": "The profile is no longer open. Open it again.",
@@ -240,7 +241,8 @@
       "modo-edicion": "Edit Mode",
       "marcos-banda": "Raid frames",
       "addons-activos": "Enabled add-ons",
-      "config-addon": "Addon settings"
+      "config-addon": "Addon settings",
+      "addon": "Addon"
     },
     "nada": "This character has nothing to export yet.",
     "barras": "What is on the action bar buttons does not travel: the server keeps it. Key bindings, macros and the list of enabled add-ons do.",
@@ -291,6 +293,21 @@
         "cuenta": "account",
         "personaje": "character"
       }
+    },
+    "carpetas": {
+      "titulo": "Add-ons",
+      "aviso": "The add-ons' code travels, not just their settings. The game runs it: whoever imports the profile has to trust you. Many add-ons don't allow redistribution: sharing them is your responsibility.",
+      "marcarTodas": "Tick all",
+      "desmarcarTodas": "Untick all",
+      "noExportables_one": "{{count}} add-on can't be taken: whoever imports will see it's missing",
+      "noExportables_other": "{{count}} add-ons can't be taken: whoever imports will see they're missing",
+      "motivo": {
+        "demasiadoGrande": "it is larger than 64 MiB.",
+        "demasiadosFicheros": "it has more than 4,096 files.",
+        "rutaNoValida": "it has a name Windows doesn't allow or that can't be taken ({{detalle}}).",
+        "enlace": "it has a Windows link or junction ({{detalle}}).",
+        "noSeLee": "it can't be read."
+      }
     }
   },
   "motivosPaquete": {
@@ -303,7 +320,8 @@
     "piezaIlegible": "one of its files can't be read.",
     "piezaDemasiadoGrande": "one of its files is larger than it says.",
     "totalDemasiadoGrande": "its files are too large in total.",
-    "piezaDanada": "one of its files is damaged or was modified."
+    "piezaDanada": "one of its files is damaged or was modified.",
+    "addonNoValido": "one of its add-ons has files that would leave its folder, names Windows doesn't allow or too much content."
   },
   "importar": {
     "titulo": "Import",
@@ -363,7 +381,8 @@
       "quitado": "Removed"
     },
     "otrasCategorias": {
-      "config-addon": "Add-on settings"
+      "config-addon": "Add-on settings",
+      "addon": "Add-on folder"
     },
     "aplicarImportacion": "Apply…",
     "noSePuedeAplicar": {

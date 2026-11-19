@@ -162,6 +162,7 @@ export const PROPUESTA: PropuestaExportacion = {
   ],
   apartadas: [],
   noExportables: [],
+  carpetasNoExportables: [],
   juegoAbierto: false,
 };
 

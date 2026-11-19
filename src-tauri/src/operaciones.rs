@@ -20,6 +20,7 @@ use crate::error::ErrorNucleo;
 use crate::escritura::escribir_atomico;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 use std::sync::Mutex;
 
@@ -858,11 +859,30 @@ fn fallida(diario: &Diario, restaurada: bool, error: &ErrorNucleo) -> ErrorNucle
 }
 
 pub(crate) fn sha256(bytes: &[u8]) -> String {
-    Sha256::digest(bytes)
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect()
+    hexadecimal(&Sha256::digest(bytes))
 }
+
+/// El SHA-256 de todo lo que da `lector`, sin tenerlo entero en memoria.
+pub(crate) fn sha256_de(mut lector: impl Read) -> std::io::Result<String> {
+    let mut hash = Sha256::new();
+    let mut bloque = vec![0u8; BLOQUE_HASH];
+    loop {
+        let leidos = match lector.read(&mut bloque) {
+            Ok(0) => return Ok(hexadecimal(&hash.finalize())),
+            Ok(leidos) => leidos,
+            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(e) => return Err(e),
+        };
+        hash.update(&bloque[..leidos]);
+    }
+}
+
+fn hexadecimal(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// Lo que se lee de una vez al calcular el hash de un fichero grande.
+const BLOQUE_HASH: usize = 64 * 1024;
 
 /// Bits altos del sufijo del id: el milisegundo (0–999 cabe en 10).
 const BITS_MILISEGUNDO: u32 = 10;

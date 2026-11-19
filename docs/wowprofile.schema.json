@@ -50,10 +50,15 @@
   },
   "$defs": {
     "idAddon": {
-      "description": "Nombre de la carpeta del addon en Interface/AddOns.",
+      "description": "Nombre de la carpeta del addon en Interface/AddOns: sin nombres de dispositivo de Windows ni punto final.",
       "type": "string",
       "pattern": "^[A-Za-z0-9_!.\\-]{1,64}$",
-      "not": { "pattern": "^\\.+$" }
+      "not": {
+        "anyOf": [
+          { "pattern": "\\.$" },
+          { "pattern": "^([Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][0-9]|[Ll][Pp][Tt][0-9])(\\..*)?$" }
+        ]
+      }
     },
     "addon": {
       "type": "object",
@@ -80,19 +85,18 @@
         "categoria": {
           "enum": [
             "macros", "teclas", "teclas-clic", "opciones", "chat", "ventanas",
-            "modo-edicion", "addons-activos", "config-addon", "marcos-banda"
+            "modo-edicion", "addons-activos", "config-addon", "marcos-banda", "addon"
           ]
         },
-        "tipo": { "enum": ["fichero", "fichero-filtrado", "perfil-acedb", "adaptador"] },
-        "ambito": { "enum": ["personaje", "cuenta"] },
+        "tipo": { "enum": ["fichero", "fichero-filtrado", "perfil-acedb", "adaptador", "carpeta"] },
+        "ambito": { "enum": ["personaje", "cuenta", "instalacion"] },
         "destino": {
-          "description": "Ruta lógica relativa al personaje destino o a su cuenta. Nunca una ruta de disco.",
-          "type": "string",
-          "pattern": "^(personaje|cuenta)/(SavedVariables/)?[A-Za-z0-9_!\\-]+(\\.[A-Za-z0-9_!\\-]+)*\\.(txt|wtf|lua)$"
+          "description": "Ruta lógica relativa al personaje destino, a su cuenta o, en una pieza addon, a Interface/AddOns. Nunca una ruta de disco.",
+          "type": "string"
         },
         "addon": { "$ref": "#/$defs/idAddon" },
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-        "bytes": { "type": "integer", "minimum": 0, "maximum": 33554432 },
+        "bytes": { "type": "integer", "minimum": 0, "maximum": 67108864 },
         "marcadores": {
           "type": "array",
           "uniqueItems": true,
@@ -116,6 +120,37 @@
         }
       },
       "allOf": [
+        {
+          "if": { "properties": { "categoria": { "const": "addon" } } },
+          "then": {
+            "description": "1.1: la carpeta de un addon. El destino es addons/<addon>: que coincidan lo comprueba la app.",
+            "required": ["addon"],
+            "properties": {
+              "tipo": { "const": "carpeta" },
+              "ambito": { "const": "instalacion" },
+              "destino": { "pattern": "^addons/[A-Za-z0-9_!.\\-]{1,64}$", "not": { "pattern": "\\.$" } }
+            },
+            "not": {
+              "anyOf": [
+                { "required": ["marcadores"] },
+                { "required": ["claves_quitadas"] },
+                { "required": ["variable"] },
+                { "required": ["perfil"] },
+                { "required": ["adaptador"] }
+              ]
+            }
+          },
+          "else": {
+            "properties": {
+              "tipo": { "not": { "const": "carpeta" } },
+              "ambito": { "enum": ["personaje", "cuenta"] },
+              "destino": {
+                "pattern": "^(personaje|cuenta)/(SavedVariables/)?[A-Za-z0-9_!\\-]+(\\.[A-Za-z0-9_!\\-]+)*\\.(txt|wtf|lua)$"
+              },
+              "bytes": { "maximum": 33554432 }
+            }
+          }
+        },
         {
           "if": { "properties": { "tipo": { "const": "fichero-filtrado" } } },
           "then": { "required": ["claves_quitadas"] }

@@ -1,17 +1,19 @@
 //! Exportación (`docs/arquitectura.md`): arma las piezas de un personaje para un `.wowprofile`: los ficheros que se
-//! copian sin leer Lua (spec 023) y la configuración de addons (spec 027). Solo lee; el paquete lo escribe Paquetes.
+//! copian sin leer Lua (spec 023), la configuración de addons (spec 027) y las carpetas de los addons (spec 036). Solo
+//! lee; el paquete lo escribe Paquetes.
 
+use crate::addon_zip::{self, ErrorAddon, Medida};
 use crate::addons::Addon;
 use crate::claves_personaje::claves_de_personaje;
-use crate::config_addons::{self, ConfigAddons, NoExportable, Pista, Regla};
+use crate::config_addons::{self, ConfigAddons, NoExportable, Pista, Regla, id_unico};
 use crate::descubrimiento::{CARPETA_SAVED_VARIABLES as CARPETA_SV, nombres_de_carpetas};
 use crate::deteccion::{self, PersonajeUbicado};
 use crate::error::ErrorNucleo;
 use crate::modo_edicion;
 use crate::operaciones::{ahora_rfc3339, segmento_literal};
 use crate::paquetes::{
-    AddonPaquete, Ambito, Categoria, DeAddon, MARCADOR, Origen, Paquete, Perfil, Pieza,
-    RefAdaptador, Tipo,
+    AddonPaquete, Ambito, AmbitoEntrada, CarpetaAddon, Categoria, DeAddon, MARCADOR,
+    MAX_BYTES_ADDONS, Origen, Paquete, Perfil, Pieza, RefAdaptador, Tipo, id_de_addon_valido,
 };
 use crate::piezas::{
     ACTIVADO, FUENTES, Filtro, Fuente, Quitadas, filtrar_addons, filtrar_opciones, lineas_addons,
@@ -25,6 +27,8 @@ const MAX_DESCRIPCION: usize = 500;
 pub const EXTENSION: &str = "wowprofile";
 /// Caracteres que Windows no admite en un nombre de fichero.
 const NO_ADMITIDOS_EN_FICHERO: &[char] = &['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
+/// Las piezas de carpeta de addon: `carpeta-<addon>`. Ninguna otra pieza empieza así.
+const PREFIJO_ID_CARPETA: &str = "carpeta-";
 /// Lo que ve el diálogo de exportar: sin el contenido.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,7 +38,16 @@ pub struct Propuesta {
     pub apartadas: Vec<String>,
     /// Lo que no se puede exportar de cada addon, con su motivo.
     pub no_exportables: Vec<NoExportable>,
+    /// Addons cuya carpeta no viaja (solo su enlace, en la lista de addons del paquete), con su motivo.
+    pub carpetas_no_exportables: Vec<CarpetaNoExportable>,
     pub juego_abierto: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CarpetaNoExportable {
+    pub addon: String,
+    pub motivo: ErrorAddon,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -43,7 +56,8 @@ pub struct PiezaPropuesta {
     pub id: String,
     pub categoria: Categoria,
     pub tipo: Tipo,
-    pub ambito: Ambito,
+    pub ambito: AmbitoEntrada,
+    /// En una carpeta de addon, lo que ocupa sin comprimir.
     pub bytes: u64,
     /// Líneas que se quitan al filtrar, por motivo.
     pub quitadas: Vec<Quitadas>,
@@ -65,6 +79,15 @@ struct Disponible {
     ficheros: Vec<Pieza>,
     apartadas: Vec<String>,
     config: ConfigAddons,
+    carpetas: Vec<CarpetaDisponible>,
+}
+
+/// La carpeta de un addon en uso y lo que ocupa, o por qué no puede viajar.
+struct CarpetaDisponible {
+    id: String,
+    carpeta: String,
+    origen: PathBuf,
+    medida: Result<Medida, ErrorAddon>,
 }
 
 /// Lo que el jugador pide exportar.
@@ -95,19 +118,50 @@ pub fn paquete(personaje: &PersonajeUbicado, pedido: &Pedido) -> Result<Paquete,
     };
     let addons = deteccion::addons_de(&personaje.raiz_version, personaje.producto)?;
     let disponible = disponible(personaje, &addons.addons)?;
+    let carpetas = elegir_carpetas(&disponible.carpetas, &pedido.seleccion)?;
     let todas = disponible
         .ficheros
         .into_iter()
         .chain(disponible.config.piezas.into_iter().map(|p| p.pieza))
         .collect();
-    let (elegidas, perfil) = elegir(todas, pedido, ahora_rfc3339())?;
+    let (elegidas, perfil) = elegir(todas, !carpetas.is_empty(), pedido, ahora_rfc3339())?;
     let origen = Origen {
         producto: personaje.producto.codigo(),
         build,
         interfaz,
     };
-    let addons = addons_del_paquete(&elegidas, &addons.addons);
-    Paquete::nuevo(perfil, origen, addons, elegidas)
+    let addons = addons_del_paquete(&elegidas, &carpetas, &addons.addons);
+    Paquete::nuevo(perfil, origen, addons, elegidas)?.con_carpetas(carpetas)
+}
+
+/// Las carpetas pedidas que pueden viajar. Juntas, sin comprimir, no pueden pasar del límite de addons del formato.
+fn elegir_carpetas(
+    carpetas: &[CarpetaDisponible],
+    seleccion: &[String],
+) -> Result<Vec<CarpetaAddon>, ErrorNucleo> {
+    let elegidas = carpetas
+        .iter()
+        .filter(|c| seleccion.contains(&c.id))
+        .map(|c| match &c.medida {
+            Ok(medida) => Ok((c, medida)),
+            Err(motivo) => Err(ErrorNucleo::AddonNoEmpaquetado {
+                addon: c.carpeta.clone(),
+                detalle: motivo.to_string(),
+            }),
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let total: u64 = elegidas.iter().map(|(_, m)| m.bytes).sum();
+    if total > MAX_BYTES_ADDONS {
+        return Err(ErrorNucleo::PaqueteDemasiadoGrande {});
+    }
+    Ok(elegidas
+        .into_iter()
+        .map(|(c, _)| CarpetaAddon {
+            id: c.id.clone(),
+            carpeta: c.carpeta.clone(),
+            origen: c.origen.clone(),
+        })
+        .collect())
 }
 
 /// `<nombre>.wowprofile` sin los caracteres que Windows no admite. El nombre ya viene validado (no vacío).
@@ -146,11 +200,47 @@ pub fn con_extension(ruta: PathBuf) -> PathBuf {
 fn disponible(personaje: &PersonajeUbicado, addons: &[Addon]) -> Result<Disponible, ErrorNucleo> {
     let (ficheros, apartadas) = piezas(personaje, addons)?;
     let config = config_addons::de_personaje(personaje, addons, &claves_de_cuenta(personaje)?);
+    let en_uso = addons_en_uso(
+        ficheros
+            .iter()
+            .chain(config.piezas.iter().map(|p| &p.pieza)),
+    );
+    let carpetas = carpetas_en_uso(personaje, addons, &en_uso);
     Ok(Disponible {
         ficheros,
         apartadas,
         config,
+        carpetas,
     })
+}
+
+/// Las carpetas de los addons instalados que usa el personaje, medidas sin leerlas.
+fn carpetas_en_uso(
+    personaje: &PersonajeUbicado,
+    addons: &[Addon],
+    en_uso: &HashSet<String>,
+) -> Vec<CarpetaDisponible> {
+    let raiz = deteccion::carpeta_addons(&personaje.raiz_version);
+    let mut ids = HashSet::new();
+    addons
+        .iter()
+        .filter(|a| en_uso.contains(&a.carpeta.to_lowercase()))
+        .map(|a| {
+            let origen = raiz.join(&a.carpeta);
+            // El formato solo admite carpetas que son un `id` de addon.
+            let medida = if id_de_addon_valido(&a.carpeta) {
+                addon_zip::medir(&origen)
+            } else {
+                Err(ErrorAddon::RutaNoValida(a.carpeta.clone()))
+            };
+            CarpetaDisponible {
+                id: id_unico(&mut ids, PREFIJO_ID_CARPETA, &a.carpeta, ""),
+                carpeta: a.carpeta.clone(),
+                origen,
+                medida,
+            }
+        })
+        .collect()
 }
 
 /// Cómo se llaman en los datos los personajes de su cuenta: los de `profileKeys` y los de las carpetas.
@@ -200,10 +290,41 @@ fn propuesta(disponible: Disponible, juego_abierto: bool) -> Propuesta {
             ..propuesta_de_pieza(&p.pieza)
         }
     });
+    let carpetas = disponible.carpetas.iter().filter_map(|c| {
+        let medida = c.medida.as_ref().ok()?;
+        Some(PiezaPropuesta {
+            id: c.id.clone(),
+            categoria: Categoria::Addon,
+            tipo: Tipo::Carpeta,
+            ambito: AmbitoEntrada::Instalacion,
+            bytes: medida.bytes,
+            quitadas: Vec::new(),
+            // Marcadas como el resto (decisión 1 de la spec 036): la interfaz avisa de los riesgos y la licencia.
+            marcada: true,
+            addon: Some(c.carpeta.clone()),
+            variable: None,
+            perfil: None,
+            regla: None,
+            version_no_medida: false,
+            pistas: Vec::new(),
+        })
+    });
+    let carpetas_no_exportables = disponible
+        .carpetas
+        .iter()
+        .filter_map(|c| {
+            let motivo = c.medida.as_ref().err()?;
+            Some(CarpetaNoExportable {
+                addon: c.carpeta.clone(),
+                motivo: motivo.clone(),
+            })
+        })
+        .collect();
     Propuesta {
-        piezas: ficheros.chain(config).collect(),
+        piezas: ficheros.chain(config).chain(carpetas).collect(),
         apartadas: disponible.apartadas,
         no_exportables: disponible.config.no_exportables,
+        carpetas_no_exportables,
         juego_abierto,
     }
 }
@@ -213,7 +334,7 @@ fn propuesta_de_pieza(pieza: &Pieza) -> PiezaPropuesta {
         id: pieza.id.clone(),
         categoria: pieza.categoria,
         tipo: pieza.tipo,
-        ambito: pieza.ambito,
+        ambito: pieza.ambito.into(),
         bytes: pieza.contenido.len() as u64,
         quitadas: pieza.quitadas.clone(),
         marcada: false,
@@ -227,9 +348,10 @@ fn propuesta_de_pieza(pieza: &Pieza) -> PiezaPropuesta {
     }
 }
 
-/// Se queda con las piezas pedidas y valida nombre y descripción.
+/// Se queda con las piezas pedidas y valida nombre y descripción. Sin piezas solo vale si viaja alguna carpeta.
 fn elegir(
     piezas: Vec<Pieza>,
+    con_carpetas: bool,
     pedido: &Pedido,
     creado: String,
 ) -> Result<(Vec<Pieza>, Perfil), ErrorNucleo> {
@@ -243,7 +365,7 @@ fn elegir(
         .into_iter()
         .filter(|p| pedido.seleccion.contains(&p.id))
         .collect();
-    if elegidas.is_empty() {
+    if elegidas.is_empty() && !con_carpetas {
         return Err(ErrorNucleo::SeleccionVacia {});
     }
     let perfil = Perfil {
@@ -254,9 +376,34 @@ fn elegir(
     Ok((elegidas, perfil))
 }
 
-/// Los addons instalados que el `AddOns.txt` del paquete deja activados (sin los del cliente) y los de las piezas
-/// `config-addon`: quien importa ve qué le falta y dónde conseguirlo.
-fn addons_del_paquete(piezas: &[Pieza], addons: &[Addon]) -> Vec<AddonPaquete> {
+/// Los addons instalados que el `AddOns.txt` del paquete deja activados (sin los del cliente), los de las piezas
+/// `config-addon` y los que viajan con su carpeta: quien importa ve qué le falta y dónde conseguirlo.
+fn addons_del_paquete(
+    piezas: &[Pieza],
+    carpetas: &[CarpetaAddon],
+    addons: &[Addon],
+) -> Vec<AddonPaquete> {
+    let mut activos = addons_en_uso(piezas);
+    activos.extend(carpetas.iter().map(|c| c.carpeta.to_lowercase()));
+    addons
+        .iter()
+        .filter(|a| activos.contains(&a.carpeta.to_lowercase()))
+        .filter_map(|a| {
+            AddonPaquete::nuevo(
+                &a.carpeta,
+                a.datos.titulo.as_deref(),
+                a.datos.version.as_deref(),
+                a.datos.enlace.as_deref(),
+                &a.datos.dependencias,
+            )
+        })
+        .collect()
+}
+
+/// Las carpetas (en minúsculas) de los addons que activa un `AddOns.txt` de `piezas` o que tienen configuración en
+/// ellas.
+fn addons_en_uso<'a>(piezas: impl IntoIterator<Item = &'a Pieza>) -> HashSet<String> {
+    let piezas: Vec<&Pieza> = piezas.into_iter().collect();
     let mut activos: HashSet<String> = piezas
         .iter()
         .filter(|p| p.categoria == Categoria::AddonsActivos)
@@ -271,21 +418,10 @@ fn addons_del_paquete(piezas: &[Pieza], addons: &[Addon]) -> Vec<AddonPaquete> {
         piezas
             .iter()
             .filter_map(|p| p.addon.as_ref())
+            .filter(|d| !d.addon.is_empty())
             .map(|d| d.addon.to_lowercase()),
     );
-    addons
-        .iter()
-        .filter(|a| activos.contains(&a.carpeta.to_lowercase()))
-        .filter_map(|a| {
-            AddonPaquete::nuevo(
-                &a.carpeta,
-                a.datos.titulo.as_deref(),
-                a.datos.version.as_deref(),
-                a.datos.enlace.as_deref(),
-                &a.datos.dependencias,
-            )
-        })
-        .collect()
+    activos
 }
 
 fn leer_pieza(
@@ -568,8 +704,13 @@ mod tests {
         };
         let creado = || "2026-11-18T10:00:00Z".to_owned();
 
-        let (elegidas, perfil) =
-            elegir(piezas(), &pedido(&["chat"], "  Druida ", " "), creado()).unwrap();
+        let (elegidas, perfil) = elegir(
+            piezas(),
+            false,
+            &pedido(&["chat"], "  Druida ", " "),
+            creado(),
+        )
+        .unwrap();
         assert_eq!(ids(&elegidas), ["chat"]);
         assert_eq!(
             (perfil.nombre.as_str(), perfil.descripcion),
@@ -588,12 +729,12 @@ mod tests {
             (&["otra"][..], "Druida", ErrorNucleo::SeleccionVacia {}),
         ] {
             assert_eq!(
-                elegir(piezas(), &pedido(seleccion, nombre, ""), creado()).unwrap_err(),
+                elegir(piezas(), false, &pedido(seleccion, nombre, ""), creado()).unwrap_err(),
                 error
             );
         }
         let justo = "ñ".repeat(MAX_NOMBRE);
-        assert!(elegir(piezas(), &pedido(&["chat"], &justo, ""), creado()).is_ok());
+        assert!(elegir(piezas(), false, &pedido(&["chat"], &justo, ""), creado()).is_ok());
     }
 
     #[test]
@@ -609,7 +750,7 @@ mod tests {
             quitadas: Vec::new(),
             addon: None,
         };
-        let addons = addons_del_paquete(&[lista], &[addon("Dominos"), addon("Details")]);
+        let addons = addons_del_paquete(&[lista], &[], &[addon("Dominos"), addon("Details")]);
         assert_eq!(addons.len(), 1);
         assert_eq!(
             (addons[0].id.as_str(), addons[0].titulo.as_str()),
@@ -655,6 +796,149 @@ mod tests {
         }
         assert_eq!(paquete.manifiesto.origen.interfaz, 16001);
         assert_eq!(paquete.manifiesto.entradas.len(), 1);
+    }
+
+    /// Un addon instalado en la versión del personaje, con su `.toc` y un fichero más.
+    fn instalar(pj: &PersonajeUbicado, carpeta: &str) {
+        let raiz = deteccion::carpeta_addons(&pj.raiz_version).join(carpeta);
+        create_dir_all(&raiz).unwrap();
+        write(
+            raiz.join(format!("{carpeta}.toc")),
+            format!("## Title: {carpeta}"),
+        )
+        .unwrap();
+        write(raiz.join("nucleo.lua"), "local x = 1").unwrap();
+    }
+
+    fn con_version(raiz: &Path, pj: &PersonajeUbicado) {
+        write(
+            raiz.join(".build.info"),
+            "Version!STRING:0|Product!STRING:0\n1.60.1.70938|wowf\n",
+        )
+        .unwrap();
+        write(
+            pj.raiz_version.join("WTF").join("Config.wtf"),
+            "SET engineSurveyPatch \"16001\"\r\n",
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn se_ofrecen_marcadas_las_carpetas_de_los_addons_que_usa_el_personaje() {
+        let tmp = tempfile::tempdir().unwrap();
+        let pj = personaje(tmp.path());
+        for carpeta in ["Dominos", "Details", "Roto"] {
+            instalar(&pj, carpeta);
+        }
+        let roto = deteccion::carpeta_addons(&pj.raiz_version).join("Roto");
+        write(roto.join("AUX.lua"), "x").unwrap();
+        write(
+            pj.carpeta().join("AddOns.txt"),
+            "Dominos: enabled\r\nDetails: disabled\r\nRoto: enabled\r\n",
+        )
+        .unwrap();
+        let addons = [addon("Dominos"), addon("Details"), addon("Roto")];
+
+        let propuesta = propuesta(disponible(&pj, &addons).unwrap(), false);
+
+        let carpetas: Vec<_> = propuesta
+            .piezas
+            .iter()
+            .filter(|p| p.categoria == Categoria::Addon)
+            .collect();
+        assert_eq!(carpetas.len(), 1);
+        let dominos = carpetas[0];
+        assert_eq!(
+            (
+                dominos.id.as_str(),
+                dominos.tipo,
+                dominos.ambito,
+                dominos.marcada,
+                dominos.addon.as_deref()
+            ),
+            (
+                "carpeta-dominos",
+                Tipo::Carpeta,
+                AmbitoEntrada::Instalacion,
+                true,
+                Some("Dominos")
+            )
+        );
+        assert_eq!(dominos.bytes, "## Title: Dominos".len() as u64 + 11);
+        assert_eq!(
+            propuesta.carpetas_no_exportables,
+            [CarpetaNoExportable {
+                addon: "Roto".into(),
+                motivo: ErrorAddon::RutaNoValida("AUX.lua".into()),
+            }]
+        );
+    }
+
+    #[test]
+    fn solo_con_una_carpeta_el_paquete_es_1_1_y_describe_el_addon() {
+        let tmp = tempfile::tempdir().unwrap();
+        let pj = personaje(tmp.path());
+        con_version(tmp.path(), &pj);
+        instalar(&pj, "Dominos");
+        write(pj.carpeta().join("AddOns.txt"), "Dominos: enabled\r\n").unwrap();
+        let pedido = Pedido {
+            seleccion: vec!["carpeta-dominos".into()],
+            nombre: "Druida".into(),
+            descripcion: String::new(),
+        };
+        let ruta = tmp.path().join("p.wowprofile");
+
+        paquete(&pj, &pedido).unwrap().guardar(&ruta).unwrap();
+
+        let leido = crate::paquetes::leer_fichero(&ruta).unwrap();
+        assert_eq!(leido.manifiesto.formato.version, "1.1");
+        let ids: Vec<_> = leido
+            .manifiesto
+            .entradas
+            .iter()
+            .map(|e| e.id.as_str())
+            .collect();
+        assert_eq!(ids, ["carpeta-dominos"]);
+        let addons: Vec<_> = leido
+            .manifiesto
+            .addons
+            .iter()
+            .map(|a| a.id.as_str())
+            .collect();
+        assert_eq!(addons, ["Dominos"]);
+    }
+
+    #[test]
+    fn las_carpetas_juntas_no_pasan_del_limite_de_addons() {
+        let grande = |n: usize| CarpetaDisponible {
+            id: format!("carpeta-{n}"),
+            carpeta: format!("A{n}"),
+            origen: PathBuf::from("no-se-lee"),
+            medida: Ok(Medida {
+                bytes: MAX_BYTES_ADDONS / 2,
+                ficheros: 1,
+            }),
+        };
+        let carpetas = [grande(1), grande(2), grande(3)];
+        let pedir = |ids: &[&str]| ids.iter().map(|i| (*i).to_owned()).collect::<Vec<_>>();
+        assert_eq!(
+            elegir_carpetas(&carpetas, &pedir(&["carpeta-1", "carpeta-2"]))
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            elegir_carpetas(&carpetas, &pedir(&["carpeta-1", "carpeta-2", "carpeta-3"])),
+            Err(ErrorNucleo::PaqueteDemasiadoGrande {})
+        );
+        let rota = CarpetaDisponible {
+            medida: Err(ErrorAddon::DemasiadoGrande),
+            ..grande(4)
+        };
+        assert!(matches!(
+            elegir_carpetas(&[rota], &pedir(&["carpeta-4"])),
+            Err(ErrorNucleo::AddonNoEmpaquetado { addon, .. }) if addon == "A4"
+        ));
     }
 
     #[test]

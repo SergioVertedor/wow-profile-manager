@@ -1,19 +1,21 @@
 //! Leer un `.wowprofile` según «Leer un paquete de forma segura» (`docs/formato-wowprofile.md`), pasos 1–5. El paso 6
 //! (cada `destino` a una ruta real) necesita el personaje destino y lo hace Importación. Nada de lo que trae el paquete
-//! se usa como ruta: el contenido queda en memoria, por `id`.
+//! se usa como ruta: el contenido queda en memoria, por `id`. Las piezas de addon (formato 1.1) no: se comprueban de una
+//! en una al leer y se sueltan; se vuelven a leer del fichero al instalarlas.
 
 use super::{
-    Ambito, CARPETA_DATOS, Categoria, MANIFIESTO, MAX_BYTES_PIEZA, MAX_BYTES_TOTAL,
-    MAX_CLAVES_QUITADAS, MAX_DEPENDENCIAS, MAX_ENLACE, MAX_PIEZAS, MAX_TITULO, MAX_VERSION,
-    NOMBRE_FORMATO, Tipo, id_de_addon_valido,
+    AmbitoEntrada, CARPETA_DATOS, Categoria, MANIFIESTO, MAX_BYTES_ADDONS, MAX_BYTES_PIEZA,
+    MAX_BYTES_TOTAL, MAX_CLAVES_QUITADAS, MAX_DEPENDENCIAS, MAX_ENLACE, MAX_PIEZAS, MAX_TITULO,
+    MAX_VERSION, NOMBRE_FORMATO, PREFIJO_DESTINO_ADDONS, Tipo, id_de_addon_valido,
 };
+use crate::addon_zip::{self, MAX_BYTES_ADDON};
 use crate::error::{ErrorNucleo, MotivoPaquete};
-use crate::operaciones::sha256;
+use crate::operaciones::{sha256, sha256_de};
 use serde::de::IntoDeserializer;
 use serde::de::value::{Error as ErrorValor, StrDeserializer};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::io::{Cursor, Read};
+use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::Path;
 use zip::ZipArchive;
 
@@ -21,8 +23,12 @@ use zip::ZipArchive;
 const MAX_BYTES_MANIFIESTO: u64 = 1024 * 1024;
 /// El `.wowprofile` entero: las piezas comprimidas no pasan de su tamaño sin comprimir más un margen para el ZIP y el
 /// manifiesto. Lo que pase de aquí no se lee.
-const MAX_BYTES_FICHERO: u64 = MAX_BYTES_TOTAL as u64 + 4 * MAX_BYTES_MANIFIESTO;
+const MAX_BYTES_FICHERO: u64 = MAX_BYTES_TOTAL as u64 + MAX_BYTES_ADDONS + 4 * MAX_BYTES_MANIFIESTO;
 const MAYOR_ADMITIDA: &str = "1";
+/// La versión menor más nueva que entiende esta app.
+const MENOR_CONOCIDA: u32 = 1;
+/// La que añade las piezas de addon.
+const MENOR_CON_ADDONS: u32 = 1;
 const MAX_NOMBRE_PERFIL: usize = 80;
 const MAX_DESCRIPCION: usize = 500;
 const MAX_ID_ENTRADA: usize = 64;
@@ -31,7 +37,7 @@ const MAX_CLASE: usize = 20;
 const MIN_CLASE: usize = 2;
 const MAX_VARIABLE: usize = 128;
 const PRODUCTOS: [&str; 2] = ["wowf", "wow"];
-/// Las de la 1.0. En una 1.x más nueva puede haber más: se aceptan y se marcan como desconocidas.
+/// Las de la 1.0; la 1.1 añade `addon`. En una 1.x más nueva puede haber más: se aceptan y se marcan como desconocidas.
 const CATEGORIAS_1_0: [&str; 10] = [
     "macros",
     "teclas",
@@ -45,6 +51,8 @@ const CATEGORIAS_1_0: [&str; 10] = [
     "marcos-banda",
 ];
 const TIPOS_1_0: [&str; 4] = ["fichero", "fichero-filtrado", "perfil-acedb", "adaptador"];
+const CATEGORIA_ADDON: &str = "addon";
+const TIPO_CARPETA: &str = "carpeta";
 const EXTENSIONES_DESTINO: [&str; 3] = ["txt", "wtf", "lua"];
 const MARCADORES: [&str; 2] = ["PERSONAJE", "REINO"];
 const TIPO_FICHERO_FILTRADO: &str = "fichero-filtrado";
@@ -53,7 +61,7 @@ const TIPO_ADAPTADOR: &str = "adaptador";
 const CATEGORIA_CONFIG_ADDON: &str = "config-addon";
 /// Largo máximo de un texto del paquete en un mensaje de diagnóstico.
 const MAX_DIAGNOSTICO: usize = 120;
-/// Campos de cada objeto en el schema 1.0 (`additionalProperties: false`).
+/// Campos de cada objeto en el schema 1.0 y 1.1 (`additionalProperties: false`).
 const CAMPOS_RAIZ: [&str; 5] = ["formato", "perfil", "origen", "addons", "entradas"];
 const CAMPOS_FORMATO: [&str; 2] = ["nombre", "version"];
 const CAMPOS_PERFIL: [&str; 3] = ["nombre", "descripcion", "creado"];
@@ -153,7 +161,7 @@ pub struct EntradaLeida {
     pub id: String,
     pub categoria: String,
     pub tipo: String,
-    pub ambito: Ambito,
+    pub ambito: AmbitoEntrada,
     pub destino: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub addon: Option<String>,
@@ -205,28 +213,42 @@ fn invalido(motivo: MotivoPaquete, detalle: impl Into<String>) -> ErrorNucleo {
     }
 }
 
-/// Lee el fichero sin pasar del tamaño máximo y lo comprueba entero.
+/// Lee el fichero sin pasar del tamaño máximo y lo comprueba entero, sin cargarlo en memoria: con addons puede ocupar
+/// cientos de MiB.
 pub fn leer_fichero(ruta: &Path) -> Result<PaqueteLeido, ErrorNucleo> {
-    let fichero = std::fs::File::open(ruta).map_err(|e| ErrorNucleo::lectura(ruta, &e))?;
-    let mut bytes = Vec::new();
-    fichero
-        .take(MAX_BYTES_FICHERO + 1)
-        .read_to_end(&mut bytes)
-        .map_err(|e| ErrorNucleo::lectura(ruta, &e))?;
-    if bytes.len() as u64 > MAX_BYTES_FICHERO {
+    let lectura = |e: std::io::Error| ErrorNucleo::lectura(ruta, &e);
+    let mut fichero = std::fs::File::open(ruta).map_err(lectura)?;
+    if fichero.metadata().map_err(lectura)?.len() > MAX_BYTES_FICHERO {
         return Err(invalido(MotivoPaquete::DemasiadoGrande, ""));
     }
-    leer(&bytes)
+    // El fichero puede crecer mientras se calcula el hash: si pasa del máximo, no se lee.
+    let hash =
+        sha256_de(BufReader::new((&fichero).take(MAX_BYTES_FICHERO + 1))).map_err(lectura)?;
+    if fichero.stream_position().map_err(lectura)? > MAX_BYTES_FICHERO {
+        return Err(invalido(MotivoPaquete::DemasiadoGrande, ""));
+    }
+    fichero.seek(SeekFrom::Start(0)).map_err(lectura)?;
+    leer_zip(BufReader::new(fichero), hash, MAX_BYTES_TOTAL as u64)
 }
 
 /// Pasos 1–5 sobre el fichero en memoria. Si algo falla no hay paquete: nunca uno «medio válido».
+#[cfg(test)]
 pub fn leer(bytes: &[u8]) -> Result<PaqueteLeido, ErrorNucleo> {
     leer_con_tope(bytes, MAX_BYTES_TOTAL as u64)
 }
 
+#[cfg(test)]
 fn leer_con_tope(bytes: &[u8], maximo_total: u64) -> Result<PaqueteLeido, ErrorNucleo> {
-    let mut zip = ZipArchive::new(Cursor::new(bytes))
-        .map_err(|e| invalido(MotivoPaquete::NoEsZip, e.to_string()))?;
+    leer_zip(std::io::Cursor::new(bytes), sha256(bytes), maximo_total)
+}
+
+fn leer_zip<R: Read + Seek>(
+    lector: R,
+    sha256: String,
+    maximo_total: u64,
+) -> Result<PaqueteLeido, ErrorNucleo> {
+    let mut zip =
+        ZipArchive::new(lector).map_err(|e| invalido(MotivoPaquete::NoEsZip, e.to_string()))?;
     // Paso 1: antes de leer nada más.
     if zip.len() > MAX_PIEZAS + 1 {
         return Err(invalido(
@@ -238,14 +260,16 @@ fn leer_con_tope(bytes: &[u8], maximo_total: u64) -> Result<PaqueteLeido, ErrorN
     comprobar_nombres(&mut zip, &manifiesto)?;
     let piezas = leer_piezas(&mut zip, &manifiesto, maximo_total)?;
     Ok(PaqueteLeido {
-        sha256: sha256(bytes),
+        sha256,
         manifiesto,
         piezas,
     })
 }
 
 /// Paso 2: como mucho 1 MiB, versión mayor 1 y lo que pide el schema.
-fn leer_manifiesto(zip: &mut ZipArchive<Cursor<&[u8]>>) -> Result<ManifiestoLeido, ErrorNucleo> {
+fn leer_manifiesto<R: Read + Seek>(
+    zip: &mut ZipArchive<R>,
+) -> Result<ManifiestoLeido, ErrorNucleo> {
     let fichero = zip
         .by_name(MANIFIESTO)
         .map_err(|e| invalido(MotivoPaquete::ManifiestoIlegible, e.to_string()))?;
@@ -264,14 +288,15 @@ fn leer_manifiesto(zip: &mut ZipArchive<Cursor<&[u8]>>) -> Result<ManifiestoLeid
     if !sin_nulos(&valor) {
         return Err(invalido(MotivoPaquete::ManifiestoNoValido, "null"));
     }
-    // En la 1.0, nada que el schema no nombre. En una 1.x más nueva se ignora (`docs/formato-wowprofile.md`).
-    if menor == 0 {
+    // En las versiones que conoce, nada que el schema no nombre. En una 1.x más nueva se ignora
+    // (`docs/formato-wowprofile.md`).
+    if menor <= MENOR_CONOCIDA {
         campos_conocidos(&valor)
             .map_err(|campo| invalido(MotivoPaquete::ManifiestoNoValido, campo))?;
     }
     let manifiesto: ManifiestoLeido = serde_json::from_value(valor)
         .map_err(|e| invalido(MotivoPaquete::ManifiestoNoValido, e.to_string()))?;
-    validar(&manifiesto, menor > 0)
+    validar(&manifiesto, menor)
         .map_err(|campo| invalido(MotivoPaquete::ManifiestoNoValido, campo))?;
     Ok(manifiesto)
 }
@@ -305,7 +330,7 @@ fn sin_nulos(valor: &serde_json::Value) -> bool {
     }
 }
 
-/// `additionalProperties: false` del schema 1.0, objeto a objeto. Devuelve el primer campo que sobra.
+/// `additionalProperties: false` del schema 1.0 y 1.1, objeto a objeto. Devuelve el primer campo que sobra.
 fn campos_conocidos(valor: &serde_json::Value) -> Result<(), String> {
     solo_campos(valor, &CAMPOS_RAIZ, "manifiesto")?;
     solo_campos(&valor["formato"], &CAMPOS_FORMATO, "formato")?;
@@ -350,7 +375,7 @@ fn numero_sin_ceros(texto: &str) -> bool {
 }
 
 /// Lo que el schema 1.x exige y `serde` no comprueba. Devuelve el campo que falla.
-fn validar(m: &ManifiestoLeido, menor_mas_nueva: bool) -> Result<(), String> {
+fn validar(m: &ManifiestoLeido, menor: u32) -> Result<(), String> {
     validar_perfil(&m.perfil)?;
     validar_origen(&m.origen)?;
     if m.addons.len() > MAX_PIEZAS {
@@ -364,8 +389,7 @@ fn validar(m: &ManifiestoLeido, menor_mas_nueva: bool) -> Result<(), String> {
     }
     let mut ids = HashSet::new();
     for (i, entrada) in m.entradas.iter().enumerate() {
-        validar_entrada(entrada, menor_mas_nueva)
-            .map_err(|campo| format!("entradas[{i}].{campo}"))?;
+        validar_entrada(entrada, menor).map_err(|campo| format!("entradas[{i}].{campo}"))?;
         if !ids.insert(entrada.id.as_str()) {
             return Err(format!("entradas[{i}].id repetido"));
         }
@@ -433,20 +457,57 @@ fn validar_addon(addon: &AddonLeido) -> Result<(), String> {
     )
 }
 
-fn validar_entrada(entrada: &EntradaLeida, menor_mas_nueva: bool) -> Result<(), String> {
+fn validar_entrada(entrada: &EntradaLeida, menor: u32) -> Result<(), String> {
     exigir(id_de_entrada_valido(&entrada.id), "id")?;
-    let conocida = |lista: &[&str], valor: &str| menor_mas_nueva || lista.contains(&valor);
-    exigir(conocida(&CATEGORIAS_1_0, &entrada.categoria), "categoria")?;
-    exigir(conocida(&TIPOS_1_0, &entrada.tipo), "tipo")?;
-    exigir(destino_valido(&entrada.destino), "destino")?;
+    let mas_nueva = menor > MENOR_CONOCIDA;
+    let con_addons = menor >= MENOR_CON_ADDONS;
+    let categoria = entrada.categoria.as_str();
+    let tipo = entrada.tipo.as_str();
+    let categoria_conocida =
+        CATEGORIAS_1_0.contains(&categoria) || (con_addons && categoria == CATEGORIA_ADDON);
+    let tipo_conocido = TIPOS_1_0.contains(&tipo) || (con_addons && tipo == TIPO_CARPETA);
+    exigir(mas_nueva || categoria_conocida, "categoria")?;
+    exigir(mas_nueva || tipo_conocido, "tipo")?;
     exigir(
         entrada.addon.as_deref().is_none_or(id_de_addon_valido),
         "addon",
     )?;
     exigir(hash_valido(&entrada.sha256), "sha256")?;
+    if es_de_addon(entrada) {
+        return validar_carpeta(entrada);
+    }
+    exigir(tipo != TIPO_CARPETA, "tipo")?;
+    exigir(entrada.ambito != AmbitoEntrada::Instalacion, "ambito")?;
+    exigir(destino_valido(&entrada.destino), "destino")?;
     exigir(entrada.bytes <= MAX_BYTES_PIEZA as u64, "bytes")?;
     validar_opcionales(entrada)?;
     validar_condiciones(entrada)
+}
+
+/// La pieza es la carpeta de un addon (formato 1.1).
+fn es_de_addon(entrada: &EntradaLeida) -> bool {
+    entrada.categoria == CATEGORIA_ADDON
+}
+
+/// Una pieza de addon: tipo `carpeta`, de la instalación, con destino `addons/<addon>` y nada más.
+fn validar_carpeta(entrada: &EntradaLeida) -> Result<(), String> {
+    exigir(entrada.tipo == TIPO_CARPETA, "tipo")?;
+    exigir(entrada.ambito == AmbitoEntrada::Instalacion, "ambito")?;
+    let destino = entrada
+        .addon
+        .as_deref()
+        .map(|addon| format!("{PREFIJO_DESTINO_ADDONS}{addon}"));
+    exigir(
+        destino.as_deref() == Some(entrada.destino.as_str()),
+        "destino",
+    )?;
+    exigir(entrada.bytes <= MAX_BYTES_ADDON, "bytes")?;
+    let sin_extras = entrada.marcadores.is_none()
+        && entrada.claves_quitadas.is_none()
+        && entrada.variable.is_none()
+        && entrada.perfil.is_none()
+        && entrada.adaptador.is_none();
+    exigir(sin_extras, "addon")
 }
 
 fn validar_opcionales(entrada: &EntradaLeida) -> Result<(), String> {
@@ -491,7 +552,7 @@ fn validar_condiciones(entrada: &EntradaLeida) -> Result<(), String> {
         || (entrada.addon.is_some()
             && entrada.variable.is_some()
             && entrada.perfil.is_some()
-            && entrada.ambito == Ambito::Cuenta
+            && entrada.ambito == AmbitoEntrada::Cuenta
             && config_addon);
     exigir(acedb, "tipo")?;
     exigir(
@@ -502,7 +563,7 @@ fn validar_condiciones(entrada: &EntradaLeida) -> Result<(), String> {
 }
 
 /// `^[a-z0-9][a-z0-9-]{0,63}$`.
-fn id_de_entrada_valido(id: &str) -> bool {
+pub(super) fn id_de_entrada_valido(id: &str) -> bool {
     let mut bytes = id.bytes();
     let primero = bytes
         .next()
@@ -594,8 +655,8 @@ fn dias_del_mes(anio: u32, mes: u32) -> u32 {
 }
 
 /// Paso 3: exactamente `manifest.json` y un `datos/<id>` por entrada. Ni de más, ni de menos, ni repetidos.
-fn comprobar_nombres(
-    zip: &mut ZipArchive<Cursor<&[u8]>>,
+fn comprobar_nombres<R: Read + Seek>(
+    zip: &mut ZipArchive<R>,
     manifiesto: &ManifiestoLeido,
 ) -> Result<(), ErrorNucleo> {
     let mut esperados: HashSet<String> = manifiesto
@@ -623,39 +684,61 @@ fn comprobar_nombres(
     Ok(())
 }
 
-/// Pasos 4 y 5: cada pieza sin pasar de sus `bytes` + 1 ni del total, y con su tamaño y su hash.
+/// Pasos 4 y 5: cada pieza sin pasar de sus `bytes` + 1 ni del total, y con su tamaño y su hash. Las de addon llevan
+/// su propio total y además tienen que ser un ZIP de addon seguro; no se guardan.
 /// `maximo_total` es el límite del formato; los tests lo bajan para no tener que fabricar 128 MiB.
-fn leer_piezas(
-    zip: &mut ZipArchive<Cursor<&[u8]>>,
+fn leer_piezas<R: Read + Seek>(
+    zip: &mut ZipArchive<R>,
     manifiesto: &ManifiestoLeido,
     maximo_total: u64,
 ) -> Result<HashMap<String, Vec<u8>>, ErrorNucleo> {
     let mut piezas = HashMap::new();
     let mut total: u64 = 0;
+    let mut total_addons: u64 = 0;
     for entrada in &manifiesto.entradas {
-        let nombre = format!("{CARPETA_DATOS}{}", entrada.id);
-        let ilegible = |e: &dyn std::fmt::Display| {
-            invalido(MotivoPaquete::PiezaIlegible, format!("{nombre}: {e}"))
-        };
-        let fichero = zip.by_name(&nombre).map_err(|e| ilegible(&e))?;
-        let mut contenido = Vec::new();
-        fichero
-            .take(entrada.bytes + 1)
-            .read_to_end(&mut contenido)
-            .map_err(|e| ilegible(&e))?;
-        total += contenido.len() as u64;
-        if contenido.len() as u64 > entrada.bytes {
-            return Err(invalido(MotivoPaquete::PiezaDemasiadoGrande, nombre));
+        let contenido = leer_pieza(zip, entrada)?;
+        let nombre = || format!("{CARPETA_DATOS}{}", entrada.id);
+        if es_de_addon(entrada) {
+            total_addons += entrada.bytes;
+            if total_addons > MAX_BYTES_ADDONS {
+                return Err(invalido(MotivoPaquete::TotalDemasiadoGrande, nombre()));
+            }
+            addon_zip::leer(&contenido).map_err(|e| {
+                invalido(MotivoPaquete::AddonNoValido, format!("{}: {e}", nombre()))
+            })?;
+            continue;
         }
+        total += entrada.bytes;
         if total > maximo_total {
-            return Err(invalido(MotivoPaquete::TotalDemasiadoGrande, nombre));
-        }
-        if contenido.len() as u64 != entrada.bytes || sha256(&contenido) != entrada.sha256 {
-            return Err(invalido(MotivoPaquete::PiezaDanada, nombre));
+            return Err(invalido(MotivoPaquete::TotalDemasiadoGrande, nombre()));
         }
         piezas.insert(entrada.id.clone(), contenido);
     }
     Ok(piezas)
+}
+
+/// Una pieza sin pasar de sus `bytes` + 1, con su tamaño y su hash comprobados.
+fn leer_pieza<R: Read + Seek>(
+    zip: &mut ZipArchive<R>,
+    entrada: &EntradaLeida,
+) -> Result<Vec<u8>, ErrorNucleo> {
+    let nombre = format!("{CARPETA_DATOS}{}", entrada.id);
+    let ilegible = |e: &dyn std::fmt::Display| {
+        invalido(MotivoPaquete::PiezaIlegible, format!("{nombre}: {e}"))
+    };
+    let fichero = zip.by_name(&nombre).map_err(|e| ilegible(&e))?;
+    let mut contenido = Vec::new();
+    fichero
+        .take(entrada.bytes + 1)
+        .read_to_end(&mut contenido)
+        .map_err(|e| ilegible(&e))?;
+    if contenido.len() as u64 > entrada.bytes {
+        return Err(invalido(MotivoPaquete::PiezaDemasiadoGrande, nombre));
+    }
+    if contenido.len() as u64 != entrada.bytes || sha256(&contenido) != entrada.sha256 {
+        return Err(invalido(MotivoPaquete::PiezaDanada, nombre));
+    }
+    Ok(contenido)
 }
 
 #[cfg(test)]
@@ -664,7 +747,7 @@ mod tests {
     use crate::paquetes::tests::{entradas_zip, pieza};
     use crate::paquetes::{Origen, Paquete, Perfil};
     use serde_json::{Value, json};
-    use std::io::Write;
+    use std::io::{Cursor, Write};
     use zip::ZipWriter;
     use zip::write::SimpleFileOptions;
 
@@ -680,10 +763,19 @@ mod tests {
             interfaz: 16001,
         };
         let piezas = vec![pieza("macros", b"VER 3\r\nEND\r\n"), pieza("chat", b"")];
-        Paquete::nuevo(perfil, origen, Vec::new(), piezas)
+        let zip = Paquete::nuevo(perfil, origen, Vec::new(), piezas)
             .unwrap()
             .a_zip()
-            .unwrap()
+            .unwrap();
+        // El orden del ZIP no importa al leer: con el manifiesto delante, los tests lo encuentran en `[0]`.
+        let mut ficheros = entradas_zip(&zip);
+        ficheros.rotate_right(1);
+        assert_eq!(ficheros[0].0, MANIFIESTO);
+        let ficheros: Vec<_> = ficheros
+            .iter()
+            .map(|(n, b)| (n.as_str(), b.as_slice()))
+            .collect();
+        zip_de(&ficheros)
     }
 
     /// Un ZIP con estos ficheros, en este orden.
@@ -749,7 +841,7 @@ mod tests {
             .next()
             .unwrap();
         let manifiesto: ManifiestoLeido = serde_json::from_str(json).unwrap();
-        assert_eq!(validar(&manifiesto, false), Ok(()));
+        assert_eq!(validar(&manifiesto, 0), Ok(()));
     }
 
     #[test]
@@ -809,7 +901,7 @@ mod tests {
     #[test]
     fn una_menor_mas_nueva_ignora_lo_desconocido_y_lo_marca() {
         let bytes = con_manifiesto(|m| {
-            m["formato"]["version"] = json!("1.1");
+            m["formato"]["version"] = json!("1.2");
             m["novedad"] = json!(true);
             m["entradas"][0]["categoria"] = json!("tablero");
             m["entradas"][0]["tipo"] = json!("parche");
@@ -823,11 +915,27 @@ mod tests {
     }
 
     #[test]
-    fn en_la_1_0_una_categoria_o_un_tipo_desconocidos_no_cumplen_el_schema() {
-        for (campo, valor) in [("categoria", "tablero"), ("tipo", "parche")] {
-            let bytes = con_manifiesto(|m| m["entradas"][0][campo] = json!(valor));
-            assert_eq!(motivo(&bytes), MotivoPaquete::ManifiestoNoValido, "{campo}");
+    fn en_la_1_0_y_la_1_1_una_categoria_o_un_tipo_desconocidos_no_cumplen_el_schema() {
+        for version in ["1.0", "1.1"] {
+            for (campo, valor) in [("categoria", "tablero"), ("tipo", "parche")] {
+                let bytes = con_manifiesto(|m| {
+                    m["formato"]["version"] = json!(version);
+                    m["entradas"][0][campo] = json!(valor);
+                });
+                let error = motivo(&bytes);
+                assert_eq!(
+                    error,
+                    MotivoPaquete::ManifiestoNoValido,
+                    "{version} {campo}"
+                );
+            }
         }
+        // La 1.0 no tiene piezas de addon.
+        let bytes = con_manifiesto(|m| {
+            m["entradas"][0]["categoria"] = json!("addon");
+            m["entradas"][0]["tipo"] = json!("carpeta");
+        });
+        assert_eq!(motivo(&bytes), MotivoPaquete::ManifiestoNoValido);
     }
 
     /// Un caso con nombre y cómo estropea el manifiesto.

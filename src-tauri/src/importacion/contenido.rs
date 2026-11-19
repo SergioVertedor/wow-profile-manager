@@ -40,7 +40,8 @@ pub fn contenido(categoria: Categoria, pieza: &[u8]) -> Option<Contenido> {
         | Categoria::Ventanas
         | Categoria::ModoEdicion
         | Categoria::MarcosBanda
-        | Categoria::ConfigAddon => return None,
+        | Categoria::ConfigAddon
+        | Categoria::Addon => return None,
     };
     (!elementos.is_empty()).then_some(Contenido::Lista { elementos })
 }

@@ -1,7 +1,8 @@
-# Formato `.wowprofile` 1.0
+# Formato `.wowprofile` 1.1
 
 Un `.wowprofile` lleva la configuración de un personaje de WoW a otro, normalmente de otro jugador en otro
-ordenador. Este documento es el contrato entre exportar e importar. El manifiesto se valida con
+ordenador, y si se quiere también los addons que usa. Este documento es el contrato entre exportar e importar. La
+`1.1` añade a la `1.0` las [piezas de addon](#piezas-de-addon-11); un paquete sin addons se sigue escribiendo como `1.0`. El manifiesto se valida con
 [`wowprofile.schema.json`](wowprofile.schema.json) (JSON Schema 2020-12). Lo medido que lo justifica está en
 [`compatibilidad-wow-forever.md`](compatibilidad-wow-forever.md).
 
@@ -31,13 +32,15 @@ datos/<id>           ← una pieza por entrada del manifiesto, bytes tal cual
 ```
 
 - Nada más. Cualquier otra entrada del ZIP, carpeta incluida, hace que el paquete se rechace.
+- El orden de las entradas del ZIP no importa. La app escribe `manifest.json` al final: el hash de una pieza de addon
+  solo se sabe al empaquetarla.
 
 ## Manifiesto
 
 | campo | obligatorio | qué es |
 |---|---|---|
 | `formato.nombre` | sí | siempre `"wowprofile"` |
-| `formato.version` | sí | `"MAYOR.MENOR"`; este documento es la `1.0` |
+| `formato.version` | sí | `"MAYOR.MENOR"`; este documento es la `1.1` (la `1.0` si no hay piezas de addon) |
 | `perfil.nombre` | sí | nombre descriptivo que pone el usuario (1–80 caracteres) |
 | `perfil.descripcion` | no | texto libre (hasta 500) |
 | `perfil.creado` | sí | fecha de exportación, RFC 3339 en UTC (`…Z`) |
@@ -50,8 +53,8 @@ datos/<id>           ← una pieza por entrada del manifiesto, bytes tal cual
 
 ### `addons[]`
 
-Solo la descripción del addon. **El código del addon nunca viaja**: quien importa ve qué le falta y dónde
-conseguirlo.
+La descripción del addon: quien importa ve qué le falta y dónde conseguirlo. El código del addon solo viaja si además
+hay una [pieza de addon](#piezas-de-addon-11) suya.
 
 | campo | obligatorio | de dónde sale |
 |---|---|---|
@@ -68,8 +71,8 @@ conseguirlo.
 | `id` | sí | `^[a-z0-9][a-z0-9-]{0,63}$`; la pieza está en `datos/<id>` |
 | `categoria` | sí | lo que ve el usuario al elegir qué importa (tabla de abajo) |
 | `tipo` | sí | cómo se extrajo la pieza y cómo se aplica (tabla de abajo) |
-| `ambito` | sí | dónde estaba en el origen: `personaje` o `cuenta` |
-| `destino` | sí | ruta lógica donde se aplica por defecto: `personaje/<fichero>` o `cuenta/[SavedVariables/]<fichero>` |
+| `ambito` | sí | dónde estaba en el origen: `personaje` o `cuenta`; `instalacion` en una pieza de addon |
+| `destino` | sí | ruta lógica donde se aplica por defecto: `personaje/<fichero>` o `cuenta/[SavedVariables/]<fichero>`; `addons/<carpeta>` en una pieza de addon |
 | `addon` | según tipo | `id` del addon al que pertenece |
 | `sha256` | sí | SHA-256 de la pieza, en hexadecimal minúsculas |
 | `bytes` | sí | tamaño exacto de la pieza |
@@ -96,6 +99,7 @@ en ningún fichero, lo guarda el servidor.
 | `addons-activos` | `fichero-filtrado` | `personaje/AddOns.txt` |
 | `config-addon` | `perfil-acedb`, `fichero` o `adaptador` | `cuenta/SavedVariables/<addon>.lua` o `personaje/SavedVariables/<addon>.lua`, con `<addon>` = la carpeta del addon (el juego guarda así sus variables) |
 | `marcos-banda` | `fichero` | `personaje/CUFProfiles.txt` |
+| `addon` (1.1) | `carpeta` | `addons/<carpeta>`, con `<carpeta>` = `addon` |
 
 Reglas de las categorías de fichero:
 
@@ -125,7 +129,7 @@ Reglas de `config-addon` (el orden de decisión está en [`adaptadores.md`](adap
   `claves_quitadas` (viajan aparte, como su perfil). Si no queda nada, no hay entrada genérica.
 - Fichero del personaje de un addon sin adaptador: `fichero`, entero.
 
-No viajan en la `1.0`: `flagged-cache-*` (tutoriales vistos), `character-list-order.txt` (orden de la pantalla de
+No viajan: `flagged-cache-*` (tutoriales vistos), `character-list-order.txt` (orden de la pantalla de
 selección), `tts-cache-*` y `cooldownmanager.txt` (sin medir), `cache.md5` y las copias `.old` y `.bak` del juego.
 
 ### Tipos de entrada
@@ -136,6 +140,7 @@ selección), `tts-cache-*` y `cooldownmanager.txt` (sin medir), `cache.md5` y la
 | `fichero-filtrado` | el fichero sin las claves de estado o las líneas que no deben viajar | `claves_quitadas` | `config-cache.wtf` sin `hardTrackedQuests`; `AddOns.txt` sin los addons que no estaban instalados |
 | `perfil-acedb` | el perfil del personaje y el de cada módulo (namespace), en texto Lua (ver abajo) | `addon`, `variable`, `perfil` | el perfil `Default` de `DominosDB` |
 | `adaptador` | `<variable> = <tabla>` en texto Lua, solo con lo que deja pasar la regla del adaptador | `adaptador.id`, `adaptador.version`, `addon` si es de un addon, `variable` | preferencias de un addon que mezcla progreso |
+| `carpeta` (1.1) | un ZIP con los ficheros de la carpeta de un addon | `addon` | la carpeta `Interface/AddOns/Dominos` |
 
 Pieza `perfil-acedb`. Muchos addons AceDB guardan parte de su configuración en módulos (`namespaces`), cada uno con sus
 propios perfiles; por eso la pieza lleva el perfil y el de cada módulo con el mismo nombre:
@@ -187,6 +192,27 @@ Cómo se aplica cada tipo al importar:
 Las entradas de `cuenta` que no se pueden aplicar solo al personaje destino (macros generales, opciones de
 cuenta) se muestran con lo que van a sobrescribir y solo se aplican si el usuario acepta.
 
+## Piezas de addon (1.1)
+
+Una pieza `addon` lleva la carpeta de un addon, con su código. **Es código que el juego ejecuta**: quien importa tiene
+que fiarse de quien comparte, y muchos addons no permiten redistribuirse (es responsabilidad de quien comparte). La app
+lo avisa al exportar y al importar.
+
+- **Qué viaja.** Al exportar se ofrecen las carpetas de los addons instalados que el personaje usa: los que activa su
+  `AddOns.txt` y los que tienen configuración en el paquete. Salen marcadas, con el aviso.
+- **La pieza.** Un ZIP (`deflate`) con los ficheros de la carpeta y rutas relativas a ella, separadas por `/`. Va dentro
+  del `.wowprofile` sin volver a comprimir (`stored`). Sin carpetas vacías ni enlaces: al empaquetar, un enlace o una
+  unión de Windows hacen que esa carpeta no viaje.
+- **Cada ruta** es relativa, sin `.` ni `..`, sin raíz ni unidad, sin `\`, con segmentos que Windows escribe tal
+  cual (nada de `CON`, `AUX`…, `:`, ni terminados en punto o espacio), como mucho 32 carpetas anidadas. Dos rutas que solo se
+  distinguen en mayúsculas son la misma para Windows: el ZIP se rechaza.
+- **Límites.** 64 MiB por addon, descomprimido y también como ZIP; 4.096 ficheros por addon; 512 MiB de piezas de
+  addon por paquete, aparte de los 128 MiB del resto. Un addon que no cabe no viaja: queda en `addons[]`, con su
+  enlace si lo tiene.
+- **Al importar**, el addon se instala en `Interface/AddOns/<addon>` **solo si esa carpeta no existe** (sin distinguir
+  mayúsculas). Uno ya instalado no se toca, aunque sea de otra versión: se avisa. Deshacer la importación borra las
+  carpetas que creó.
+
 ## Marcadores
 
 Donde una pieza lleva el nombre del personaje de origen, se sustituye al exportar por `@@WOWPROFILE:PERSONAJE@@`.
@@ -202,15 +228,17 @@ Para los addons que guardan el reino se usa `@@WOWPROFILE:REINO@@`.
 
 Requisitos de la implementación, en este orden, **antes** de escribir nada:
 
-1. Rechazar el ZIP si tiene más de 257 entradas (`manifest.json` + 256 piezas).
+1. Rechazar el fichero si pasa de 644 MiB (128 de piezas, 512 de addons y margen) y el ZIP si tiene más de 257
+   entradas (`manifest.json` + 256 piezas).
 2. Leer `manifest.json` (como mucho 1 MiB) y validarlo contra el schema de su versión mayor.
    - Versión mayor desconocida: rechazar y pedir que se actualice la app.
    - Misma mayor y menor más nueva: ignorar los campos y valores desconocidos; las entradas con una categoría
      o un tipo desconocidos se ofrecen desactivadas.
 3. Los `id` de las entradas son únicos. El conjunto de entradas del ZIP tiene que ser exactamente
    `manifest.json` más `datos/<id>` de cada entrada. Nunca se usa un nombre de entrada del ZIP como ruta.
-4. Descomprimir cada pieza a memoria parando en `bytes` + 1. Si pasa de `bytes`, o el total pasa de 128 MiB,
-   rechazar (ZIP bomba).
+4. Descomprimir cada pieza a memoria parando en `bytes` + 1. Si pasa de `bytes`, o el total pasa de 128 MiB (512 MiB
+   las de addon), rechazar (ZIP bomba). Las piezas de addon se comprueban de una en una y no se quedan en memoria:
+   se vuelven a leer del fichero al instalarlas.
 5. Comprobar `bytes` y `sha256` de cada pieza. Si alguna falla, se rechaza el paquete entero.
 6. Traducir cada `destino` a una ruta real **dentro** de la carpeta del personaje o de la cuenta elegidos, y
    comprobar que la ruta resultante sigue dentro de esa carpeta.
@@ -220,7 +248,10 @@ Requisitos de la implementación, en este orden, **antes** de escribir nada:
      categoría no explica.
    - La ruta real sale de esa tabla, no del texto del `destino`.
 
-7. Cada pieza `config-addon` tiene que ser **solo datos**: sentencias `Nombre = <valor>` (o una tabla suelta en
+7. Cada pieza de addon tiene que ser un ZIP que cumple [sus reglas](#piezas-de-addon-11) al descomprimirlo, parando
+   en sus límites. Si una no las cumple, se rechaza el paquete entero: alguien lo ha preparado para escribir fuera de
+   su sitio.
+8. Cada pieza `config-addon` tiene que ser **solo datos**: sentencias `Nombre = <valor>` (o una tabla suelta en
    `perfil-acedb`) con tablas, cadenas, números, `true`, `false` y `nil`. Una llamada a función, una variable, una
    función o un operador hacen que la entrada no se importe: el juego ejecuta los `SavedVariables` al cargarlos.
 
@@ -232,10 +263,12 @@ protección está en tratar todo como dato, en las rutas lógicas, en la vista p
 
 ## Versiones
 
-- `MAYOR.MENOR`. Este documento define la `1.0`.
+- `MAYOR.MENOR`. Este documento define la `1.1`; la `1.0` es lo mismo sin piezas de addon.
 - **Menor**: añadir categorías, tipos o campos opcionales. Una app que lee `1.0` puede abrir un `1.3`.
 - **Mayor**: cambiar el significado de un campo, quitar uno obligatorio o cambiar el contenedor.
 - Los límites (256 entradas, 32 MiB por pieza, 128 MiB en total) se pueden subir en una versión menor.
+- Una app que solo lee la `1.0` no abre una `1.1` con addons: su `destino` y su tamaño no le cuadran. No hay ninguna
+  publicada: la `1.1` llega antes de la primera versión de la app.
 
 ## Ejemplo
 

@@ -3,6 +3,7 @@
 
 mod actualizacion;
 mod adaptadores;
+mod addon_zip;
 mod addons;
 mod agente_battlenet;
 mod bpsv;

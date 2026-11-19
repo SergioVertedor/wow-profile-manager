@@ -1,22 +1,28 @@
-//! Paquetes (`docs/arquitectura.md`): el `.wowprofile` según `docs/formato-wowprofile.md` (formato 1.0). Lo escribe
-//! (spec 023) y lo lee con las comprobaciones del formato (`lectura`, spec 024). Solo escribe el `.wowprofile`.
+//! Paquetes (`docs/arquitectura.md`): el `.wowprofile` según `docs/formato-wowprofile.md` (formato 1.0, y 1.1 si
+//! lleva addons, spec 036). Lo escribe (spec 023) y lo lee con las comprobaciones del formato (`lectura`, spec 024).
+//! Solo escribe el `.wowprofile`.
 
 mod lectura;
 
+use lectura::id_de_entrada_valido;
 pub use lectura::{EntradaLeida, ManifiestoLeido, PaqueteLeido, leer_fichero};
 
+use crate::addon_zip;
 use crate::error::ErrorNucleo;
-use crate::escritura::escribir_atomico;
-use crate::operaciones::sha256;
+use crate::escritura::escribir_atomico_con;
+use crate::operaciones::{segmento_literal, sha256};
 use crate::piezas::{Quitadas, todas_las_claves};
 use serde::{Deserialize, Serialize};
-use std::io::{Cursor, Write};
-use std::path::Path;
+use std::collections::HashSet;
+use std::io::{BufWriter, Seek, Write};
+use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
 use zip::{CompressionMethod, ZipWriter};
 
 const NOMBRE_FORMATO: &str = "wowprofile";
 const VERSION_FORMATO: &str = "1.0";
+/// La de los paquetes que llevan addons. Uno sin addons sigue siendo 1.0.
+const VERSION_FORMATO_ADDONS: &str = "1.1";
 const MANIFIESTO: &str = "manifest.json";
 const CARPETA_DATOS: &str = "datos/";
 /// Límites del formato 1.0: piezas, bytes por pieza y bytes de todas juntas.
@@ -25,6 +31,10 @@ pub const MAX_BYTES_PIEZA: usize = 32 * 1024 * 1024;
 /// Texto que el formato reserva para sus marcadores: lo que ya lo trae no viaja.
 pub const MARCADOR: &[u8] = b"@@WOWPROFILE:";
 const MAX_BYTES_TOTAL: usize = 128 * 1024 * 1024;
+/// Las piezas de addon juntas (formato 1.1). Van aparte de las 128 MiB: no se cargan todas en memoria.
+pub const MAX_BYTES_ADDONS: u64 = 512 * 1024 * 1024;
+/// El `destino` de una pieza de addon es `addons/<carpeta>`.
+pub const PREFIJO_DESTINO_ADDONS: &str = "addons/";
 /// El schema no admite más nombres en `claves_quitadas`.
 const MAX_CLAVES_QUITADAS: usize = 256;
 
@@ -43,6 +53,8 @@ pub enum Categoria {
     MarcosBanda,
     AddonsActivos,
     ConfigAddon,
+    /// La carpeta de un addon, con su código (formato 1.1, spec 036).
+    Addon,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -52,14 +64,44 @@ pub enum Tipo {
     FicheroFiltrado,
     PerfilAcedb,
     Adaptador,
+    /// Un ZIP con los ficheros de la carpeta de un addon.
+    Carpeta,
 }
 
-/// Dónde estaba la pieza en el origen.
+/// Dónde estaba una pieza de configuración en el origen.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Ambito {
     Personaje,
     Cuenta,
+}
+
+/// El `ambito` del manifiesto: el de la configuración o, en una pieza de addon, la instalación (`Interface/AddOns` es
+/// de todas las cuentas).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AmbitoEntrada {
+    Personaje,
+    Cuenta,
+    Instalacion,
+}
+
+impl From<Ambito> for AmbitoEntrada {
+    fn from(ambito: Ambito) -> Self {
+        match ambito {
+            Ambito::Personaje => Self::Personaje,
+            Ambito::Cuenta => Self::Cuenta,
+        }
+    }
+}
+
+/// La carpeta de un addon que viaja en el paquete. Se empaqueta al guardar, leyendo del disco en ese momento.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CarpetaAddon {
+    pub id: String,
+    /// Nombre de la carpeta en `Interface/AddOns`, ya validado como `id` de addon.
+    pub carpeta: String,
+    pub origen: PathBuf,
 }
 
 /// Una pieza con su contenido, tal como sale de Exportación.
@@ -124,7 +166,7 @@ pub struct Origen {
     pub interfaz: u32,
 }
 
-/// Un addon que el paquete menciona. El código del addon nunca viaja.
+/// Un addon que el paquete menciona. Su código solo viaja si además hay una pieza `addon` suya.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AddonPaquete {
     pub id: String,
@@ -180,12 +222,16 @@ impl AddonPaquete {
     }
 }
 
-/// `$defs.idAddon` del schema: `^[A-Za-z0-9_!.\-]{1,64}$` y no solo puntos.
+/// `$defs.idAddon` del schema: `^[A-Za-z0-9_!.\-]{1,64}$`, no solo puntos y un nombre de carpeta que Windows escribe
+/// tal cual (sin `CON`, `NUL`…, ni punto final): con la 1.1 es la carpeta que se crea en `Interface/AddOns`.
 pub fn id_de_addon_valido(id: &str) -> bool {
     let caracteres = id
         .chars()
         .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '!' | '.' | '-'));
-    caracteres && (1..=MAX_ID_ADDON).contains(&id.len()) && !id.chars().all(|c| c == '.')
+    caracteres
+        && (1..=MAX_ID_ADDON).contains(&id.len())
+        && !id.chars().all(|c| c == '.')
+        && segmento_literal(id)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -193,7 +239,7 @@ pub struct Entrada {
     pub id: String,
     pub categoria: Categoria,
     pub tipo: Tipo,
-    pub ambito: Ambito,
+    pub ambito: AmbitoEntrada,
     pub destino: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub addon: Option<String>,
@@ -221,11 +267,13 @@ pub struct Manifiesto {
     pub entradas: Vec<Entrada>,
 }
 
-/// Un paquete listo para escribir: el manifiesto y el contenido de cada entrada, en el mismo orden.
+/// Un paquete listo para escribir: el manifiesto y el contenido de cada entrada, en el mismo orden, y las carpetas de
+/// addons, que se empaquetan al escribir (sus entradas se añaden entonces al manifiesto que se escribe).
 #[derive(Debug)]
 pub struct Paquete {
     pub manifiesto: Manifiesto,
     datos: Vec<Vec<u8>>,
+    carpetas: Vec<CarpetaAddon>,
 }
 
 impl Paquete {
@@ -254,32 +302,110 @@ impl Paquete {
                 entradas,
             },
             datos,
+            carpetas: Vec::new(),
         })
     }
 
-    /// El `.wowprofile` en memoria: `manifest.json` y `datos/<id>`, nada más.
-    pub fn a_zip(&self) -> Result<Vec<u8>, ErrorNucleo> {
-        let fallo = |e: &dyn std::fmt::Display| ErrorNucleo::escritura(Path::new(MANIFIESTO), e);
-        let manifiesto = serde_json::to_vec_pretty(&self.manifiesto).map_err(|e| fallo(&e))?;
-        let opciones = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
-        let mut zip = ZipWriter::new(Cursor::new(Vec::new()));
-        let ficheros = std::iter::once((MANIFIESTO.to_owned(), manifiesto.as_slice())).chain(
-            self.manifiesto
-                .entradas
-                .iter()
-                .zip(&self.datos)
-                .map(|(e, d)| (format!("{CARPETA_DATOS}{}", e.id), d.as_slice())),
-        );
-        for (nombre, bytes) in ficheros {
-            zip.start_file(nombre, opciones).map_err(|e| fallo(&e))?;
-            zip.write_all(bytes).map_err(|e| fallo(&e))?;
+    /// Añade carpetas de addons: el paquete pasa a ser 1.1. Su tamaño se comprueba al empaquetarlas.
+    pub fn con_carpetas(mut self, carpetas: Vec<CarpetaAddon>) -> Result<Self, ErrorNucleo> {
+        if self.manifiesto.entradas.len() + carpetas.len() > MAX_PIEZAS {
+            return Err(ErrorNucleo::PaqueteDemasiadoGrande {});
         }
-        Ok(zip.finish().map_err(|e| fallo(&e))?.into_inner())
+        let mut ids: HashSet<&str> = self
+            .manifiesto
+            .entradas
+            .iter()
+            .map(|e| e.id.as_str())
+            .collect();
+        if let Some(mala) = carpetas.iter().find(|c| {
+            !id_de_addon_valido(&c.carpeta) || !id_de_entrada_valido(&c.id) || !ids.insert(&c.id)
+        }) {
+            return Err(ErrorNucleo::AddonNoEmpaquetado {
+                addon: mala.carpeta.clone(),
+                detalle: format!("id no válido o repetido: {}", mala.id),
+            });
+        }
+        if !carpetas.is_empty() {
+            self.manifiesto.formato.version = VERSION_FORMATO_ADDONS;
+        }
+        self.carpetas = carpetas;
+        Ok(self)
     }
 
-    /// Escribe el paquete en `ruta` a través de un temporal: un fallo no deja un `.wowprofile` a medias.
+    /// El `.wowprofile` en memoria, para los tests.
+    #[cfg(test)]
+    pub fn a_zip(&self) -> Result<Vec<u8>, ErrorNucleo> {
+        self.escribir(std::io::Cursor::new(Vec::new()), Path::new(MANIFIESTO))
+            .map(std::io::Cursor::into_inner)
+    }
+
+    /// Escribe el paquete en `ruta` a través de un temporal: un fallo no deja un `.wowprofile` a medias. Las carpetas
+    /// de addons se empaquetan de una en una, sin tener el paquete entero en memoria.
     pub fn guardar(&self, ruta: &Path) -> Result<(), ErrorNucleo> {
-        escribir_atomico(ruta, &self.a_zip()?)
+        escribir_atomico_con(ruta, |fichero| {
+            self.escribir(BufWriter::new(fichero), ruta)?
+                .into_inner()
+                .map(|_| ())
+                .map_err(|e| ErrorNucleo::escritura(ruta, e.error()))
+        })
+    }
+
+    /// `datos/<id>` de cada entrada, las carpetas de addons y, al final, `manifest.json`: ya con las entradas de las
+    /// carpetas, cuyo hash solo se sabe al empaquetarlas. Nada más.
+    fn escribir<W: Write + Seek>(&self, salida: W, ruta: &Path) -> Result<W, ErrorNucleo> {
+        let fallo = |e: &dyn std::fmt::Display| ErrorNucleo::escritura(ruta, e);
+        let comprimido =
+            SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
+        // Un ZIP de addon ya va comprimido: comprimirlo otra vez solo gasta tiempo.
+        let tal_cual = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
+        let mut zip = ZipWriter::new(salida);
+        let mut anadir = |nombre: String, bytes: &[u8], opciones: SimpleFileOptions| {
+            zip.start_file(nombre, opciones)
+                .and_then(|()| zip.write_all(bytes).map_err(Into::into))
+                .map_err(|e| fallo(&e))
+        };
+        for (entrada, bytes) in self.manifiesto.entradas.iter().zip(&self.datos) {
+            anadir(format!("{CARPETA_DATOS}{}", entrada.id), bytes, comprimido)?;
+        }
+        let mut manifiesto = self.manifiesto.clone();
+        let mut total: u64 = 0;
+        for carpeta in &self.carpetas {
+            let bytes = addon_zip::empaquetar(&carpeta.origen).map_err(|e| {
+                ErrorNucleo::AddonNoEmpaquetado {
+                    addon: carpeta.carpeta.clone(),
+                    detalle: e.to_string(),
+                }
+            })?;
+            total += bytes.len() as u64;
+            if total > MAX_BYTES_ADDONS {
+                return Err(ErrorNucleo::PaqueteDemasiadoGrande {});
+            }
+            anadir(format!("{CARPETA_DATOS}{}", carpeta.id), &bytes, tal_cual)?;
+            manifiesto
+                .entradas
+                .push(entrada_de_carpeta(carpeta, &bytes));
+        }
+        let json = serde_json::to_vec_pretty(&manifiesto).map_err(|e| fallo(&e))?;
+        anadir(MANIFIESTO.to_owned(), &json, comprimido)?;
+        zip.finish().map_err(|e| fallo(&e))
+    }
+}
+
+fn entrada_de_carpeta(carpeta: &CarpetaAddon, bytes: &[u8]) -> Entrada {
+    Entrada {
+        id: carpeta.id.clone(),
+        categoria: Categoria::Addon,
+        tipo: Tipo::Carpeta,
+        ambito: AmbitoEntrada::Instalacion,
+        destino: format!("{PREFIJO_DESTINO_ADDONS}{}", carpeta.carpeta),
+        addon: Some(carpeta.carpeta.clone()),
+        sha256: sha256(bytes),
+        bytes: bytes.len() as u64,
+        marcadores: Vec::new(),
+        claves_quitadas: None,
+        variable: None,
+        perfil: None,
+        adaptador: None,
     }
 }
 
@@ -294,7 +420,7 @@ fn entrada_de(pieza: Pieza) -> (Entrada, Vec<u8>) {
         id: pieza.id,
         categoria: pieza.categoria,
         tipo: pieza.tipo,
-        ambito: pieza.ambito,
+        ambito: pieza.ambito.into(),
         destino: pieza.destino,
         addon: (!de_addon.addon.is_empty()).then_some(de_addon.addon),
         sha256: sha256(&pieza.contenido),
@@ -311,7 +437,7 @@ fn entrada_de(pieza: Pieza) -> (Entrada, Vec<u8>) {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
-    use std::io::Read;
+    use std::io::{Cursor, Read};
 
     pub fn pieza(id: &'static str, contenido: &[u8]) -> Pieza {
         Pieza {
@@ -368,9 +494,9 @@ pub(crate) mod tests {
         let entradas = entradas_zip(&paquete.a_zip().unwrap());
 
         let nombres: Vec<_> = entradas.iter().map(|(n, _)| n.as_str()).collect();
-        assert_eq!(nombres, ["manifest.json", "datos/macros", "datos/chat"]);
-        assert_eq!(entradas[1].1, b"VER 3\r\n");
-        let manifiesto: serde_json::Value = serde_json::from_slice(&entradas[0].1).unwrap();
+        assert_eq!(nombres, ["datos/macros", "datos/chat", "manifest.json"]);
+        assert_eq!(entradas[0].1, b"VER 3\r\n");
+        let manifiesto: serde_json::Value = serde_json::from_slice(&entradas[2].1).unwrap();
         assert_eq!(
             manifiesto["formato"],
             serde_json::json!({ "nombre": "wowprofile", "version": "1.0" })
@@ -383,7 +509,7 @@ pub(crate) mod tests {
         );
         assert!(manifiesto["perfil"].get("descripcion").is_none());
         assert!(manifiesto["entradas"][0].get("claves_quitadas").is_none());
-        assert_ne!(entradas[0].1.first(), Some(&0xEF), "sin BOM");
+        assert_ne!(entradas[2].1.first(), Some(&0xEF), "sin BOM");
     }
 
     #[test]
@@ -454,6 +580,9 @@ pub(crate) mod tests {
         assert_eq!(entradas_zip(&std::fs::read(&ruta).unwrap()).len(), 2);
     }
 }
+
+#[cfg(test)]
+mod tests_carpetas;
 
 #[cfg(test)]
 mod config_addon {

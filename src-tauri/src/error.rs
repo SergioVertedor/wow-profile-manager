@@ -61,8 +61,12 @@ pub enum ErrorNucleo {
     PerfilNoValido {},
     /// No se ha marcado ninguna pieza que exista.
     SeleccionVacia {},
-    /// Se pasa de los límites del formato (256 piezas, 32 MiB por pieza, 128 MiB en total).
+    /// Se pasa de los límites del formato (256 piezas, 32 MiB por pieza, 128 MiB en total; 64 MiB por addon y 512 MiB
+    /// de addons).
     PaqueteDemasiadoGrande {},
+    /// La carpeta de un addon no se pudo empaquetar al guardar (cambió desde la propuesta, un enlace, un nombre que
+    /// Windows no admite…). `detalle`, para el diagnóstico.
+    AddonNoEmpaquetado { addon: String, detalle: String },
     /// Un nombre propio demasiado largo o con caracteres de control.
     NombreNoValido { maximo: usize },
     /// El `.wowprofile` no cumple el formato. `detalle` dice dónde (para diagnóstico, no para el usuario).
@@ -102,8 +106,11 @@ pub enum MotivoPaquete {
     PiezaIlegible,
     /// Una pieza descomprime más de lo que dice el manifiesto (ZIP bomba).
     PiezaDemasiadoGrande,
-    /// Las piezas pasan de 128 MiB en total.
+    /// Las piezas pasan de 128 MiB en total, o las de addons de 512 MiB.
     TotalDemasiadoGrande,
+    /// El ZIP de un addon no es seguro: una ruta que sale de su carpeta, un nombre que Windows no admite, un enlace o
+    /// demasiado contenido (spec 036).
+    AddonNoValido,
     /// El tamaño o el hash de una pieza no cuadran.
     PiezaDanada,
 }

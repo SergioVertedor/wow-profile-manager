@@ -44,6 +44,7 @@ export type ErrorNucleo =
   | { codigo: "perfilNoValido"; datos: Record<string, never> }
   | { codigo: "seleccionVacia"; datos: Record<string, never> }
   | { codigo: "paqueteDemasiadoGrande"; datos: Record<string, never> }
+  | { codigo: "addonNoEmpaquetado"; datos: { addon: string; detalle: string } }
   | { codigo: "paqueteInvalido"; datos: { motivo: MotivoPaquete; detalle: string } }
   | { codigo: "versionPaquete"; datos: { version: string } }
   | { codigo: "paqueteNoAbierto"; datos: Record<string, never> }
@@ -63,6 +64,7 @@ export type MotivoPaquete =
   | "piezaIlegible"
   | "piezaDemasiadoGrande"
   | "totalDemasiadoGrande"
+  | "addonNoValido"
   | "piezaDanada";
 
 export function esErrorNucleo(valor: unknown): valor is ErrorNucleo {
@@ -193,11 +195,24 @@ export type CategoriaFichero =
   | "marcos-banda"
   | "addons-activos";
 
-/** Todas las que exporta la app. `config-addon` aún no se importa (#72). */
-export type Categoria = CategoriaFichero | "config-addon";
+/** Todas las que exporta la app. `addon` es la carpeta de un addon, con su código (formato 1.1, spec 036). */
+export type Categoria = CategoriaFichero | "config-addon" | "addon";
 
 /** Cómo se extrajo una pieza (`Tipo` en `src-tauri/src/paquetes.rs`). */
-export type TipoPieza = "fichero" | "fichero-filtrado" | "perfil-acedb" | "adaptador";
+export type TipoPieza = "fichero" | "fichero-filtrado" | "perfil-acedb" | "adaptador" | "carpeta";
+
+/** Dónde estaba una pieza en el origen (`AmbitoEntrada`): la carpeta de un addon es de toda la instalación. */
+export type AmbitoEntrada = "personaje" | "cuenta" | "instalacion";
+
+/** Por qué la carpeta de un addon no se puede llevar (`ErrorAddon` en `src-tauri/src/addon_zip.rs`). */
+export type MotivoCarpeta =
+  | { codigo: "demasiadoGrande" | "demasiadosFicheros"; detalle?: undefined }
+  | { codigo: "rutaNoValida" | "enlace" | "noSeLee"; detalle: string };
+
+export interface CarpetaNoExportable {
+  addon: string;
+  motivo: MotivoCarpeta;
+}
 
 /** Por qué no viaja una línea (`Motivo` en `src-tauri/src/piezas.rs`). */
 export type Motivo = "seguridad" | "estado" | "addonNoInstalado" | "viajaComoPerfil";
@@ -255,13 +270,14 @@ export interface PiezaPropuesta {
   categoria: Categoria;
   tipo: TipoPieza;
   /** Dónde estaba en el origen. */
-  ambito: "personaje" | "cuenta";
+  ambito: AmbitoEntrada;
+  /** En una carpeta de addon, lo que ocupa sin comprimir. */
   bytes: number;
   /** Líneas que se quitan al filtrar, por motivo. */
   quitadas: Quitadas[];
   /** Si sale marcada al abrir el diálogo. */
   marcada: boolean;
-  /** Solo en `config-addon`: la carpeta del addon. */
+  /** En `config-addon` y `addon`: la carpeta del addon. */
   addon: string | null;
   variable: string | null;
   /** Nombre del perfil AceDB. */
@@ -279,6 +295,8 @@ export interface PropuestaExportacion {
   apartadas: string[];
   /** Lo que no se puede exportar de cada addon, con su motivo. */
   noExportables: NoExportable[];
+  /** Addons cuya carpeta no se puede llevar, con su motivo. */
+  carpetasNoExportables: CarpetaNoExportable[];
   juegoAbierto: boolean;
 }
 
@@ -325,7 +343,7 @@ export interface EntradaPaquete {
   categoria: string;
   /** Texto, como la categoría. */
   tipo: string;
-  ambito: "personaje" | "cuenta";
+  ambito: AmbitoEntrada;
   /** Afecta a todos los personajes de la cuenta: hay que decidirla en cada cuenta. */
   deCuenta: boolean;
   bytes: number;
