@@ -1,6 +1,6 @@
 [package]
 name = "wow-profile-manager"
-version = "0.1.0"
+version = "0.2.0"
 description = "Exporta, comparte e importa perfiles de configuración de personajes de WoW Forever"
 authors = ["Sergio Vertedor"]
 license = "GPL-3.0-only"
