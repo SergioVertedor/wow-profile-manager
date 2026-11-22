@@ -268,10 +268,10 @@
     "apartadas": "No viajan porque ya contienen el texto reservado «@@WOWPROFILE:»: {{piezas}}.",
     "nombre": "Nombre del perfil",
     "descripcion": "Descripción (opcional)",
-    "cancelar": "Cancelar",
+    "volver": "Volver",
+    "cargando": "Mirando qué se puede exportar…",
     "confirmar": "Guardar…",
     "exportando": "Guardando…",
-    "cerrar": "Cerrar",
     "hecho": "Guardado como {{fichero}}.",
     "addons": {
       "titulo": "Configuración de addons",

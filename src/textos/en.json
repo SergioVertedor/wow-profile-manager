@@ -268,10 +268,10 @@
     "apartadas": "Not included because they already contain the reserved text “@@WOWPROFILE:”: {{piezas}}.",
     "nombre": "Profile name",
     "descripcion": "Description (optional)",
-    "cancelar": "Cancel",
+    "volver": "Back",
+    "cargando": "Checking what can be exported…",
     "confirmar": "Save…",
     "exportando": "Saving…",
-    "cerrar": "Close",
     "hecho": "Saved as {{fichero}}.",
     "addons": {
       "titulo": "Addon settings",
