@@ -1,5 +1,5 @@
-// Lo que no viaja, agrupado por motivo (spec 026): cada grupo con la frase que lo explica y sus claves. Exportar e
-// importar lo comparten; importar cambia la frase de los addons, porque allí sí se escriben (spec 024, decisión 9).
+// Lo que no viaja, agrupado por motivo (#65): cada grupo con la frase que lo explica y sus claves. Exportar e
+// importar lo comparten; importar cambia la frase de los addons, porque allí sí se escriben (#63, decisión 9).
 import { useTranslation } from "react-i18next";
 import type { Motivo, Quitadas } from "../nucleo";
 import css from "./ListaQuitadas.module.css";

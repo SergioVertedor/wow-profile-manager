@@ -1,5 +1,5 @@
-// La lista de personajes de una cuenta (spec 017): cambio de cuenta si hay más de una, buscador si la lista es larga
-// y reinos fuera de Forever, que se pliegan y despliegan (spec 019). Al importar (spec 024) se marcan varios destinos:
+// La lista de personajes de una cuenta (#45): cambio de cuenta si hay más de una, buscador si la lista es larga
+// y reinos fuera de Forever, que se pliegan y despliegan (#48). Al importar (#63) se marcan varios destinos:
 // con `marcados`, cada fila es una casilla y `elegirPersonaje` la alterna.
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -138,7 +138,7 @@ function GrupoReino({
   );
 }
 
-/** Con una cuenta, su nombre; con varias, un desplegable para cambiar. Al lado, el lápiz para renombrarla (spec 018). */
+/** Con una cuenta, su nombre; con varias, un desplegable para cambiar. Al lado, el lápiz para renombrarla (#34). */
 function CabeceraCuenta(props: Props) {
   const { t } = useTranslation();
   const { cuenta, cuentaPorDefecto, renombrarCuenta } = props;

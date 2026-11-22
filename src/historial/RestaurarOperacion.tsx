@@ -1,4 +1,4 @@
-// «Restaurar» una operación sin resolver (spec 025, decisiones 4 y 16): una importación que se cortó a mitad (no se
+// «Restaurar» una operación sin resolver (#63): una importación que se cortó a mitad (no se
 // restaura sola al arrancar, se pregunta) o un reintento de una que no se pudo restaurar del todo. Devuelve, desde sus
 // copias, los ficheros que la operación llegó a cambiar; lo que no llegó a tocar no se toca.
 import { useId, useRef, useState } from "react";

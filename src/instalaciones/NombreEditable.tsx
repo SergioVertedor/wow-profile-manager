@@ -1,4 +1,4 @@
-// Un nombre propio que se puede cambiar en el sitio (spec 018): el texto con un lápiz al lado; el lápiz lo convierte en
+// Un nombre propio que se puede cambiar en el sitio (#34): el texto con un lápiz al lado; el lápiz lo convierte en
 // un campo. Intro guarda, Escape cancela y un campo vacío borra el nombre. Si el núcleo lo rechaza, se dice por qué y
 // el campo sigue abierto. Al cerrar, el foco vuelve al lápiz.
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";

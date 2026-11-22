@@ -1,4 +1,4 @@
-//! Importar un paquete con carpetas de addons (spec 036, E2), de punta a punta: abrir, vista previa, aplicar y deshacer.
+//! Importar un paquete con carpetas de addons (#73, E2), de punta a punta: abrir, vista previa, aplicar y deshacer.
 
 use super::super::{PaquetesAbiertos, Pedido};
 use super::*;

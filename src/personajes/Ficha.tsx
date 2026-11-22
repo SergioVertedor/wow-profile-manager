@@ -1,13 +1,15 @@
-// El personaje elegido, en el centro y con un foco de luz: la pieza llamativa de la app (spec 017). El retrato es un
+// El personaje elegido, en el centro y con un foco de luz: la pieza llamativa de la app (#45). El retrato es un
 // monograma: el de la API de Blizzard se descartó (#50), porque sus condiciones piden una clave secreta que no cabe en
 // una app de repositorio público.
 import type { TFunction } from "i18next";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { PackageOpen } from "lucide-react";
 import Desplegable from "../comun/Desplegable";
 import type { Addon, Personaje, VersionJuego } from "../nucleo";
 import AbrirCarpeta from "./AbrirCarpeta";
 import EliminarPersonaje from "./EliminarPersonaje";
-import ExportarPersonaje from "./ExportarPersonaje";
+import type { DatosExportacion } from "./ExportarPersonaje";
 import css from "./Ficha.module.css";
 import { claveDePersonaje, inicial, muestraReinos, nombreVisible } from "./lista";
 
@@ -21,11 +23,31 @@ type Props = Readonly<{
   carpetaCuenta: string;
   /** Tras eliminar su carpeta: vuelve a leer los personajes. */
   alEliminar: () => Promise<void>;
+  /** «Exportar» abre su vista en lugar de la pantalla (#107). */
+  alExportar: (datos: DatosExportacion) => void;
+  /** Al volver de «Exportar», el foco vuelve a su botón. */
+  enfocarExportar?: boolean;
 }>;
 
 /** La instalación va siempre: dos personajes con la misma carpeta en dos instalaciones son personajes distintos. */
-export default function Ficha({ personaje, version, cuenta, instalacion, raiz, carpetaCuenta, alEliminar }: Props) {
+export default function Ficha({
+  personaje,
+  version,
+  cuenta,
+  instalacion,
+  raiz,
+  carpetaCuenta,
+  alEliminar,
+  alExportar,
+  enfocarExportar = false,
+}: Props) {
   const { t } = useTranslation();
+  const exportar = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (enfocarExportar) {
+      exportar.current?.focus();
+    }
+  }, [enfocarExportar]);
   // Una cuenta sin personajes: el escenario queda vacío y la lista dice por qué.
   if (personaje === null) {
     return <div className={css.escenario} aria-hidden />;
@@ -75,7 +97,15 @@ export default function Ficha({ personaje, version, cuenta, instalacion, raiz, c
           </ul>
         </Desplegable>
       )}
-      <ExportarPersonaje key={`exportar-${clave}`} pedido={pedido} nombre={nombre} donde={donde} />
+      <button
+        ref={exportar}
+        type="button"
+        className={css.exportar}
+        onClick={() => alExportar({ pedido, nombre, donde })}
+      >
+        <PackageOpen aria-hidden size={16} strokeWidth={1.75} />
+        {t("exportar.boton")}
+      </button>
       <AbrirCarpeta key={`abrir-${clave}`} pedido={pedido} />
       <EliminarPersonaje
         key={`eliminar-${clave}`}

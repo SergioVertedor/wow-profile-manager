@@ -1,27 +1,41 @@
-/* «Exportar»: la acción principal de la ficha, en oro. El diálogo usa `estilo/Dialogo.module.css`; aquí solo la lista
-   de piezas y los campos del perfil. */
-.boton {
+/* Vista «Exportar» (#107): ocupa la pantalla Personajes. Avisos y botones vienen de `estilo/Dialogo.module.css`; aquí
+   la vista, la lista de piezas y los campos del perfil. */
+/* Mismo hueco que la pantalla Personajes; el formulario, a ancho de lectura, y el pie siempre a la vista. */
+.vista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  height: 100%;
+  padding: var(--espacio-5) var(--espacio-7) var(--espacio-4);
+}
+
+.titulo {
+  outline: none;
+  color: var(--color-nombre);
+  font-size: var(--texto-l);
+  overflow-wrap: anywhere;
+}
+
+.cuerpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.cuerpo > * {
+  max-width: 44rem;
+}
+
+.pie {
+  display: flex;
+  gap: var(--espacio-3);
+  justify-content: flex-end;
+}
+
+.pie button {
   display: inline-flex;
   gap: var(--espacio-2);
   align-items: center;
-  margin-top: var(--espacio-6);
-  padding: var(--espacio-2) var(--espacio-5);
-  border: 1px solid var(--color-oro-hondo);
-  border-radius: var(--radio-s);
-  background: linear-gradient(180deg, var(--color-oro-claro), var(--color-oro));
-  color: var(--color-sobre-oro);
-  font-size: var(--texto-control);
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.boton:hover:not(:disabled) {
-  background: var(--color-oro-claro);
-}
-
-.boton:disabled {
-  cursor: progress;
-  opacity: 0.6;
 }
 
 .piezas {
@@ -97,7 +111,7 @@
   resize: vertical;
 }
 
-/* Configuración de addons (spec 027): un bloque por addon, con sus avisos bajo cada pieza. */
+/* Configuración de addons (#56): un bloque por addon, con sus avisos bajo cada pieza. */
 .addons {
   margin-top: var(--espacio-5);
 }

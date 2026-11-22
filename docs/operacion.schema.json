@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/SergioVertedor/wow-profile-manager/blob/develop/docs/operacion.schema.json",
-  "title": "operacion.json, esquema 1",
-  "description": "Diario y backup de una operación que escribe en el WTF (importar, deshacer o eliminar la carpeta de un personaje). Ver docs/flujos.md.",
+  "title": "operacion.json, schema 1",
+  "description": "Journal and backup of an operation that writes to WTF (import, undo or delete a character's folder). See docs/flows.md.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -126,7 +126,7 @@
       }
     },
     "carpetas": {
-      "description": "Solo en importacion y en el deshacer de una: las carpetas de addons que instaló (spec 036). Sin copia: la lista de ficheros con su hash sirve para quitar solo lo que sigue como se instaló.",
+      "description": "Only in importacion and in the deshacer of one: the addon folders it installed (#73). No copy: the list of files with their hash is enough to remove only what is still as it was installed.",
       "type": "array",
       "maxItems": 256,
       "items": {
@@ -346,7 +346,7 @@
       "pattern": "^[0-9a-f]{64}$"
     },
     "segmento": {
-      "description": "Un nombre de carpeta. Sin separadores ni caracteres prohibidos en Windows, sin punto o espacio final (excluye . y ..) y sin nombres de dispositivo.",
+      "description": "A folder name. No separators or characters forbidden on Windows, no trailing dot or space (excludes . and ..) and no device names.",
       "type": "string",
       "minLength": 1,
       "maxLength": 255,
@@ -356,7 +356,7 @@
       }
     },
     "ruta": {
-      "description": "Relativa a raizVersion, con / y siempre dentro de WTF/Account/. Mismas reglas que segmento en cada segmento.",
+      "description": "Relative to raizVersion, with / and always inside WTF/Account/. Same rules as segmento for each segment.",
       "type": "string",
       "maxLength": 1024,
       "pattern": "^WTF/Account/[^/\\:*?\"<>|]+(/[^/\\:*?\"<>|]+)+$",
@@ -568,7 +568,7 @@
       ],
       "properties": {
         "ruta": {
-          "description": "Interface/AddOns/<carpeta>, relativa a raizVersion; la carpeta cumple segmento.",
+          "description": "Interface/AddOns/<folder>, relative to raizVersion; the folder satisfies segmento.",
           "type": "string",
           "maxLength": 1024,
           "pattern": "^Interface/AddOns/[^/\\:*?\"<>|]+$",
@@ -599,7 +599,7 @@
             ],
             "properties": {
               "ruta": {
-                "description": "Relativa a la carpeta del addon, con /. Mismas reglas que segmento en cada segmento; sin . ni ..; como mucho 33 segmentos.",
+                "description": "Relative to the addon folder, with /. Same rules as segmento for each segment; no . or ..; at most 33 segments.",
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 1024,

@@ -1,4 +1,4 @@
-// Capturas del README (spec 033, #83). Abre el escaparate (`escaparate.html`: la app real con el núcleo simulado y
+// Capturas del README (#83). Abre el escaparate (`escaparate.html`: la app real con el núcleo simulado y
 // datos ficticios) en Edge sin ventana, recorre las vistas pulsando en el DOM y guarda PNG en `docs/capturas/`.
 //
 // Uso, con el servidor de Vite en marcha (`npm run dev` o `npm run tauri dev`):

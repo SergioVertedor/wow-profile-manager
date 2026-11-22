@@ -115,3 +115,28 @@
     transform: scale(0.94);
   }
 }
+
+/* «Exportar»: la acción principal de la ficha, en oro. */
+.exportar {
+  display: inline-flex;
+  gap: var(--espacio-2);
+  align-items: center;
+  margin-top: var(--espacio-6);
+  padding: var(--espacio-2) var(--espacio-5);
+  border: 1px solid var(--color-oro-hondo);
+  border-radius: var(--radio-s);
+  background: linear-gradient(180deg, var(--color-oro-claro), var(--color-oro));
+  color: var(--color-sobre-oro);
+  font-size: var(--texto-control);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.exportar:hover:not(:disabled) {
+  background: var(--color-oro-claro);
+}
+
+.exportar:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}

@@ -1,4 +1,4 @@
-// Las carpetas de addons en el paso «Qué se importa» (spec 036): salen marcadas, con el aviso de que es código que el
+// Las carpetas de addons en el paso «Qué se importa» (#73): salen marcadas, con el aviso de que es código que el
 // juego ejecuta. Solo se instalan las que el destino no tiene: eso lo dice la vista previa.
 import { useId } from "react";
 import { useTranslation } from "react-i18next";

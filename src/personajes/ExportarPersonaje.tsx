@@ -1,11 +1,15 @@
-// «Exportar» del personaje elegido (specs 023, 027 y 036). Pide al núcleo qué se puede llevar, lo enseña en un diálogo con lo
-// que el núcleo marca por defecto, y con el nombre del perfil le pide que arme el `.wowprofile`. El diálogo de guardar lo abre el núcleo: la
-// interfaz solo pasa la identidad del personaje y lo marcado, nunca una ruta. Exportar no escribe en el WTF.
-import { useId, useRef, useState } from "react";
+// Vista «Exportar» del personaje elegido (#56, #73 y #107). Ocupa la pantalla Personajes, sin diálogo encima: pide al
+// núcleo qué se puede llevar, lo enseña con lo que el núcleo marca por defecto y, con el nombre del perfil, le pide que
+// arme el `.wowprofile`. El diálogo de guardar lo abre el núcleo: la interfaz solo pasa la identidad del personaje y lo
+// marcado, nunca una ruta. Exportar no escribe en el WTF.
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { PackageOpen, TriangleAlert } from "lucide-react";
+import { ArrowLeft, TriangleAlert } from "lucide-react";
 import Desplegable from "../comun/Desplegable";
 import ListaQuitadas from "../comun/ListaQuitadas";
+import { agrupar, type Modo } from "../comun/modoSimple";
+import SeleccionSimple from "../comun/SeleccionSimple";
+import SelectorModo from "../comun/SelectorModo";
 import CarpetasAddons from "./CarpetasAddons";
 import ConfigAddons from "./ConfigAddons";
 import {
@@ -21,51 +25,66 @@ import { tamanoLegible } from "../textos/formato";
 import estiloDialogo from "../estilo/Dialogo.module.css";
 import css from "./ExportarPersonaje.module.css";
 
-type Props = Readonly<{
+/** El personaje que se exporta, tal como lo enseña la ficha. */
+export type DatosExportacion = Readonly<{
   pedido: PersonajePedido;
   nombre: string;
   /** Reino (si se enseña), cuenta e instalación, ya con sus etiquetas. */
   donde: string[];
 }>;
 
+type Props = DatosExportacion & Readonly<{ volver: () => void }>;
+
 /** Los mismos límites que comprueba el núcleo (`exportacion.rs`). */
 const MAX_NOMBRE = 80;
 const MAX_DESCRIPCION = 500;
 
 type Paso =
-  | { tipo: "inicio" }
-  /** Pidiendo qué se puede exportar: el botón no responde, para no abrir dos veces. */
+  /** Pidiendo qué se puede exportar. */
   | { tipo: "cargando" }
   | { tipo: "eligiendo"; propuesta: PropuestaExportacion; error: unknown }
   | { tipo: "exportando"; propuesta: PropuestaExportacion }
   | { tipo: "hecho"; fichero: string }
-  /** Falló al pedir qué se puede exportar: se enseña junto al botón. */
+  /** Falló al pedir qué se puede exportar. */
   | { tipo: "error"; error: unknown };
 
-export default function ExportarPersonaje({ pedido, nombre, donde }: Props) {
+export default function ExportarPersonaje({ pedido, nombre, donde, volver }: Props) {
   const { t } = useTranslation();
-  const dialogo = useRef<HTMLDialogElement>(null);
-  const [paso, setPaso] = useState<Paso>({ tipo: "inicio" });
+  const [paso, setPaso] = useState<Paso>({ tipo: "cargando" });
   const [marcadas, setMarcadas] = useState<ReadonlySet<string>>(new Set());
+  // Siempre abre en simple (#105): el modo no se recuerda.
+  const [modo, setModo] = useState<Modo>("simple");
   const [perfil, setPerfil] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const idTitulo = useId();
+  const titulo = useRef<HTMLHeadingElement>(null);
   const exportando = paso.tipo === "exportando";
   const propuesta = paso.tipo === "eligiendo" || paso.tipo === "exportando" ? paso.propuesta : null;
   const listo = perfil.trim() !== "" && marcadas.size > 0;
 
-  const abrir = () => {
-    setPaso({ tipo: "cargando" });
+  // La vista sustituye a la pantalla: el foco va a su título, no se queda en el botón que ya no está.
+  useEffect(() => titulo.current?.focus(), []);
+
+  // Se pide al abrir la vista; si se vuelve antes de que llegue, la respuesta se ignora.
+  useEffect(() => {
+    let vigente = true;
     pedirPropuestaExportacion(pedido)
       .then((propuesta) => {
-        setMarcadas(new Set(propuesta.piezas.filter((p) => p.marcada).map((p) => p.id)));
-        setPerfil("");
-        setDescripcion("");
-        setPaso({ tipo: "eligiendo", propuesta, error: null });
-        dialogo.current?.showModal();
+        if (vigente) {
+          setMarcadas(new Set(propuesta.piezas.filter((p) => p.marcada).map((p) => p.id)));
+          setPaso({ tipo: "eligiendo", propuesta, error: null });
+        }
       })
-      .catch((error: unknown) => setPaso({ tipo: "error", error }));
-  };
+      .catch((error: unknown) => {
+        if (vigente) {
+          setPaso({ tipo: "error", error });
+        }
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [pedido]);
+
   const exportar = (propuesta: PropuestaExportacion) => {
     setPaso({ tipo: "exportando", propuesta });
     // Se mandan en el orden de la propuesta: el paquete sale igual marque el usuario en el orden que marque.
@@ -91,38 +110,32 @@ export default function ExportarPersonaje({ pedido, nombre, donde }: Props) {
   const marcar = (ids: readonly string[]) => setMarcadas((antes) => new Set([...antes, ...ids]));
   const desmarcar = (ids: readonly string[]) =>
     setMarcadas((antes) => new Set([...antes].filter((id) => !ids.includes(id))));
-  const cerrar = () => dialogo.current?.close();
 
   return (
-    <>
-      <button type="button" className={css.boton} onClick={abrir} disabled={paso.tipo === "cargando"}>
-        <PackageOpen aria-hidden size={16} strokeWidth={1.75} />
-        {t("exportar.boton")}
-      </button>
-      {paso.tipo === "error" && (
-        <p role="alert" className={estiloDialogo.alerta}>
-          {mensajeDeError(t, paso.error)}
-        </p>
-      )}
-      <dialog
-        ref={dialogo}
-        className={estiloDialogo.dialogo}
-        aria-labelledby={idTitulo}
-        onClose={() => setPaso({ tipo: "inicio" })}
-        // Mientras se guarda no se cierra: el diálogo de Windows sigue abierto encima.
-        onCancel={(evento) => exportando && evento.preventDefault()}
-      >
-        <h2 id={idTitulo} className={estiloDialogo.titulo}>
+    <section className={css.vista} aria-labelledby={idTitulo}>
+      <header>
+        <h1 id={idTitulo} ref={titulo} tabIndex={-1} className={css.titulo}>
           {t("exportar.titulo", { nombre })}
-        </h2>
+        </h1>
         <p className={estiloDialogo.donde}>{donde.join(" · ")}</p>
+      </header>
+      <div className={css.cuerpo}>
+        {paso.tipo === "cargando" && <p role="status" className={css.nota}>{t("exportar.cargando")}</p>}
+        {paso.tipo === "error" && (
+          <p role="alert" className={estiloDialogo.alerta}>
+            {mensajeDeError(t, paso.error)}
+          </p>
+        )}
         {propuesta !== null && (
           <Formulario
             propuesta={propuesta}
             marcadas={marcadas}
+            cambiar={setMarcadas}
             alternar={alternar}
             marcar={marcar}
             desmarcar={desmarcar}
+            modo={modo}
+            setModo={setModo}
             perfil={perfil}
             setPerfil={setPerfil}
             descripcion={descripcion}
@@ -140,38 +153,37 @@ export default function ExportarPersonaje({ pedido, nombre, donde }: Props) {
             {t("exportar.hecho", { fichero: paso.fichero })}
           </p>
         )}
-        <div className={estiloDialogo.acciones}>
-          {propuesta === null ? (
-            <button type="button" className={estiloDialogo.secundario} onClick={cerrar}>
-              {t("exportar.cerrar")}
-            </button>
-          ) : (
-            <>
-              <button type="button" className={estiloDialogo.secundario} onClick={cerrar} disabled={exportando}>
-                {t("exportar.cancelar")}
-              </button>
-              <button
-                type="button"
-                className={estiloDialogo.principal}
-                onClick={() => exportar(propuesta)}
-                disabled={exportando || !listo}
-              >
-                {exportando ? t("exportar.exportando") : t("exportar.confirmar")}
-              </button>
-            </>
-          )}
-        </div>
-      </dialog>
-    </>
+      </div>
+      {/* Mientras se guarda no se vuelve: el diálogo de Windows sigue abierto encima. */}
+      <div className={css.pie}>
+        <button type="button" className={estiloDialogo.secundario} onClick={volver} disabled={exportando}>
+          <ArrowLeft aria-hidden size={16} strokeWidth={1.75} />
+          {t("exportar.volver")}
+        </button>
+        {propuesta !== null && (
+          <button
+            type="button"
+            className={estiloDialogo.principal}
+            onClick={() => exportar(propuesta)}
+            disabled={exportando || !listo}
+          >
+            {exportando ? t("exportar.exportando") : t("exportar.confirmar")}
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
 
 type PropsFormulario = Readonly<{
   propuesta: PropuestaExportacion;
   marcadas: ReadonlySet<string>;
+  cambiar: (marcadas: ReadonlySet<string>) => void;
   alternar: (id: string) => void;
   marcar: (ids: readonly string[]) => void;
   desmarcar: (ids: readonly string[]) => void;
+  modo: Modo;
+  setModo: (modo: Modo) => void;
   perfil: string;
   setPerfil: (valor: string) => void;
   descripcion: string;
@@ -182,9 +194,12 @@ type PropsFormulario = Readonly<{
 function Formulario({
   propuesta,
   marcadas,
+  cambiar,
   alternar,
   marcar,
   desmarcar,
+  modo,
+  setModo,
   perfil,
   setPerfil,
   descripcion,
@@ -196,6 +211,7 @@ function Formulario({
   const ficheros = propuesta.piezas.filter((p) => p.categoria !== "config-addon" && p.categoria !== "addon");
   const deAddons = propuesta.piezas.filter((p) => p.categoria === "config-addon");
   const carpetas = propuesta.piezas.filter((p) => p.categoria === "addon");
+  const hayPiezas = propuesta.piezas.length > 0;
   return (
     <>
       {propuesta.juegoAbierto && (
@@ -204,7 +220,9 @@ function Formulario({
           {t("exportar.juegoAbierto")}
         </p>
       )}
-      {propuesta.piezas.length === 0 ? (
+      {hayPiezas ? (
+        <SelectorModo modo={modo} cambiar={setModo} bloqueado={bloqueado} />
+      ) : (
         <>
           <p className={css.nada}>{t("exportar.nada")}</p>
           <ConfigAddons
@@ -223,7 +241,24 @@ function Formulario({
             desmarcar={desmarcar}
           />
         </>
-      ) : (
+      )}
+      {hayPiezas && modo === "simple" && (
+        <SeleccionSimple
+          grupos={agrupar(propuesta.piezas, (p) => p.marcada)}
+          marcadas={marcadas}
+          cambiar={cambiar}
+          bloqueado={bloqueado}
+          avisos={{
+            carpetasAddons: (
+              <p className={estiloDialogo.aviso}>
+                <TriangleAlert aria-hidden size={16} strokeWidth={1.75} />
+                {t("exportar.carpetas.aviso")}
+              </p>
+            ),
+          }}
+        />
+      )}
+      {hayPiezas && modo === "avanzado" && (
         <fieldset className={css.piezas} aria-describedby={idPiezas} disabled={bloqueado}>
           <legend>{t("exportar.piezas")}</legend>
           {ficheros.map((pieza) => (
@@ -272,7 +307,7 @@ function Formulario({
           {t("exportar.apartadas", { piezas: propuesta.apartadas.join(", ") })}
         </p>
       )}
-      {propuesta.piezas.length > 0 && (
+      {hayPiezas && (
         <div className={css.campos}>
           <label className={css.campo}>
             {t("exportar.nombre")}

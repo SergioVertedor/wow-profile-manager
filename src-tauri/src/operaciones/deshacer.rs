@@ -1,11 +1,11 @@
-//! Deshacer (`docs/flujos.md`, «Deshacer»): devolver lo que tocó una operación a como estaba antes. Es otra operación,
+//! Deshacer (`docs/flows.md`, «Undo»): devolver lo que tocó una operación a como estaba antes. Es otra operación,
 //! de tipo `deshacer`, con el mismo orden de escritura: primero copia lo que haya ahora y después restaura. La original
 //! pasa a `deshecha`.
 //!
-//! - Una **eliminación** (spec 022) deja la carpeta del personaje exactamente como estaba: también quita lo que el juego
+//! - Una **eliminación** (#54) deja la carpeta del personaje exactamente como estaba: también quita lo que el juego
 //!   volvió a crear y antes no estaba.
-//! - Una **importación** (spec 025) solo devuelve sus ficheros: quita los que creó y restaura los demás desde su copia.
-//!   No toca ningún otro. Las carpetas de addons que instaló (spec 036) se quitan al final, solo lo que sigue como se
+//! - Una **importación** (#63) solo devuelve sus ficheros: quita los que creó y restaura los demás desde su copia.
+//!   No toca ningún otro. Las carpetas de addons que instaló (#73) se quitan al final, solo lo que sigue como se
 //!   instaló: lo que cambió después se queda.
 
 use super::carpetas::{self, CarpetaInstalada};
@@ -19,6 +19,7 @@ use crate::deteccion::producto_de;
 use crate::disco::{clave_de_ruta, subcarpetas};
 use crate::error::ErrorNucleo;
 use crate::escritura::escribir_atomico;
+use crate::modo_edicion;
 use serde::Serialize;
 use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -135,7 +136,7 @@ impl Operaciones {
         let fuentes = preparado.fuentes;
         let hecho = ejecutar(&dir, diario, &juego_en_marcha, |diario| {
             aplicar(diario, &fuentes)?;
-            // Al final y sin copia (decisión 5 de la spec 036): lo que no se puede quitar se queda.
+            // Al final y sin copia (#73): un addon se quita solo si sigue intacto; lo demás se queda.
             let quedan = carpetas::quitar(&diario.destino.raiz_version, id, &diario.carpetas);
             if !quedan.is_empty() {
                 log::warn!("deshacer {id}: se quedan {}", quedan.join("; "));
@@ -154,7 +155,7 @@ impl Operaciones {
             return Err(ErrorNucleo::NoDeshacible {});
         }
         mismo_juego(&original.destino)?;
-        if let Some(posterior) = self.posterior_que_la_toca(id, &original)? {
+        if let Some(posterior) = self.posterior_que_depende(id, &original)? {
             return Err(ErrorNucleo::OperacionPosterior { id: posterior });
         }
         comprobar_bases(&original)?;
@@ -167,20 +168,21 @@ impl Operaciones {
         construir(&original_dir, original, actuales)
     }
 
-    /// Una operación posterior `completa` en la misma versión del juego que tocó alguno de los mismos ficheros. Se
-    /// deshacen de la más nueva a la más antigua: así nunca se pisa en silencio una más reciente. Un `deshacer` no
-    /// cuenta: solo devolvió un estado anterior, y lo que pisaría sale en `cambian` del plan.
-    fn posterior_que_la_toca(
+    /// Una operación posterior `completa` en la misma versión del juego que depende de esta: tocó alguno de los mismos
+    /// ficheros o usa un diseño del Modo Edición que esta añadió a la cuenta. Se deshacen de la más nueva a la más
+    /// antigua: así nunca se pisa en silencio una más reciente ni se deja a un personaje apuntando a un diseño que ya
+    /// no existe (#85). Un `deshacer` no cuenta: solo devolvió un estado anterior, y lo que pisaría sale en `cambian`
+    /// del plan.
+    fn posterior_que_depende(
         &self,
         id: &str,
         original: &Diario,
     ) -> Result<Option<String>, ErrorNucleo> {
-        let rutas: HashSet<String> = original
+        let rutas: HashSet<String> = rutas_de(original).map(str::to_lowercase).collect();
+        let anadio_disenos = original
             .cambios
             .iter()
-            .map(|c| c.ruta.to_lowercase())
-            .chain(original.carpetas.iter().map(|c| c.ruta.to_lowercase()))
-            .collect();
+            .any(|c| es_fichero(&c.ruta, modo_edicion::FICHERO_CUENTA));
         let raiz = clave_de_ruta(&original.destino.raiz_version);
         Ok(subcarpetas(&self.dir)?
             .into_iter()
@@ -190,17 +192,41 @@ impl Operaciones {
                     && d.estado == Estado::Completa
                     && d.tipo != Tipo::Deshacer
                     && clave_de_ruta(&d.destino.raiz_version) == raiz
-                    && d.cambios
-                        .iter()
-                        .map(|c| &c.ruta)
-                        .chain(d.carpetas.iter().map(|c| &c.ruta))
-                        .any(|ruta| rutas.contains(&ruta.to_lowercase()))
+                    && (rutas_de(d).any(|ruta| rutas.contains(&ruta.to_lowercase()))
+                        || (anadio_disenos
+                            && usa_disenos_de_la_cuenta(d, &original.destino.cuenta)))
             })
             .map(|(nombre, _)| nombre))
     }
 }
 
-/// La raíz de la versión tiene que seguir existiendo y ser del mismo producto (`docs/flujos.md`, «Mismo juego»).
+/// Las rutas que tocó una operación: sus ficheros y las carpetas de addons que instaló.
+fn rutas_de(diario: &Diario) -> impl Iterator<Item = &str> {
+    diario
+        .cambios
+        .iter()
+        .map(|c| c.ruta.as_str())
+        .chain(diario.carpetas.iter().map(|c| c.ruta.as_str()))
+}
+
+/// Si la ruta (relativa, con `/`) es de un fichero con ese nombre.
+fn es_fichero(ruta: &str, nombre: &str) -> bool {
+    ruta.rsplit('/')
+        .next()
+        .is_some_and(|ultimo| ultimo.eq_ignore_ascii_case(nombre))
+}
+
+/// Un personaje de esa cuenta pasó a usar un diseño propio de la cuenta: su fichero del Modo Edición apunta a él por
+/// su posición, así que quitar un diseño de la cuenta lo dejaría apuntando a uno que no existe o a otro.
+fn usa_disenos_de_la_cuenta(diario: &Diario, cuenta: &str) -> bool {
+    diario.destino.cuenta.eq_ignore_ascii_case(cuenta)
+        && diario
+            .cambios
+            .iter()
+            .any(|c| es_fichero(&c.ruta, modo_edicion::FICHERO_PERSONAJE))
+}
+
+/// La raíz de la versión tiene que seguir existiendo y ser del mismo producto (`docs/flows.md`, «Same game»).
 fn mismo_juego(destino: &Destino) -> Result<(), ErrorNucleo> {
     let raiz = &destino.raiz_version;
     let producto = if raiz.is_dir() {

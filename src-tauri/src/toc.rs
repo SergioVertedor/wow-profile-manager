@@ -1,10 +1,10 @@
 //! Lector del `.toc` de un addon: las líneas `## Clave: valor` de su cabecera. Puro (texto → datos), sin disco.
-//! El `.toc` es una pista, no la verdad (`docs/modelo-de-datos.md`): lo que falta queda vacío, nunca se inventa.
+//! El `.toc` es una pista, no la verdad (`docs/data-model.md`): lo que falta queda vacío, nunca se inventa.
 
 use serde::Serialize;
 use std::collections::HashMap;
 
-/// Lo que la app usa de un `.toc`. Medido sobre 226 `.toc` reales (spec 014).
+/// Lo que la app usa de un `.toc`. Medido sobre 226 `.toc` reales (#36).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Toc {

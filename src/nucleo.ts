@@ -178,12 +178,12 @@ export function pedirResumenEliminacion(personaje: PersonajePedido): Promise<Res
   return invoke<ResumenEliminacion>("resumen_eliminacion", { personaje });
 }
 
-/** Saca la carpeta del personaje del `WTF` y guarda una copia como operación (spec 021). Devuelve su id. */
+/** Saca la carpeta del personaje del `WTF` y guarda una copia como operación (#49). Devuelve su id. */
 export function eliminarPersonaje(personaje: PersonajePedido): Promise<string> {
   return invoke<string>("eliminar_personaje", { personaje });
 }
 
-/** Categorías de fichero de un `.wowprofile`: las que la app exporta e importa (`docs/formato-wowprofile.md`). */
+/** Categorías de fichero de un `.wowprofile`: las que la app exporta e importa (`docs/wowprofile-format.md`). */
 export type CategoriaFichero =
   | "macros"
   | "teclas"
@@ -195,7 +195,7 @@ export type CategoriaFichero =
   | "marcos-banda"
   | "addons-activos";
 
-/** Todas las que exporta la app. `addon` es la carpeta de un addon, con su código (formato 1.1, spec 036). */
+/** Todas las que exporta la app. `addon` es la carpeta de un addon, con su código (formato 1.1, #73). */
 export type Categoria = CategoriaFichero | "config-addon" | "addon";
 
 /** Cómo se extrajo una pieza (`Tipo` en `src-tauri/src/paquetes.rs`). */
@@ -217,7 +217,7 @@ export interface CarpetaNoExportable {
 /** Por qué no viaja una línea (`Motivo` en `src-tauri/src/piezas.rs`). */
 export type Motivo = "seguridad" | "estado" | "addonNoInstalado" | "viajaComoPerfil";
 
-/** Las reglas genéricas de `docs/adaptadores.md`: sus piezas salen desmarcadas y con aviso. */
+/** Las reglas genéricas de `docs/adapters.md`: sus piezas salen desmarcadas y con aviso. */
 export type ReglaGenerica = "genericoCuenta" | "genericoPersonaje" | "genericoCuentaConPersonajes";
 
 /** Qué regla sacó una pieza de addon (`Regla` en `src-tauri/src/config_addons.rs`). */
@@ -455,7 +455,7 @@ export interface PlanPersonaje {
   conflictosPerfil: ConflictoPerfil[];
   /** Entradas que no se pueden aplicar en este personaje. */
   noAplicables: { entrada: string; motivo: MotivoNoAplicable }[];
-  /** Carpetas de addons (spec 036): son de la instalación, solo vienen en el primer personaje. */
+  /** Carpetas de addons (#73): son de la instalación, solo vienen en el primer personaje. */
   addons: AddonPlan[];
 }
 

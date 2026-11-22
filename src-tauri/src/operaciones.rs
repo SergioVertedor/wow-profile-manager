@@ -1,9 +1,9 @@
-//! Operaciones (ver `docs/arquitectura.md` y `docs/flujos.md`): el único módulo que escribe en `WTF`. Cada operación es
+//! Operaciones (ver `docs/architecture.md` y `docs/flows.md`): el único módulo que escribe en `WTF`. Cada operación es
 //! una carpeta en `<datos>/operaciones/<id>/` con su diario (`operacion.json`) y las copias de lo que había. Nada se
-//! quita del `WTF` sin una copia verificada, y nada de esta carpeta se borra solo (D-04).
+//! quita del `WTF` sin una copia verificada, y nada de esta carpeta se borra solo (#18).
 //!
-//! Hay tres tipos: `eliminacion` (spec 021), sacar la carpeta de un personaje; `importacion` (spec 025), escribir los
-//! ficheros de un perfil; y `deshacer` (spec 022), devolver lo que hizo una de las otras dos. El historial (listar,
+//! Hay tres tipos: `eliminacion` (#49), sacar la carpeta de un personaje; `importacion` (#63), escribir los
+//! ficheros de un perfil; y `deshacer` (#54), devolver lo que hizo una de las otras dos. El historial (listar,
 //! borrar, abrir) vive en `historial.rs`, deshacer en `deshacer.rs` e importar en `importar.rs`.
 
 mod carpetas;
@@ -167,7 +167,7 @@ struct Diario {
     error: Option<String>,
     destino: Destino,
     cambios: Vec<Cambio>,
-    /// Solo en `importacion` y en el `deshacer` de una: las carpetas de addons que instaló (spec 036).
+    /// Solo en `importacion` y en el `deshacer` de una: las carpetas de addons que instaló (#73).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     carpetas: Vec<carpetas::CarpetaInstalada>,
 }
@@ -201,7 +201,7 @@ pub struct Recuperacion {
     pub sin_restaurar: u32,
     /// Cortadas a mitad que esperan: hay un `Wow.exe` en marcha.
     pub pendientes: u32,
-    /// Importaciones cortadas a mitad: no se restauran solas (spec 025, decisión 4). Esperan a que el usuario las
+    /// Importaciones cortadas a mitad: no se restauran solas (#63, decisión 4). Esperan a que el usuario las
     /// restaure, y mientras no se crea ninguna otra operación.
     pub a_medias: u32,
     /// Carpetas con un `operacion.json` que no se entiende. No se tocan.
@@ -223,7 +223,7 @@ impl Operaciones {
         }
     }
 
-    /// Si alguna operación está escribiendo ahora mismo (spec 029: no se cierra la ventana sin avisar). Toda escritura
+    /// Si alguna operación está escribiendo ahora mismo (#60: no se cierra la ventana sin avisar). Toda escritura
     /// en el `WTF` toma el cerrojo, así que basta con mirarlo sin esperar. Envenenado no cuenta como ocupado: las
     /// tomas siguen con `into_inner`.
     pub fn ocupada(&self) -> bool {
@@ -252,7 +252,7 @@ impl Operaciones {
         })
     }
 
-    /// Saca la carpeta del personaje del `WTF` siguiendo el orden de escritura de `docs/flujos.md`. Devuelve el id de
+    /// Saca la carpeta del personaje del `WTF` siguiendo el orden de escritura de `docs/flows.md`. Devuelve el id de
     /// la operación.
     pub fn eliminar_personaje(
         &self,
@@ -287,7 +287,7 @@ impl Operaciones {
         })
     }
 
-    /// Al arrancar (`docs/flujos.md`, «Al arrancar»): las cortadas antes de tocar el `WTF` se cancelan; las cortadas a
+    /// Al arrancar (`docs/flows.md`, «On startup»): las cortadas antes de tocar el `WTF` se cancelan; las cortadas a
     /// mitad se restauran, salvo con el juego abierto o si son importaciones (esas se preguntan). Un diario que no se
     /// entiende no se toca.
     pub fn recuperar(&self, juego_en_marcha: impl Fn() -> bool) -> Recuperacion {
@@ -348,7 +348,7 @@ impl Operaciones {
     }
 
     /// Una operación sin resolver bloquea cualquier otra: otra escritura podría cambiar sus ficheros y restaurarla ya no
-    /// podría devolverlos (spec 025, decisiones 13 y 16). Sin resolver: una importación cortada a mitad o cualquier
+    /// podría devolverlos (#63). Sin resolver: una importación cortada a mitad o cualquier
     /// operación que no se pudo restaurar del todo. Se resuelve restaurándola o, si ya se devolvió a mano, borrándola.
     fn sin_operacion_por_resolver(&self) -> Result<(), ErrorNucleo> {
         // Si no se puede listar, no se sigue: podría haber una a medias que no se ve.

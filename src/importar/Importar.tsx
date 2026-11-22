@@ -1,4 +1,4 @@
-// Vista «Importar» (specs 024 y 025): abrir un `.wowprofile`, elegir uno o varios personajes destino, elegir qué se
+// Vista «Importar» (#63): abrir un `.wowprofile`, elegir uno o varios personajes destino, elegir qué se
 // importa, ver la vista previa, aplicar y ver el resultado, con «Deshacer» por personaje.
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,7 @@ import {
   type ResultadoImportacion,
   type ResumenPaquete,
 } from "../nucleo";
+import type { Modo } from "../comun/modoSimple";
 import { mensajeDeError } from "../textos/errores";
 import { fechaLegible } from "../textos/formato";
 import { decidirPerfil, pedidoDe, seleccionPorDefecto, type Destino } from "./importacion";
@@ -30,7 +31,7 @@ export default function Importar({ estado, irAHistorial }: Props) {
   const [abriendo, setAbriendo] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
-  // Al salir de la vista, el núcleo olvida el paquete (spec 024, decisión 10). Si falla, no hay nada que hacer: el
+  // Al salir de la vista, el núcleo olvida el paquete (#63, decisión 10). Si falla, no hay nada que hacer: el
   // siguiente que se abra lo sustituye igual.
   useEffect(
     () => () => {
@@ -111,6 +112,8 @@ function Asistente({ resumen, deteccion, irAHistorial }: PropsAsistente) {
   const [seleccion, setSeleccion] = useState<ReadonlySet<string>>(() => seleccionPorDefecto(resumen));
   const [decisiones, setDecisiones] = useState<ReadonlyMap<string, boolean>>(new Map());
   const [perfiles, setPerfiles] = useState<readonly DecisionPerfil[]>([]);
+  // Dura mientras el paquete está abierto: volver al paso anterior no lo cambia (#105).
+  const [modo, setModo] = useState<Modo>("simple");
   const lista = [...destinos.values()];
   const indice = PASOS.indexOf(paso);
   const puedeSeguir = (paso === "destino" && destinos.size > 0) || (paso === "seleccion" && seleccion.size > 0);
@@ -137,6 +140,8 @@ function Asistente({ resumen, deteccion, irAHistorial }: PropsAsistente) {
             cambiarSeleccion={setSeleccion}
             decisiones={decisiones}
             cambiarDecisiones={setDecisiones}
+            modo={modo}
+            cambiarModo={setModo}
           />
         )}
         {paso === "vistaPrevia" && (

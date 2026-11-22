@@ -1,7 +1,7 @@
 //! Claves de personaje de los `SavedVariables` de una cuenta: las de cada tabla AceDB (`profileKeys` con `profiles`
-//! al lado), según `docs/modelo-de-datos.md`. Solo lee. Los ficheros se parsean con `full_moon` sin ejecutarlos.
+//! al lado), según `docs/data-model.md`. Solo lee. Los ficheros se parsean con `full_moon` sin ejecutarlos.
 //!
-//! D-02: un SavedVariables guarda bytes, no texto UTF-8. Se lee como Latin-1 (1 byte = 1 `char`) para que el
+//! #1: un SavedVariables guarda bytes, no texto UTF-8. Se lee como Latin-1 (1 byte = 1 `char`) para que el
 //! parser lo acepte entero, y cada clave se recompone a UTF-8 al final (`Gøldberg`).
 
 use crate::disco::ficheros_con_extension;
@@ -26,7 +26,7 @@ pub fn claves_de_personaje(carpeta_sv: &Path) -> Result<HashSet<String>, ErrorNu
 }
 
 /// Claves de personaje de un fichero. Sin `profileKeys` no se parsea: de 215 ficheros medidos, solo 50 lo traen.
-/// Un fichero que no parsea no aporta claves [D-02 midió 0 de 1.467]: el personaje cae a la regla de la carpeta,
+/// Un fichero que no parsea no aporta claves [#1 midió 0 de 1.467]: el personaje cae a la regla de la carpeta,
 /// que no inventa nada.
 fn claves_de_lua(bytes: &[u8]) -> Vec<String> {
     let marca = CLAVE_PERSONAJES.as_bytes();

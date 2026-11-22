@@ -12,8 +12,16 @@ afterEach(() => {
   clearMocks();
 });
 
+/** Lo que propone el núcleo al abrir «Exportar»: sin piezas, la vista dice que no hay nada. */
+const PROPUESTA = { piezas: [], apartadas: [], noExportables: [], carpetasNoExportables: [], juegoAbierto: false };
+
 function pintar(idioma: Idioma, respuesta: () => unknown) {
-  mockIPC((comando) => (comando === "detectar_instalaciones" ? respuesta() : undefined));
+  mockIPC((comando) => {
+    if (comando === "propuesta_exportacion") {
+      return PROPUESTA;
+    }
+    return comando === "detectar_instalaciones" ? respuesta() : undefined;
+  });
   render(
     <I18nextProvider i18n={crearTextos(idioma)}>
       <ConDeteccion />
@@ -254,7 +262,7 @@ describe("Personajes", () => {
 
     await screen.findByRole("heading", { name: "Goldberg Joestar" });
     expect(screen.getByText("2 carpetas de reino son de la otra versión del juego y se han saltado.")).toBeDefined();
-    // Spec 029: el pie de diagnóstico ya no está, aunque haya carpetas saltadas.
+    // #60: el pie de diagnóstico ya no está, aunque haya carpetas saltadas.
     expect(screen.queryByText(/WTF\/Account/)).toBeNull();
     expect(screen.queryByText(/Interface\/AddOns/)).toBeNull();
     expect(screen.queryByText(/C:\\Juegos\\World of Warcraft/)).toBeNull();
@@ -352,6 +360,20 @@ describe("Personajes", () => {
       nombre: " Principal ",
     });
     expect(llamadas.filter((l) => l.comando === "detectar_instalaciones")).toHaveLength(1);
+  });
+
+  it("«Exportar» abre su vista en lugar de la pantalla y «Volver» deja el mismo personaje elegido", async () => {
+    pintar("es", () => instalacion(FOREVER));
+    fireEvent.click(await screen.findByRole("button", { name: "Goldberg Sp" }));
+
+    fireEvent.click(within(ficha()).getByRole("button", { name: "Exportar" }));
+
+    const vista = screen.getByRole("region", { name: "Exportar a Goldberg Sp" });
+    expect(await within(vista).findByText(/no tiene nada que exportar/)).toBeDefined();
+    expect(screen.queryByRole("region", { name: /Personaje elegido/ })).toBeNull();
+    fireEvent.click(within(vista).getByRole("button", { name: "Volver" }));
+    expect(within(ficha()).getByRole("heading", { name: "Goldberg Sp" })).toBeDefined();
+    expect(document.activeElement).toBe(within(ficha()).getByRole("button", { name: "Exportar" }));
   });
 
   it("si no hay ninguna instalación, lo dice", async () => {

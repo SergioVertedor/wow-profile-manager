@@ -1,6 +1,6 @@
 name: Release
 
-# Publica una versión (spec 035): construye el `.exe` portable, lo firma y crea la release con los dos ficheros que
+# Publica una versión (#3): construye el `.exe` portable, lo firma y crea la release con los dos ficheros que
 # busca la autoactualización. Solo se dispara al subir un tag `vX.Y.Z`, que solo puede subir quien mantiene el repo:
 # nunca con pull_request ni pull_request_target, así que un PR de un fork no llega al secreto.
 on:

@@ -2,8 +2,8 @@
 
 # WoW Profile Manager
 
-**Export a WoW Forever character's setup to a single file, share it, and apply it to another character, on another
-computer, safely.**
+**Export a WoW character's setup (Forever or Retail) to a single file, share it, and apply it to another character, on
+another computer, safely.**
 
 [![CI](https://github.com/SergioVertedor/wow-profile-manager/actions/workflows/calidad.yml/badge.svg?branch=develop)](https://github.com/SergioVertedor/wow-profile-manager/actions/workflows/calidad.yml)
 [![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
@@ -17,10 +17,14 @@ computer, safely.**
 
 ## What it does
 
-WoW Profile Manager is a Windows desktop app for **WoW Forever**. It takes a character's configuration (add-ons and
+WoW Profile Manager is a Windows desktop app for **WoW Forever** and **WoW Retail**. It takes a character's configuration (add-ons and
 their settings, macros, key bindings and action bar layout) and packs it into one portable `.wowprofile` file. Another
 player opens that file, picks which of their own characters to apply it to and what to bring over, sees exactly what
-will change, and applies it. Every import can be undone.
+will change, and applies it. Every import can be undone. A profile is only applied to the same game version it came
+from.
+
+Forever is the version tested most on real installations; Retail uses the same code paths but has been tested less
+(#98).
 
 What sits inside each action bar button does not travel: the game server stores it, and each player places their own
 abilities.
@@ -77,17 +81,16 @@ updates work today; the first release is next. The roadmap lives in the
 
 ## Documentation
 
-The technical documentation is in Spanish (an English version is tracked in
-[#80](https://github.com/SergioVertedor/wow-profile-manager/issues/80)):
+The technical documentation lives in [`docs/`](docs):
 
 | document | what it covers |
 |---|---|
-| [`formato-wowprofile.md`](docs/formato-wowprofile.md) | The `.wowprofile` package format, with its [JSON Schema](docs/wowprofile.schema.json). |
-| [`compatibilidad-wow-forever.md`](docs/compatibilidad-wow-forever.md) | What was measured on a real WoW Forever installation. |
-| [`adaptadores.md`](docs/adaptadores.md) | Add-on adapters: how add-on settings are read and written, with their [schema](docs/adaptador.schema.json). |
-| [`flujos.md`](docs/flujos.md) | Export and import flows, backups and history, with the [operation schema](docs/operacion.schema.json). |
-| [`modelo-de-datos.md`](docs/modelo-de-datos.md) | Data model: installations, accounts, characters and add-ons. |
-| [`arquitectura.md`](docs/arquitectura.md) | Architecture: modules, responsibilities and who writes where. |
+| [`wowprofile-format.md`](docs/wowprofile-format.md) | The `.wowprofile` package format, with its [JSON Schema](docs/wowprofile.schema.json). |
+| [`wow-forever-compatibility.md`](docs/wow-forever-compatibility.md) | What was measured on a real WoW Forever installation. |
+| [`adapters.md`](docs/adapters.md) | Add-on adapters: how add-on settings are read and written, with their [schema](docs/adaptador.schema.json). |
+| [`flows.md`](docs/flows.md) | Export and import flows, backups and history, with the [operation schema](docs/operacion.schema.json). |
+| [`data-model.md`](docs/data-model.md) | Data model: installations, accounts, characters and add-ons. |
+| [`architecture.md`](docs/architecture.md) | Architecture: modules, responsibilities and who writes where. |
 
 ## Development
 
@@ -125,7 +128,7 @@ Windows for every pull request.
 ## How it is made
 
 This project is developed with the help of AI tools. A person makes the decisions and does the in-game testing, and
-everything the project says about WoW Forever has been measured on a real installation, not assumed.
+everything the project says about the game's files has been measured on a real installation, not assumed.
 
 ## Support the project
 

@@ -81,7 +81,7 @@
     "enlaceNoAdmitido": "Hay un enlace o una unión de carpetas en {{ruta}}. No se sigue, porque podría llevar fuera de WTF. Quítalo a mano para continuar.",
     "operacionNoEncontrada": "Esa operación ya no está en el historial. Vuelve a cargarlo.",
     "noDeshacible": "Esta operación ya no se puede deshacer: solo se deshace una eliminación o una importación terminada que no esté deshecha.",
-    "operacionPosterior": "Antes hay que deshacer la operación {{id}}: es más reciente y tocó los mismos ficheros.",
+    "operacionPosterior": "Antes hay que deshacer la operación {{id}}: es más reciente y depende de esta (tocó los mismos ficheros o usa un diseño del Modo Edición que esta añadió).",
     "juegoDistinto": "En {{raiz}} ya no está la misma versión del juego (se movió, se borró o se reinstaló). No se ha escrito nada y la copia sigue en la operación.",
     "planCaducado": "Algún fichero ha cambiado desde que se mostró qué iba a pasar. No se ha escrito nada: vuelve a intentarlo para verlo de nuevo.",
     "operacionEnCurso": "La operación está a medias: no se puede borrar hasta que termine.",
@@ -226,6 +226,21 @@
     "borrando": "Borrando…",
     "deshacer": "Es un deshacer: su copia es lo que el juego había guardado en la carpeta después de eliminarla."
   },
+  "modo": {
+    "etiqueta": "Modo de selección",
+    "simple": "Simple",
+    "avanzado": "Avanzado",
+    "queSeLleva": "Qué se lleva",
+    "grupos": {
+      "macros": "Macros",
+      "teclas": "Teclas",
+      "interfaz": "Opciones e interfaz",
+      "modoEdicion": "Modo Edición",
+      "addonsActivos": "Addons activos",
+      "configAddons": "Configuración de addons",
+      "carpetasAddons": "Addons (código)"
+    }
+  },
   "exportar": {
     "boton": "Exportar",
     "titulo": "Exportar a {{nombre}}",
@@ -253,10 +268,10 @@
     "apartadas": "No viajan porque ya contienen el texto reservado «@@WOWPROFILE:»: {{piezas}}.",
     "nombre": "Nombre del perfil",
     "descripcion": "Descripción (opcional)",
-    "cancelar": "Cancelar",
+    "volver": "Volver",
+    "cargando": "Mirando qué se puede exportar…",
     "confirmar": "Guardar…",
     "exportando": "Guardando…",
-    "cerrar": "Cerrar",
     "hecho": "Guardado como {{fichero}}.",
     "addons": {
       "titulo": "Configuración de addons",

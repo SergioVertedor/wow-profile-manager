@@ -1,4 +1,4 @@
-//! Historial (spec 022, `docs/flujos.md`): listar las operaciones, saber dónde está la carpeta de una y borrarla. Lee
+//! Historial (#54, `docs/flows.md`): listar las operaciones, saber dónde está la carpeta de una y borrarla. Lee
 //! el `WTF` para decir qué quedó sin devolver, pero nunca lo escribe.
 
 use super::deshacer::se_puede_deshacer;
@@ -55,7 +55,7 @@ struct Resumen {
     bytes: u64,
     /// Si se le puede ofrecer «Deshacer»: una eliminación o una importación `completa`.
     deshacible: bool,
-    /// Una importación cortada a mitad (spec 025).
+    /// Una importación cortada a mitad (#63).
     a_medias: bool,
     /// Sin resolver (una importación a medias o una que no se pudo restaurar del todo): se le ofrece «Restaurar» y
     /// bloquea las demás operaciones.
@@ -109,7 +109,7 @@ impl Operaciones {
             .ok_or(ErrorNucleo::OperacionNoEncontrada {})
     }
 
-    /// Borra la carpeta de una operación terminada y con ella la posibilidad de deshacerla (`docs/flujos.md`,
+    /// Borra la carpeta de una operación terminada y con ella la posibilidad de deshacerla (`docs/flows.md`,
     /// «Historial»). Una `fallida-sin-restaurar` solo si el usuario confirma que ya restauró a mano: sus copias pueden
     /// ser lo único que queda del estado anterior.
     pub fn borrar(&self, id: &str, restaurada_a_mano: bool) -> Result<(), ErrorNucleo> {

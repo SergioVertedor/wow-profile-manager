@@ -1,5 +1,5 @@
 /* El desplegable: el resumen en oro como un enlace discreto y el cuerpo con altura máxima. Las listas medidas caben
-   enteras (spec 026, decisión 4), pero una larga desplaza en vez de empujar el resto de la ventana. */
+   enteras (#65, decisión 4), pero una larga desplaza en vez de empujar el resto de la ventana. */
 .desplegable {
   text-align: left;
 }

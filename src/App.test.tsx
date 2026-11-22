@@ -18,7 +18,7 @@ afterEach(async () => {
 /** Lo que da `detectar_instalaciones` sin nada instalado. */
 const SIN_NADA: Deteccion = { instalaciones: [], noEncontradas: [], preferencias: null };
 
-/** Con los eventos simulados: `App` monta vistas que escuchan eventos del núcleo (spec 029). */
+/** Con los eventos simulados: `App` monta vistas que escuchan eventos del núcleo (#60). */
 function simular(respuesta: Parameters<typeof mockIPC>[0]) {
   mockIPC(respuesta, { shouldMockEvents: true });
 }

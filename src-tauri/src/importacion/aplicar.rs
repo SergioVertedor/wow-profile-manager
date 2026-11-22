@@ -1,4 +1,4 @@
-//! Aplicar el plan (spec 025, entrega 2 de #63): una operación `importacion` por personaje, una detrás de otra. Si una
+//! Aplicar el plan (#63): una operación `importacion` por personaje, una detrás de otra. Si una
 //! falla, se restaura, las siguientes no se aplican y las anteriores quedan aplicadas.
 
 use super::{Accion, Destino, FicheroPlan, Grupo, Plan, PlanPersonaje};
@@ -45,7 +45,7 @@ fn a_escribir(personaje: &PlanPersonaje) -> impl Iterator<Item = &FicheroPlan> {
 }
 
 /// Huella del plan: por cada fichero que se escribe, su ruta, cómo estaba y cómo quedará; y lo que sigue sin decidir.
-/// Aplicar rehace el plan y solo escribe si sale la misma huella que se enseñó (spec 025, decisión 7).
+/// Aplicar rehace el plan y solo escribe si sale la misma huella que se enseñó (#63, decisión 7).
 pub fn huella(plan: &Plan) -> String {
     let mut texto = String::new();
     for personaje in &plan.personajes {

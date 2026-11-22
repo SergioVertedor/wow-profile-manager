@@ -1,4 +1,4 @@
-//! Escritura segura (`docs/flujos.md`): todo fichero que escribe la app se escribe a un temporal en la misma carpeta,
+//! Escritura segura (`docs/flows.md`): todo fichero que escribe la app se escribe a un temporal en la misma carpeta,
 //! se fuerza a disco y se renombra encima del destino. Un corte, incluso de corriente, deja el fichero anterior o el
 //! nuevo, nunca uno a medias.
 

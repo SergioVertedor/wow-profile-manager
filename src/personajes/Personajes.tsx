@@ -1,6 +1,6 @@
-// Pantalla «Personajes» (spec 017), al estilo de la selección de personaje del juego: selector de versión arriba, el
+// Pantalla «Personajes» (#45), al estilo de la selección de personaje del juego: selector de versión arriba, el
 // personaje elegido en el centro y la lista de la cuenta a la derecha. Solo enseña lo que devuelve el núcleo. Con más
-// de una instalación, cada versión lleva el nombre de la suya (spec 018).
+// de una instalación, cada versión lleva el nombre de la suya (#34).
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TriangleAlert } from "lucide-react";
@@ -8,6 +8,7 @@ import { conNombreDeCuenta, etiquetaDeInstalacion, nombreDeProducto, normalizarN
 import type { UsoDeteccion } from "../instalaciones/useDeteccion";
 import { nombrarCuenta, type Cuenta, type Deteccion, type Personaje, type VersionJuego } from "../nucleo";
 import { mensajeDeError } from "../textos/errores";
+import ExportarPersonaje, { type DatosExportacion } from "./ExportarPersonaje";
 import Ficha from "./Ficha";
 import css from "./Personajes.module.css";
 import Plantel from "./Plantel";
@@ -49,9 +50,19 @@ type PropsSeleccion = Readonly<{
 function Seleccion({ deteccion, actualizar, recargar }: PropsSeleccion) {
   const { t } = useTranslation();
   const [eleccion, setEleccion] = useState<Eleccion>(SIN_ELEGIR);
+  // «Exportar» ocupa la pantalla (#107). `Seleccion` sigue montada: al volver, la elección es la misma.
+  const [aExportar, setAExportar] = useState<DatosExportacion | null>(null);
+  const [volvioDeExportar, setVolvioDeExportar] = useState(false);
   const entradas = entradasDeVersion(deteccion.instalaciones);
   const elegido = resolverEleccion(entradas, eleccion);
 
+  if (aExportar !== null) {
+    const volver = () => {
+      setAExportar(null);
+      setVolvioDeExportar(true);
+    };
+    return <ExportarPersonaje {...aExportar} volver={volver} />;
+  }
   if (elegido === null) {
     return (
       <section className={css.pantalla}>
@@ -100,6 +111,8 @@ function Seleccion({ deteccion, actualizar, recargar }: PropsSeleccion) {
           personaje={personaje}
           cambiar={(cambio) => setEleccion({ ...eleccion, version: entrada.clave, ...cambio })}
           renombrarCuenta={renombrarCuenta(cuenta.carpeta)}
+          exportar={(datos) => setAExportar(datos)}
+          enfocarExportar={volvioDeExportar}
         />
       )}
     </section>
@@ -115,6 +128,8 @@ function Cuerpo({
   personaje,
   cambiar,
   renombrarCuenta,
+  exportar,
+  enfocarExportar,
 }: Readonly<{
   raiz: string;
   recargar: () => Promise<void>;
@@ -124,6 +139,8 @@ function Cuerpo({
   personaje: Personaje | null;
   cambiar: (cambio: Partial<Eleccion>) => void;
   renombrarCuenta: (nombre: string) => Promise<void>;
+  exportar: (datos: DatosExportacion) => void;
+  enfocarExportar: boolean;
 }>) {
   const { t } = useTranslation();
   const cuentas = version.cuentas.cuentas;
@@ -143,6 +160,8 @@ function Cuerpo({
         raiz={raiz}
         carpetaCuenta={cuenta.carpeta}
         alEliminar={recargar}
+        alExportar={exportar}
+        enfocarExportar={enfocarExportar}
       />
       <Plantel
         key={cuenta.carpeta}

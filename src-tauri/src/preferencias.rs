@@ -1,4 +1,4 @@
-//! Preferencias (spec 018): lo que el usuario le dice a la app y tiene que recordarse entre arranques: las carpetas
+//! Preferencias (#34): lo que el usuario le dice a la app y tiene que recordarse entre arranques: las carpetas
 //! de WoW añadidas a mano y los nombres propios de instalaciones y cuentas. Escribe solo `preferencias.json`, en la
 //! carpeta de datos de la app (junto al `.exe`, `portable.rs`), nunca dentro de una instalación: eso es de Operaciones.
 
@@ -26,9 +26,9 @@ pub struct Preferencias {
     pub nombres_instalacion: BTreeMap<String, String>,
     /// Clave: `clave_cuenta`.
     pub nombres_cuenta: BTreeMap<String, String>,
-    /// El interruptor «Guardar registro de diagnóstico» (spec 029). Apagado si el fichero no lo trae.
+    /// El interruptor «Guardar registro de diagnóstico» (#60). Apagado si el fichero no lo trae.
     pub registro: bool,
-    /// El interruptor «Buscar actualizaciones al arrancar» (spec 035), al revés: encendido si el fichero no lo trae.
+    /// El interruptor «Buscar actualizaciones al arrancar» (#3), al revés: encendido si el fichero no lo trae.
     pub actualizaciones_apagadas: bool,
 }
 
@@ -136,7 +136,7 @@ pub fn nombre_valido(texto: &str) -> Result<Option<String>, ErrorNucleo> {
 }
 
 /// Lee las preferencias de `dir`. Sin fichero, vacías. Un fichero que no se entiende es un error: quien llama decide
-/// seguir sin preferencias, pero nadie lo sobrescribe (D-04: nada se borra solo).
+/// seguir sin preferencias, pero nadie lo sobrescribe (#18: nada se borra solo).
 pub fn cargar(dir: &Path) -> Result<Preferencias, ErrorNucleo> {
     let ruta = dir.join(FICHERO);
     let bytes = match std::fs::read(&ruta) {

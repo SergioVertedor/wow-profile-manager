@@ -1,4 +1,4 @@
-//! Paquetes con carpetas de addons (formato 1.1, spec 036): ida y vuelta, y lo que la lectura rechaza.
+//! Paquetes con carpetas de addons (formato 1.1, #73): ida y vuelta, y lo que la lectura rechaza.
 
 use super::tests::{entradas_zip, pieza};
 use super::*;

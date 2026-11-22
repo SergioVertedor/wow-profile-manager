@@ -1,4 +1,4 @@
-//! El plan de la configuración de addons (spec 028, decisiones 4 y 5): cada fichero se escribe una sola vez, con todas
+//! El plan de la configuración de addons (#72): cada fichero se escribe una sola vez, con todas
 //! las entradas que van a él aplicadas en el orden del paquete. Un fichero de cuenta lleva lo de todos los destinos de
 //! esa cuenta y se escribe en la operación del primero; en los demás sale «sin cambios», escrito en el primero.
 
@@ -235,7 +235,7 @@ fn decision_perfil(pedido: &Pedido, cuenta: &str, entrada: &str) -> Option<Accio
         .map(|d| d.accion)
 }
 
-/// «Falta el addon» y «versión no medida», una vez por addon (spec 028, decisión 9).
+/// «Falta el addon» y «versión no medida», una vez por addon (#72, decisión 9).
 fn avisos(destino: &Destino, aplicadas: &[&EntradaAddon<'_>]) -> Vec<AvisoFichero> {
     let mut avisos = Vec::new();
     for entrada in aplicadas {

@@ -1,4 +1,4 @@
-// La configuración de addons en el paso «Qué se importa» (spec 028): una lista por addon con cada pieza. Los ficheros
+// La configuración de addons en el paso «Qué se importa» (#72): una lista por addon con cada pieza. Los ficheros
 // enteros salen desmarcados y con su aviso: el paquete no dice quién lo hizo ni qué llevan dentro.
 import { useId } from "react";
 import { useTranslation } from "react-i18next";

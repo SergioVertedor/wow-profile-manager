@@ -1,4 +1,4 @@
-//! Importar el Modo Edición (spec 034): el diseño se añade a la cuenta y el personaje pasa a usarlo.
+//! Importar el Modo Edición (#71): el diseño se añade a la cuenta y el personaje pasa a usarlo.
 
 use super::*;
 use crate::deteccion::Producto;

@@ -1,5 +1,5 @@
-//! Exportación (`docs/arquitectura.md`): arma las piezas de un personaje para un `.wowprofile`: los ficheros que se
-//! copian sin leer Lua (spec 023), la configuración de addons (spec 027) y las carpetas de los addons (spec 036). Solo
+//! Exportación (`docs/architecture.md`): arma las piezas de un personaje para un `.wowprofile`: los ficheros que se
+//! copian sin leer Lua y la configuración de addons (#56), y las carpetas de los addons (#73). Solo
 //! lee; el paquete lo escribe Paquetes.
 
 use crate::addon_zip::{self, ErrorAddon, Medida};
@@ -61,7 +61,7 @@ pub struct PiezaPropuesta {
     pub bytes: u64,
     /// Líneas que se quitan al filtrar, por motivo.
     pub quitadas: Vec<Quitadas>,
-    /// Si sale marcada en el diálogo (`docs/flujos.md`, «Exportar», paso 3).
+    /// Si sale marcada en el diálogo (`docs/flows.md`, «Export», paso 3).
     pub marcada: bool,
     /// Solo en `config-addon`.
     pub addon: Option<String>,
@@ -75,7 +75,7 @@ pub struct PiezaPropuesta {
 
 /// Todo lo que se puede llevar del personaje ahora mismo.
 struct Disponible {
-    /// Ficheros de la entrega 1, sin las apartadas.
+    /// Ficheros del personaje y de la cuenta (no la configuración de addons), sin las apartadas.
     ficheros: Vec<Pieza>,
     apartadas: Vec<String>,
     config: ConfigAddons,
@@ -299,7 +299,7 @@ fn propuesta(disponible: Disponible, juego_abierto: bool) -> Propuesta {
             ambito: AmbitoEntrada::Instalacion,
             bytes: medida.bytes,
             quitadas: Vec::new(),
-            // Marcadas como el resto (decisión 1 de la spec 036): la interfaz avisa de los riesgos y la licencia.
+            // Marcadas como el resto (#73): quien exporta decide, y la interfaz avisa de los riesgos y la licencia.
             marcada: true,
             addon: Some(c.carpeta.clone()),
             variable: None,

@@ -1,5 +1,5 @@
-//! Descubrimiento (ver `docs/arquitectura.md`): cuentas y personajes de una versión del juego, según
-//! `docs/modelo-de-datos.md`. Solo lee. Lo que no encaja en las reglas no se lista, pero se cuenta, para que un
+//! Descubrimiento (ver `docs/architecture.md`): cuentas y personajes de una versión del juego, según
+//! `docs/data-model.md`. Solo lee. Lo que no encaja en las reglas no se lista, pero se cuenta, para que un
 //! error de regla se note.
 
 use crate::claves_personaje::claves_de_personaje;
@@ -26,7 +26,7 @@ pub struct Cuentas {
 #[serde(rename_all = "camelCase")]
 pub struct Cuenta {
     pub carpeta: String,
-    /// Nombre propio que le ha puesto el usuario (spec 018). Lo rellena Detección con las preferencias.
+    /// Nombre propio que le ha puesto el usuario (#34). Lo rellena Detección con las preferencias.
     pub nombre: Option<String>,
     pub personajes: Vec<Personaje>,
     /// Carpetas de reino de la otra versión del juego: no se listan.
@@ -110,7 +110,7 @@ fn leer_cuenta(carpeta: String, ruta: &Path, producto: Producto) -> Result<Cuent
     })
 }
 
-/// Cómo se llamaría en los datos cada personaje de la cuenta `ruta_cuenta`, según su carpeta (spec 027: saber si un
+/// Cómo se llamaría en los datos cada personaje de la cuenta `ruta_cuenta`, según su carpeta (#56: saber si un
 /// fichero de la cuenta menciona a sus personajes).
 pub fn nombres_de_carpetas(
     ruta_cuenta: &Path,
@@ -128,7 +128,7 @@ pub fn nombres_de_carpetas(
     Ok(nombres)
 }
 
-/// Orden de `docs/modelo-de-datos.md`: el candidato de la carpeta, confirmado si es una clave de los datos.
+/// Orden de `docs/data-model.md`: el candidato de la carpeta, confirmado si es una clave de los datos.
 fn resolver_nombre(
     carpeta_reino: &str,
     carpeta_personaje: &str,

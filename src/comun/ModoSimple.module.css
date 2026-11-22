@@ -1,0 +1,73 @@
+/* Modo simple (#105): el selector «Simple · Avanzado», en píldora, y las casillas por grupo. */
+.selector {
+  display: inline-flex;
+  /* En una columna flex (paso «Seleccionar» de Importar) no se estira: ocupa lo que sus dos opciones. */
+  align-self: flex-start;
+  margin: var(--espacio-4) 0 0;
+  padding: 2px;
+  border: 1px solid var(--color-linea-control);
+  border-radius: var(--radio-pildora);
+  background: var(--color-hundido);
+}
+
+.opcion {
+  position: relative;
+  padding: var(--espacio-1) var(--espacio-4);
+  border-radius: var(--radio-pildora);
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+  cursor: pointer;
+  transition: background var(--duracion), color var(--duracion);
+}
+
+.opcion[data-elegido="true"] {
+  background: var(--oro-velo);
+  color: var(--color-texto);
+  box-shadow: inset 0 0 0 1px var(--oro-borde);
+}
+
+/* La casilla del radio no se ve: la píldora entera es el control. El foco se enseña en la píldora. */
+.opcion input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.opcion:focus-within {
+  outline: 2px solid var(--oro-foco);
+  outline-offset: 1px;
+}
+
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.grupos {
+  margin-top: var(--espacio-4);
+  padding: 0;
+  border: none;
+}
+
+.grupos legend {
+  margin-bottom: var(--espacio-2);
+  color: var(--color-texto-2);
+  font-size: var(--texto-pequeno);
+}
+
+.grupo {
+  display: flex;
+  gap: var(--espacio-3);
+  align-items: baseline;
+  padding: var(--espacio-1) 0;
+  font-size: var(--texto-control);
+  cursor: pointer;
+}
+
+.grupo input {
+  accent-color: var(--color-oro);
+}

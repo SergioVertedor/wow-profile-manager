@@ -1,4 +1,4 @@
-// Qué trae una entrada del paquete (spec 026): una frase que dice qué es y, si el núcleo la da, la lista de lo que
+// Qué trae una entrada del paquete (#65): una frase que dice qué es y, si el núcleo la da, la lista de lo que
 // trae. Va en «Qué se importa» y en las decisiones de cuenta, para decidir viendo lo que se copia.
 import { useTranslation } from "react-i18next";
 import Desplegable from "../comun/Desplegable";

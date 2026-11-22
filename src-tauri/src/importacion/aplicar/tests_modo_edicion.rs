@@ -1,9 +1,10 @@
-//! Modo Edición de punta a punta (spec 034): el diseño del origen se lleva en un `.wowprofile` real, se aplica en dos
-//! personajes de la misma cuenta y deshacer devuelve los ficheros como estaban.
+//! Modo Edición de punta a punta (#71): el diseño del origen se lleva en un `.wowprofile` real, se aplica en dos
+//! personajes de la misma cuenta y deshacer, del más nuevo al más antiguo, devuelve los ficheros como estaban.
 
 use super::super::{PaquetesAbiertos, Pedido};
 use super::*;
 use crate::deteccion::{PersonajeUbicado, Producto};
+use crate::error::ErrorNucleo;
 use crate::modo_edicion;
 use crate::operaciones::Operaciones;
 use crate::paquetes::{
@@ -143,6 +144,17 @@ fn se_lleva_el_diseno_se_aplica_en_dos_personajes_y_se_deshace() {
             "{carpeta}"
         );
     }
+
+    // El segundo usa el diseño que añadió el primero: deshacer el primero antes dejaría a B apuntando a un diseño que
+    // ya no existe (#85).
+    let operacion = |i: usize| match &resultados[i].resultado {
+        Resultado::Completa { operacion, .. } => operacion.clone(),
+        otro => panic!("{otro:?}"),
+    };
+    assert_eq!(
+        operaciones.plan_deshacer(&operacion(0)).unwrap_err(),
+        ErrorNucleo::OperacionPosterior { id: operacion(1) }
+    );
 
     // Deshacer el segundo y luego el primero deja todo como estaba.
     for resultado in resultados.iter().rev() {

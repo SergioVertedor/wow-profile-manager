@@ -1,4 +1,4 @@
-// «Aplicar» (spec 025): botón y confirmación al pie de la vista previa. Manda al núcleo la huella del plan que se ve: si
+// «Aplicar» (#63): botón y confirmación al pie de la vista previa. Manda al núcleo la huella del plan que se ve: si
 // algo cambió desde entonces, no escribe nada y la vista previa se vuelve a pedir. Una operación por personaje.
 import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";

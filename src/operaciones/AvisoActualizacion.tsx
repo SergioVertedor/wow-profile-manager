@@ -1,4 +1,4 @@
-// Al arrancar, la interfaz pregunta al núcleo si hay una versión nueva (spec 035). El núcleo decide si sale a la red:
+// Al arrancar, la interfaz pregunta al núcleo si hay una versión nueva (#3). El núcleo decide si sale a la red:
 // con el interruptor apagado, o en desarrollo, responde que no sin mirar. Si la hay, se pregunta antes de instalar.
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";

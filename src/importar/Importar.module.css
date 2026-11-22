@@ -1,4 +1,4 @@
-/* Vista «Importar» (spec 024): cabecera con el botón de abrir, el paquete, los pasos del asistente y cada paso. */
+/* Vista «Importar» (#63): cabecera con el botón de abrir, el paquete, los pasos del asistente y cada paso. */
 .pantalla {
   display: flex;
   flex-direction: column;
@@ -245,8 +245,8 @@
   gap: var(--espacio-2);
 }
 
-/* Configuración de addons: un bloque por addon (spec 028). */
-/* Marcar o desmarcar todas las carpetas de addons (spec 036). */
+/* Configuración de addons: un bloque por addon (#72). */
+/* Marcar o desmarcar todas las carpetas de addons (#73). */
 .acciones {
   display: flex;
   flex-wrap: wrap;
@@ -338,7 +338,7 @@
   color: var(--color-aviso);
 }
 
-/* Pie de la vista previa (spec 025): el motivo si no se puede aplicar y el botón, a la derecha. */
+/* Pie de la vista previa (#63): el motivo si no se puede aplicar y el botón, a la derecha. */
 .aplicar {
   display: flex;
   gap: var(--espacio-3);

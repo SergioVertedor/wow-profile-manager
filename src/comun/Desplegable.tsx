@@ -1,4 +1,4 @@
-// Un bloque que se abre y se cierra (spec 026, decisión 7): `<details>` y `<summary>` del navegador, que ya son
+// Un bloque que se abre y se cierra (#65, decisión 7): `<details>` y `<summary>` del navegador, que ya son
 // accesibles con teclado y lector de pantalla. Lo usan la ficha, exportar e importar.
 import type { ReactNode } from "react";
 import css from "./Desplegable.module.css";

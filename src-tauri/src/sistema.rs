@@ -1,5 +1,5 @@
-//! Sistema (ver `docs/arquitectura.md`): si el juego está en marcha. Con WoW abierto no se escribe en `WTF`: al salir,
-//! el cliente reescribe sus ficheros encima (`docs/flujos.md`).
+//! Sistema (ver `docs/architecture.md`): si el juego está en marcha. Con WoW abierto no se escribe en `WTF`: al salir,
+//! el cliente reescribe sus ficheros encima (`docs/flows.md`).
 
 /// Forever y Retail se lanzan con el mismo ejecutable [V], así que no se distingue la versión: cualquiera bloquea.
 const EJECUTABLE: &str = "Wow.exe";

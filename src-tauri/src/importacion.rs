@@ -1,4 +1,4 @@
-//! Importación (`docs/arquitectura.md`, specs 024 y 025): del paquete leído y los personajes destino al plan que enseña
+//! Importación (`docs/architecture.md`, #63): del paquete leído y los personajes destino al plan que enseña
 //! la vista previa, y de ahí a las operaciones que lo escriben. Planificar es puro: no escribe en ningún sitio. Leer los
 //! ficheros actuales va aparte (`leer_destino`) y escribir es de Operaciones (`aplicar.rs`).
 
@@ -47,10 +47,10 @@ pub struct EntradaResumen {
     pub categoria: String,
     pub tipo: String,
     pub ambito: AmbitoEntrada,
-    /// Afecta a todos los personajes de la cuenta: hay que decidirla en cada cuenta (spec 028, decisión 6).
+    /// Afecta a todos los personajes de la cuenta: hay que decidirla en cada cuenta (#72, decisión 6).
     pub de_cuenta: bool,
     pub bytes: u64,
-    /// Marcada por defecto (spec 028, decisión 10).
+    /// Marcada por defecto (#72, decisión 10).
     pub marcada: bool,
     /// Sale de una regla genérica: puede llevar estado o datos de otros jugadores.
     pub generica: bool,
@@ -73,11 +73,11 @@ pub struct EntradaResumen {
 pub enum MotivoIncompatible {
     /// Categoría o tipo que esta versión no importa (uno de una 1.x más nueva).
     NoSeImporta,
-    /// El `destino` no es el fichero de su categoría (spec 024, decisión 7).
+    /// El `destino` no es el fichero de su categoría (#63, decisión 7).
     DestinoAjeno,
-    /// La pieza no tiene la forma de su tipo o no es solo datos (spec 028, decisión 1).
+    /// La pieza no tiene la forma de su tipo o no es solo datos (#72, decisión 1).
     PiezaNoValida,
-    /// Adaptador que esta versión no conoce, de otro addon o más nuevo que el suyo (spec 028, decisión 2).
+    /// Adaptador que esta versión no conoce, de otro addon o más nuevo que el suyo (#72, decisión 2).
     AdaptadorDesconocido,
 }
 
@@ -120,7 +120,7 @@ pub struct Destino {
     /// La versión de cada addon instalado (por carpeta en minúsculas), si la declara.
     pub versiones: HashMap<String, Option<String>>,
     /// Todo lo que hay en `Interface/AddOns`, en minúsculas, cargue o no el juego: una carpeta de addon solo se
-    /// instala si no hay nada con su nombre (spec 036).
+    /// instala si no hay nada con su nombre (#73).
     pub en_addons: HashSet<String>,
 }
 
@@ -152,7 +152,7 @@ pub struct PlanPersonaje {
     pub conflictos_perfil: Vec<ConflictoPerfil>,
     /// Entradas que no se pueden aplicar en este personaje.
     pub no_aplicables: Vec<NoAplicable>,
-    /// Carpetas de addons del paquete (spec 036). Son de la instalación: van solo en el primer personaje.
+    /// Carpetas de addons del paquete (#73). Son de la instalación: van solo en el primer personaje.
     pub addons: Vec<AddonPlan>,
 }
 
@@ -201,12 +201,12 @@ pub enum Accion {
     Fusionar,
 }
 
-/// Un fichero del plan. Lo que no se serializa es para la entrega 2: dónde se escribe, qué se escribe y la huella.
+/// Un fichero del plan. Lo que no se serializa es para aplicar el plan: dónde se escribe, qué se escribe y la huella.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FicheroPlan {
     pub entrada: String,
-    /// Todas las entradas que escriben en este fichero (spec 028, decisión 4), en el orden del paquete.
+    /// Todas las entradas que escriben en este fichero (#72, decisión 4), en el orden del paquete.
     pub entradas: Vec<String>,
     pub categoria: Categoria,
     /// Ruta lógica (`personaje/…` o `cuenta/…`).
@@ -280,7 +280,7 @@ impl Clasificada<'_> {
 
 /// Una entrada se importa si esta versión conoce su categoría y su tipo, y su `destino` es exactamente el de su
 /// categoría. Nada del `destino` que trae el paquete llega a una ruta: la ruta sale de la tabla o, en la configuración
-/// de addons, de la carpeta del addon comprobada. Una pieza de un addon tiene que ser solo datos (spec 028).
+/// de addons, de la carpeta del addon comprobada. Una pieza de un addon tiene que ser solo datos (#72).
 fn clasificar<'a>(
     entrada: &'a EntradaLeida,
     paquete: &PaqueteLeido,
@@ -390,7 +390,7 @@ fn entrada_resumen(entrada: &EntradaLeida, paquete: &PaqueteLeido) -> EntradaRes
     }
 }
 
-/// La carpeta de un addon (formato 1.1): marcada como el resto (decisión 1 de la spec 036), de la instalación.
+/// La carpeta de un addon (formato 1.1): marcada como el resto (#73), de la instalación.
 fn resumen_de_carpeta(entrada: &EntradaLeida) -> EntradaResumen {
     EntradaResumen {
         id: entrada.id.clone(),
@@ -868,7 +868,7 @@ pub struct VistaPrevia {
     pub huella: String,
 }
 
-/// El paquete abierto en la vista «Importar» (spec 024, decisión 10): la interfaz lo nombra por su SHA-256, nunca por
+/// El paquete abierto en la vista «Importar» (#63, decisión 10): la interfaz lo nombra por su SHA-256, nunca por
 /// su ruta. Solo hay uno; abrir otro o cerrar la vista lo olvida. La ruta se guarda para volver a leerlo al aplicar.
 #[derive(Debug, Default)]
 pub struct PaquetesAbiertos(Mutex<Option<(PathBuf, Arc<PaqueteLeido>)>>);
@@ -916,7 +916,7 @@ impl PaquetesAbiertos {
         })
     }
 
-    /// Aplica el paquete abierto en esos personajes (spec 025): lo vuelve a leer del disco (tiene que seguir siendo el
+    /// Aplica el paquete abierto en esos personajes (#63): lo vuelve a leer del disco (tiene que seguir siendo el
     /// mismo), rehace el plan y solo escribe si sale la huella que se enseñó. Una operación por personaje.
     pub fn aplicar(
         &self,
@@ -1041,7 +1041,7 @@ mod tests {
                     "opciones",
                     b"SET a \"2\"\r\nSET AllowDangerousScripts \"1\"\r\n",
                 ),
-                // Lua que el juego ejecutaría: una llamada, no un dato (spec 028, decisión 1).
+                // Lua que el juego ejecutaría: una llamada, no un dato (#72, decisión 1).
                 (
                     "dominos",
                     b"DominosDB = RunScript(\"x\")

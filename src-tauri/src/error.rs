@@ -1,4 +1,4 @@
-//! Errores que el núcleo devuelve a la interfaz. Siguen la convención de la spec 011: un código estable y sus datos,
+//! Errores que el núcleo devuelve a la interfaz. Siguen la convención de la #9: un código estable y sus datos,
 //! nunca un texto para el usuario; la interfaz los traduce con `src/textos/`.
 
 use serde::Serialize;
@@ -49,7 +49,7 @@ pub enum ErrorNucleo {
     CarpetaNoAbierta { ruta: String, detalle: String },
     /// No se pudo consultar o descargar una actualización (red, GitHub). `detalle`, para el diagnóstico.
     ActualizacionNoDescargada { detalle: String },
-    /// La actualización descargada no trae una firma válida de la app: no se instala (spec 035).
+    /// La actualización descargada no trae una firma válida de la app: no se instala (#3).
     ActualizacionSinFirmaValida {},
     /// Se pidió instalar y ya no hay una versión más nueva publicada.
     ActualizacionNoDisponible {},
@@ -86,7 +86,7 @@ pub enum ErrorNucleo {
     DestinosNoValidos {},
 }
 
-/// Qué paso de «Leer un paquete de forma segura» (`docs/formato-wowprofile.md`) falló.
+/// Qué paso de «Leer un paquete de forma segura» (`docs/wowprofile-format.md`) falló.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum MotivoPaquete {
@@ -109,7 +109,7 @@ pub enum MotivoPaquete {
     /// Las piezas pasan de 128 MiB en total, o las de addons de 512 MiB.
     TotalDemasiadoGrande,
     /// El ZIP de un addon no es seguro: una ruta que sale de su carpeta, un nombre que Windows no admite, un enlace o
-    /// demasiado contenido (spec 036).
+    /// demasiado contenido (#73).
     AddonNoValido,
     /// El tamaño o el hash de una pieza no cuadran.
     PiezaDanada,

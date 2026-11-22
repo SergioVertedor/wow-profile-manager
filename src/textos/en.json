@@ -81,7 +81,7 @@
     "enlaceNoAdmitido": "There is a link or folder junction at {{ruta}}. It is not followed, because it could lead outside WTF. Remove it by hand to continue.",
     "operacionNoEncontrada": "That operation is no longer in the history. Reload it.",
     "noDeshacible": "This operation can no longer be undone: only a finished deletion or import that has not been undone can be.",
-    "operacionPosterior": "Undo operation {{id}} first: it is more recent and touched the same files.",
+    "operacionPosterior": "Undo operation {{id}} first: it is more recent and depends on this one (it touched the same files or uses an Edit Mode layout this one added).",
     "juegoDistinto": "{{raiz}} no longer holds the same game version (it was moved, deleted or reinstalled). Nothing was written and the copy is still in the operation.",
     "planCaducado": "A file changed since you were shown what would happen. Nothing was written: try again to see it anew.",
     "operacionEnCurso": "The operation is unfinished: it can't be deleted until it ends.",
@@ -226,6 +226,21 @@
     "borrando": "Deleting…",
     "deshacer": "This is an undo: its copy is what the game had saved in the folder after the deletion."
   },
+  "modo": {
+    "etiqueta": "Selection mode",
+    "simple": "Simple",
+    "avanzado": "Advanced",
+    "queSeLleva": "What's included",
+    "grupos": {
+      "macros": "Macros",
+      "teclas": "Key bindings",
+      "interfaz": "Options and interface",
+      "modoEdicion": "Edit Mode",
+      "addonsActivos": "Enabled addons",
+      "configAddons": "Addon settings",
+      "carpetasAddons": "Addons (code)"
+    }
+  },
   "exportar": {
     "boton": "Export",
     "titulo": "Export {{nombre}}",
@@ -253,10 +268,10 @@
     "apartadas": "Not included because they already contain the reserved text “@@WOWPROFILE:”: {{piezas}}.",
     "nombre": "Profile name",
     "descripcion": "Description (optional)",
-    "cancelar": "Cancel",
+    "volver": "Back",
+    "cargando": "Checking what can be exported…",
     "confirmar": "Save…",
     "exportando": "Saving…",
-    "cerrar": "Close",
     "hecho": "Saved as {{fichero}}.",
     "addons": {
       "titulo": "Addon settings",

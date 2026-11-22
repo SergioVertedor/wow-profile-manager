@@ -1,5 +1,5 @@
-//! Detección (ver `docs/arquitectura.md`): encuentra las instalaciones de WoW y sus versiones del juego, según
-//! `docs/modelo-de-datos.md`. Solo lee. Fuentes: el registro de Windows y las carpetas elegidas a mano (spec 018,
+//! Detección (ver `docs/architecture.md`): encuentra las instalaciones de WoW y sus versiones del juego, según
+//! `docs/data-model.md`. Solo lee. Fuentes: el registro de Windows y las carpetas elegidas a mano (#34,
 //! guardadas en Preferencias); el agente de Battle.net llega con #35.
 
 use crate::addons::{Addons, descubrir_addons};
@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
 #[serde(rename_all = "lowercase")]
 pub enum Fuente {
     Registro,
-    /// `product.db` del agente de Battle.net (spec 020). Es una pista: lo que no se puede leer se calla.
+    /// `product.db` del agente de Battle.net (#35). Es una pista: lo que no se puede leer se calla.
     Battlenet,
     Manual,
 }
@@ -55,7 +55,7 @@ pub struct Instalacion {
     /// Ruta absoluta de la raíz. Nunca sale del equipo: no va al paquete.
     pub raiz: PathBuf,
     pub fuente: Fuente,
-    /// Nombre propio que le ha puesto el usuario (spec 018).
+    /// Nombre propio que le ha puesto el usuario (#34).
     pub nombre: Option<String>,
     pub versiones: Vec<VersionJuego>,
 }
@@ -378,7 +378,7 @@ pub fn origen_de(
     Ok((build, interfaz))
 }
 
-/// `product.db` del agente de Battle.net, en `%ProgramData%` (spec 020). Sin la variable, la ruta de siempre.
+/// `product.db` del agente de Battle.net, en `%ProgramData%` (#35). Sin la variable, la ruta de siempre.
 fn rutas_del_agente() -> Vec<PathBuf> {
     let program_data = std::env::var_os("ProgramData")
         .map_or_else(|| PathBuf::from(r"C:\ProgramData"), PathBuf::from);

@@ -1,5 +1,5 @@
-// Paso «Vista previa» (spec 024): el plan del núcleo tal cual, por personaje y en los grupos de `docs/flujos.md`. Pedirlo
-// no escribe nada. Al pie, «Aplicar» (spec 025).
+// Paso «Vista previa» (#63): el plan del núcleo tal cual, por personaje y en los grupos de `docs/flows.md`. Pedirlo
+// no escribe nada. Al pie, «Aplicar» (#63).
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -292,7 +292,7 @@ function Fichero({
   );
 }
 
-/** Al importar, los addons que faltan sí se escriben (spec 024, decisión 9): su frase es propia. */
+/** Al importar, los addons que faltan sí se escriben (#63, decisión 9): su frase es propia. */
 function textoDeApartadas(motivo: Motivo): TextoDeMotivo {
   return motivo === "addonNoInstalado" ? "importar.addonsQueFaltan" : `motivos.${motivo}`;
 }

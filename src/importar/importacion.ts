@@ -1,8 +1,9 @@
-// Lo que decide la vista «Importar» (spec 024) sin pintar nada: de qué versiones salen los destinos, qué se marca por
+// Lo que decide la vista «Importar» (#63) sin pintar nada: de qué versiones salen los destinos, qué se marca por
 // defecto, qué hay que decidir en cada cuenta y cómo se arma lo que se pide al núcleo.
 import type {
   DecisionPerfil,
   Deteccion,
+  EntradaPaquete,
   FicheroPlan,
   Grupo,
   PedidoImportacion,
@@ -11,13 +12,14 @@ import type {
   PlanPersonaje,
   ResumenPaquete,
 } from "../nucleo";
+import { grupoDe } from "../comun/modoSimple";
 import { claveDePersonaje, nombreVisible } from "../personajes/lista";
 import { entradasDeVersion, type EntradaVersion } from "../personajes/seleccion";
 
 /** Un personaje marcado como destino, con el nombre que se enseña. */
 export type Destino = Readonly<{ pedido: PersonajePedido; nombre: string }>;
 
-/** Solo las versiones del juego del paquete: Retail y Forever no se mezclan (spec 005). */
+/** Solo las versiones del juego del paquete: Retail y Forever no se mezclan (#21). */
 export function versionesDelProducto(deteccion: Deteccion, producto: string): EntradaVersion[] {
   return entradasDeVersion(deteccion.instalaciones).filter(
     (entrada) => entrada.version.soportada && entrada.version.producto === producto,
@@ -62,11 +64,17 @@ export function marcadosEnCuenta(destinos: ReadonlyMap<string, Destino>, cuenta:
 }
 
 /**
- * Marcado por defecto: lo que se puede importar, salvo los ficheros genéricos de la configuración de addons (el paquete
- * no lleva firma: no se fía de lo que marcó quien lo hizo). Las de cuenta se deciden además en cada cuenta.
+ * Lo que marca el modo simple (#105): lo que se puede importar, salvo los ficheros genéricos de la configuración de
+ * addons (el paquete no lleva firma: no se fía de lo que marcó quien lo hizo) y lo que pisa algo de todos los
+ * personajes de la cuenta. El modo simple solo toca los personajes destino, y solo con lo que tiene casilla.
  */
+export function elegibleEnSimple(entrada: EntradaPaquete): boolean {
+  return entrada.incompatible === undefined && entrada.marcada && !entrada.deCuenta && grupoDe(entrada.categoria) !== null;
+}
+
+/** Marcado por defecto: lo del modo simple, con el que abre el paso. Lo de cuenta se marca y se decide en avanzado. */
 export function seleccionPorDefecto(resumen: ResumenPaquete): Set<string> {
-  return new Set(resumen.entradas.filter((e) => e.incompatible === undefined && e.marcada).map((e) => e.id));
+  return new Set(resumen.entradas.filter(elegibleEnSimple).map((e) => e.id));
 }
 
 /** Lo que hay que decidir: cada entrada de cuenta marcada en cada cuenta de los destinos, una sola vez. */
