@@ -103,11 +103,18 @@ async function abrir() {
   return screen.findByRole("dialog");
 }
 
+/** El diálogo abre en simple (#105): los tests del detalle pasan antes a avanzado. */
+async function abrirEnAvanzado() {
+  const dialogo = await abrir();
+  fireEvent.click(within(dialogo).getByRole("radio", { name: "Avanzado" }));
+  return dialogo;
+}
+
 describe("ExportarPersonaje", () => {
   it("enseña las piezas marcadas, de dónde vienen, lo que se quita y que las barras no viajan", async () => {
     pintar({ propuesta_exportacion: () => PROPUESTA });
 
-    const dialogo = await abrir();
+    const dialogo = await abrirEnAvanzado();
 
     const casillas = within(dialogo).getAllByRole("checkbox");
     expect(casillas.map((c) => (c as HTMLInputElement).checked)).toEqual([true, true, true]);
@@ -127,7 +134,7 @@ describe("ExportarPersonaje", () => {
       }),
     });
 
-    const dialogo = await abrir();
+    const dialogo = await abrirEnAvanzado();
 
     expect(within(dialogo).getByText("diseño «Sanador»", { exact: false })).toBeTruthy();
     expect(within(dialogo).queryByText("de la cuenta", { exact: false })).toBeNull();
@@ -145,7 +152,7 @@ describe("ExportarPersonaje", () => {
       }),
     });
 
-    const dialogo = await abrir();
+    const dialogo = await abrirEnAvanzado();
 
     fireEvent.click(within(dialogo).getByText("sin 3 líneas que no viajan"));
     expect(within(dialogo).getByText(/^Por seguridad:/)).toBeTruthy();
@@ -210,7 +217,7 @@ describe("ExportarPersonaje", () => {
   it("la configuración de addons sale por addon, marcada solo si se reconoce, y con sus avisos", async () => {
     pintar({ propuesta_exportacion: () => CON_ADDONS });
 
-    const dialogo = await abrir();
+    const dialogo = await abrirEnAvanzado();
 
     const marcada = (nombre: RegExp) => (within(dialogo).getByRole("checkbox", { name: nombre }) as HTMLInputElement).checked;
     expect(marcada(/Perfil «Default - Druid»/)).toBe(true);
@@ -232,7 +239,7 @@ describe("ExportarPersonaje", () => {
       propuesta_exportacion: () => CON_ADDONS,
       exportar_personaje: () => ({ resultado: "exportada", fichero: "Druida.wowprofile" }),
     });
-    const dialogo = await abrir();
+    const dialogo = await abrirEnAvanzado();
 
     fireEvent.click(within(dialogo).getByRole("button", { name: "Marcar los ficheros del personaje" }));
     fireEvent.change(within(dialogo).getByRole("textbox", { name: "Nombre del perfil" }), {
@@ -257,7 +264,7 @@ describe("ExportarPersonaje", () => {
       }),
       exportar_personaje: () => ({ resultado: "exportada", fichero: "Druida.wowprofile" }),
     });
-    const dialogo = await abrir();
+    const dialogo = await abrirEnAvanzado();
 
     const addons = within(dialogo).getByRole("region", { name: "Addons" });
     const casilla = within(addons).getByRole("checkbox", { name: /Dominos/ });
@@ -280,7 +287,7 @@ describe("ExportarPersonaje", () => {
 
   it("dice qué no se puede exportar de cada addon y por qué", async () => {
     pintar({ propuesta_exportacion: () => CON_ADDONS });
-    const dialogo = await abrir();
+    const dialogo = await abrirEnAvanzado();
 
     fireEvent.click(within(dialogo).getByText("1 cosa no se puede exportar"));
 
@@ -293,6 +300,56 @@ describe("ExportarPersonaje", () => {
 
     expect(within(dialogo).getByText(/no tiene nada que exportar/)).toBeTruthy();
     expect(within(dialogo).getByText("1 cosa no se puede exportar")).toBeTruthy();
+  });
+
+  it("abre en simple: una casilla por grupo, sin las genéricas, con el aviso de las carpetas", async () => {
+    const llamadas = pintar({
+      propuesta_exportacion: () => ({
+        ...CON_ADDONS,
+        piezas: [
+          ...CON_ADDONS.piezas,
+          pieza({ id: "carpeta-dominos", categoria: "addon", tipo: "carpeta", ambito: "instalacion", addon: "Dominos" }),
+        ],
+      }),
+      exportar_personaje: () => ({ resultado: "exportada", fichero: "Druida.wowprofile" }),
+    });
+    const dialogo = await abrir();
+
+    const casillas = within(dialogo).getAllByRole("checkbox") as HTMLInputElement[];
+    expect(casillas.map((c) => [c.labels?.[0]?.textContent, c.checked])).toEqual([
+      ["Macros", true],
+      ["Configuración de addons", true],
+      ["Addons (código)", true],
+    ]);
+    expect(within(dialogo).getByText(/El juego lo ejecuta/)).toBeTruthy();
+
+    fireEvent.click(within(dialogo).getByRole("checkbox", { name: "Addons (código)" }));
+    fireEvent.change(within(dialogo).getByRole("textbox", { name: "Nombre del perfil" }), {
+      target: { value: "Druida" },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Guardar…" }));
+
+    await within(dialogo).findByText("Guardado como Druida.wowprofile.");
+    // La genérica no la marca el simple: solo lo que ya salía marcado.
+    expect(llamadas[llamadas.length - 1].argumentos).toMatchObject({ seleccion: ["macros", "dominos-perfil"] });
+  });
+
+  it("cambiar de modo conserva lo marcado; lo tocado en avanzado sale indeterminado en simple", async () => {
+    pintar({ propuesta_exportacion: () => CON_ADDONS });
+    const dialogo = await abrir();
+
+    fireEvent.click(within(dialogo).getByRole("checkbox", { name: "Macros" }));
+    fireEvent.click(within(dialogo).getByRole("radio", { name: "Avanzado" }));
+    const avanzado = (nombre: RegExp) => within(dialogo).getByRole("checkbox", { name: nombre }) as HTMLInputElement;
+    expect(avanzado(/^Macros/).checked).toBe(false);
+    expect(avanzado(/Perfil «Default - Druid»/).checked).toBe(true);
+    fireEvent.click(avanzado(/Perfil «Default - Druid»/));
+    fireEvent.click(within(dialogo).getAllByRole("checkbox", { name: /Fichero del personaje/ })[1]);
+
+    fireEvent.click(within(dialogo).getByRole("radio", { name: "Simple" }));
+    const addons = within(dialogo).getByRole("checkbox", { name: "Configuración de addons" }) as HTMLInputElement;
+    expect({ marcada: addons.checked, indeterminada: addons.indeterminate }).toEqual({ marcada: false, indeterminada: true });
+    expect((within(dialogo).getByRole("checkbox", { name: "Macros" }) as HTMLInputElement).checked).toBe(false);
   });
 
   it("si no se puede pedir qué exportar, lo dice junto al botón", async () => {

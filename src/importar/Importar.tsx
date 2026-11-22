@@ -13,6 +13,7 @@ import {
   type ResultadoImportacion,
   type ResumenPaquete,
 } from "../nucleo";
+import type { Modo } from "../comun/modoSimple";
 import { mensajeDeError } from "../textos/errores";
 import { fechaLegible } from "../textos/formato";
 import { decidirPerfil, pedidoDe, seleccionPorDefecto, type Destino } from "./importacion";
@@ -111,6 +112,8 @@ function Asistente({ resumen, deteccion, irAHistorial }: PropsAsistente) {
   const [seleccion, setSeleccion] = useState<ReadonlySet<string>>(() => seleccionPorDefecto(resumen));
   const [decisiones, setDecisiones] = useState<ReadonlyMap<string, boolean>>(new Map());
   const [perfiles, setPerfiles] = useState<readonly DecisionPerfil[]>([]);
+  // Dura mientras el paquete está abierto: volver al paso anterior no lo cambia (#105).
+  const [modo, setModo] = useState<Modo>("simple");
   const lista = [...destinos.values()];
   const indice = PASOS.indexOf(paso);
   const puedeSeguir = (paso === "destino" && destinos.size > 0) || (paso === "seleccion" && seleccion.size > 0);
@@ -137,6 +140,8 @@ function Asistente({ resumen, deteccion, irAHistorial }: PropsAsistente) {
             cambiarSeleccion={setSeleccion}
             decisiones={decisiones}
             cambiarDecisiones={setDecisiones}
+            modo={modo}
+            cambiarModo={setModo}
           />
         )}
         {paso === "vistaPrevia" && (

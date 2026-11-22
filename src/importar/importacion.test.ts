@@ -6,6 +6,7 @@ import {
   decisionesPendientes,
   marcadosEnCuenta,
   pedidoDe,
+  elegibleEnSimple,
   seleccionPorDefecto,
   versionesDelProducto,
   claveDeDecision,
@@ -57,8 +58,10 @@ describe("importacion", () => {
     expect(versionesDelProducto(DETECCION, "wowc")).toEqual([]);
   });
 
-  it("marca por defecto lo que se puede importar, sin los ficheros genéricos de addons", () => {
-    expect([...seleccionPorDefecto(RESUMEN)]).toEqual(["macros", "macros-cuenta"]);
+  it("marca por defecto lo del modo simple: sin los ficheros genéricos de addons ni lo de cuenta", () => {
+    expect([...seleccionPorDefecto(RESUMEN)]).toEqual(["macros"]);
+    const futura = { ...RESUMEN.entradas[0], id: "futura", categoria: "algo-nuevo" };
+    expect(elegibleEnSimple(futura)).toBe(false);
   });
 
   it("alterna destinos por cuenta y los devuelve como los entiende la lista", () => {
@@ -80,7 +83,7 @@ describe("importacion", () => {
     const destinos = [
       ...alternarDestino(alternarDestino(alternarDestino(new Map(), entrada, "1#1", PJ), entrada, "1#1", OTRO), entrada, "2#1", PJ).values(),
     ];
-    const seleccion = seleccionPorDefecto(RESUMEN);
+    const seleccion = new Set(["macros", "macros-cuenta"]);
     expect(decisionesPendientes(RESUMEN, seleccion, destinos)).toEqual([
       { cuenta: "1#1", entrada: "macros-cuenta" },
       { cuenta: "2#1", entrada: "macros-cuenta" },

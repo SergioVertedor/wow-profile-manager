@@ -226,6 +226,21 @@
     "borrando": "Deleting…",
     "deshacer": "This is an undo: its copy is what the game had saved in the folder after the deletion."
   },
+  "modo": {
+    "etiqueta": "Selection mode",
+    "simple": "Simple",
+    "avanzado": "Advanced",
+    "queSeLleva": "What's included",
+    "grupos": {
+      "macros": "Macros",
+      "teclas": "Key bindings",
+      "interfaz": "Options and interface",
+      "modoEdicion": "Edit Mode",
+      "addonsActivos": "Enabled addons",
+      "configAddons": "Addon settings",
+      "carpetasAddons": "Addons (code)"
+    }
+  },
   "exportar": {
     "boton": "Export",
     "titulo": "Export {{nombre}}",
