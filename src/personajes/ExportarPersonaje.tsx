@@ -6,6 +6,9 @@ import { useTranslation } from "react-i18next";
 import { PackageOpen, TriangleAlert } from "lucide-react";
 import Desplegable from "../comun/Desplegable";
 import ListaQuitadas from "../comun/ListaQuitadas";
+import { agrupar, type Modo } from "../comun/modoSimple";
+import SeleccionSimple from "../comun/SeleccionSimple";
+import SelectorModo from "../comun/SelectorModo";
 import CarpetasAddons from "./CarpetasAddons";
 import ConfigAddons from "./ConfigAddons";
 import {
@@ -47,6 +50,7 @@ export default function ExportarPersonaje({ pedido, nombre, donde }: Props) {
   const dialogo = useRef<HTMLDialogElement>(null);
   const [paso, setPaso] = useState<Paso>({ tipo: "inicio" });
   const [marcadas, setMarcadas] = useState<ReadonlySet<string>>(new Set());
+  const [modo, setModo] = useState<Modo>("simple");
   const [perfil, setPerfil] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const idTitulo = useId();
@@ -61,6 +65,8 @@ export default function ExportarPersonaje({ pedido, nombre, donde }: Props) {
         setMarcadas(new Set(propuesta.piezas.filter((p) => p.marcada).map((p) => p.id)));
         setPerfil("");
         setDescripcion("");
+        // Siempre abre en simple (#105): el modo no se recuerda.
+        setModo("simple");
         setPaso({ tipo: "eligiendo", propuesta, error: null });
         dialogo.current?.showModal();
       })
@@ -120,9 +126,12 @@ export default function ExportarPersonaje({ pedido, nombre, donde }: Props) {
           <Formulario
             propuesta={propuesta}
             marcadas={marcadas}
+            cambiar={setMarcadas}
             alternar={alternar}
             marcar={marcar}
             desmarcar={desmarcar}
+            modo={modo}
+            setModo={setModo}
             perfil={perfil}
             setPerfil={setPerfil}
             descripcion={descripcion}
@@ -169,9 +178,12 @@ export default function ExportarPersonaje({ pedido, nombre, donde }: Props) {
 type PropsFormulario = Readonly<{
   propuesta: PropuestaExportacion;
   marcadas: ReadonlySet<string>;
+  cambiar: (marcadas: ReadonlySet<string>) => void;
   alternar: (id: string) => void;
   marcar: (ids: readonly string[]) => void;
   desmarcar: (ids: readonly string[]) => void;
+  modo: Modo;
+  setModo: (modo: Modo) => void;
   perfil: string;
   setPerfil: (valor: string) => void;
   descripcion: string;
@@ -182,9 +194,12 @@ type PropsFormulario = Readonly<{
 function Formulario({
   propuesta,
   marcadas,
+  cambiar,
   alternar,
   marcar,
   desmarcar,
+  modo,
+  setModo,
   perfil,
   setPerfil,
   descripcion,
@@ -196,6 +211,7 @@ function Formulario({
   const ficheros = propuesta.piezas.filter((p) => p.categoria !== "config-addon" && p.categoria !== "addon");
   const deAddons = propuesta.piezas.filter((p) => p.categoria === "config-addon");
   const carpetas = propuesta.piezas.filter((p) => p.categoria === "addon");
+  const hayPiezas = propuesta.piezas.length > 0;
   return (
     <>
       {propuesta.juegoAbierto && (
@@ -204,7 +220,9 @@ function Formulario({
           {t("exportar.juegoAbierto")}
         </p>
       )}
-      {propuesta.piezas.length === 0 ? (
+      {hayPiezas ? (
+        <SelectorModo modo={modo} cambiar={setModo} bloqueado={bloqueado} />
+      ) : (
         <>
           <p className={css.nada}>{t("exportar.nada")}</p>
           <ConfigAddons
@@ -223,7 +241,24 @@ function Formulario({
             desmarcar={desmarcar}
           />
         </>
-      ) : (
+      )}
+      {hayPiezas && modo === "simple" && (
+        <SeleccionSimple
+          grupos={agrupar(propuesta.piezas, (p) => p.marcada)}
+          marcadas={marcadas}
+          cambiar={cambiar}
+          bloqueado={bloqueado}
+          avisos={{
+            carpetasAddons: (
+              <p className={estiloDialogo.aviso}>
+                <TriangleAlert aria-hidden size={16} strokeWidth={1.75} />
+                {t("exportar.carpetas.aviso")}
+              </p>
+            ),
+          }}
+        />
+      )}
+      {hayPiezas && modo === "avanzado" && (
         <fieldset className={css.piezas} aria-describedby={idPiezas} disabled={bloqueado}>
           <legend>{t("exportar.piezas")}</legend>
           {ficheros.map((pieza) => (
@@ -272,7 +307,7 @@ function Formulario({
           {t("exportar.apartadas", { piezas: propuesta.apartadas.join(", ") })}
         </p>
       )}
-      {propuesta.piezas.length > 0 && (
+      {hayPiezas && (
         <div className={css.campos}>
           <label className={css.campo}>
             {t("exportar.nombre")}

@@ -226,6 +226,21 @@
     "borrando": "Borrando…",
     "deshacer": "Es un deshacer: su copia es lo que el juego había guardado en la carpeta después de eliminarla."
   },
+  "modo": {
+    "etiqueta": "Modo de selección",
+    "simple": "Simple",
+    "avanzado": "Avanzado",
+    "queSeLleva": "Qué se lleva",
+    "grupos": {
+      "macros": "Macros",
+      "teclas": "Teclas",
+      "interfaz": "Opciones e interfaz",
+      "modoEdicion": "Modo Edición",
+      "addonsActivos": "Addons activos",
+      "configAddons": "Configuración de addons",
+      "carpetasAddons": "Addons (código)"
+    }
+  },
   "exportar": {
     "boton": "Exportar",
     "titulo": "Exportar a {{nombre}}",

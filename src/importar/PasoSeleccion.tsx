@@ -1,13 +1,17 @@
 // Paso «Seleccionar» (#63): qué entradas se importan y, para las de cuenta, si se aplican en cada cuenta de los
-// destinos. Una entrada de cuenta sin decidir llega a la vista previa como conflicto.
+// destinos. Una entrada de cuenta sin decidir llega a la vista previa como conflicto. Abre en el modo simple (#105).
 import { useTranslation } from "react-i18next";
+import { TriangleAlert } from "lucide-react";
+import { agrupar, type Modo } from "../comun/modoSimple";
+import SeleccionSimple from "../comun/SeleccionSimple";
+import SelectorModo from "../comun/SelectorModo";
 import type { ResumenPaquete } from "../nucleo";
 import { tamanoLegible } from "../textos/formato";
 import { etiquetaDeCategoria, etiquetaDePieza } from "./etiquetas";
 import QueTrae from "./QueTrae";
 import SeleccionAddons from "./SeleccionAddons";
 import SeleccionCarpetas from "./SeleccionCarpetas";
-import { claveDeDecision, decisionesPendientes, type Destino } from "./importacion";
+import { claveDeDecision, decisionesPendientes, elegibleEnSimple, type Destino } from "./importacion";
 import css from "./Importar.module.css";
 
 type Props = Readonly<{
@@ -19,9 +23,43 @@ type Props = Readonly<{
   cambiarDecisiones: (decisiones: ReadonlyMap<string, boolean>) => void;
 }>;
 
-export default function PasoSeleccion(props: Props) {
-  const { t, i18n } = useTranslation();
+type PropsPaso = Props & Readonly<{ modo: Modo; cambiarModo: (modo: Modo) => void }>;
+
+export default function PasoSeleccion({ modo, cambiarModo, ...props }: PropsPaso) {
+  const { t } = useTranslation();
   const { resumen, seleccion, cambiarSeleccion } = props;
+  const teclas = resumen.entradas.some((e) => e.categoria === "teclas" && seleccion.has(e.id));
+  return (
+    <div className={css.columna}>
+      <SelectorModo modo={modo} cambiar={cambiarModo} />
+      {modo === "simple" ? (
+        <SeleccionSimple
+          grupos={agrupar(resumen.entradas, elegibleEnSimple)}
+          marcadas={seleccion}
+          cambiar={cambiarSeleccion}
+          avisos={{
+            carpetasAddons: (
+              <p className={css.aviso}>
+                <TriangleAlert aria-hidden size={16} strokeWidth={1.75} />
+                {t("importar.carpetas.aviso")}
+              </p>
+            ),
+          }}
+        />
+      ) : (
+        <SeleccionAvanzada {...props} />
+      )}
+      {/* En los dos modos: lo de cuenta marcado en avanzado sigue pidiendo su decisión. */}
+      <DecisionesDeCuenta {...props} />
+      <p className={css.nota}>{t("exportar.barras")}</p>
+      {teclas && <p className={css.nota}>{t("importar.teclasSinComprobar")}</p>}
+    </div>
+  );
+}
+
+/** El detalle de siempre: entrada a entrada, la configuración de addons por addon y las carpetas. */
+function SeleccionAvanzada({ resumen, seleccion, cambiarSeleccion }: Props) {
+  const { t, i18n } = useTranslation();
   const alternar = (id: string) => {
     const siguiente = new Set(seleccion);
     if (!siguiente.delete(id)) {
@@ -29,7 +67,6 @@ export default function PasoSeleccion(props: Props) {
     }
     cambiarSeleccion(siguiente);
   };
-  const teclas = resumen.entradas.some((e) => e.categoria === "teclas" && seleccion.has(e.id));
   // La configuración de addons que se puede importar va agrupada por addon; la que no, con el resto y su motivo.
   const esDeAddon = (e: (typeof resumen.entradas)[number]) => e.categoria === "config-addon" && e.incompatible === undefined;
   // Las carpetas de addons (#73), aparte y con su aviso.
@@ -38,7 +75,7 @@ export default function PasoSeleccion(props: Props) {
   const carpetas = resumen.entradas.filter(esCarpeta);
   const resto = resumen.entradas.filter((e) => !esDeAddon(e) && !esCarpeta(e));
   return (
-    <div className={css.columna}>
+    <>
       <fieldset className={css.entradas}>
         <legend>{t("importar.queSeImporta")}</legend>
         {resto.map((entrada) => (
@@ -67,10 +104,7 @@ export default function PasoSeleccion(props: Props) {
         alternar={alternar}
         cambiarSeleccion={cambiarSeleccion}
       />
-      <DecisionesDeCuenta {...props} />
-      <p className={css.nota}>{t("exportar.barras")}</p>
-      {teclas && <p className={css.nota}>{t("importar.teclasSinComprobar")}</p>}
-    </div>
+    </>
   );
 }
 

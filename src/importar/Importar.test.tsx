@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { I18nextProvider } from "react-i18next";
 import type { UsoDeteccion } from "../instalaciones/useDeteccion";
-import type { Deteccion, ResumenPaquete, VistaPrevia } from "../nucleo";
+import type { Deteccion, EntradaPaquete, ResumenPaquete, VistaPrevia } from "../nucleo";
 import { crearTextos } from "../textos";
 import Importar from "./Importar";
 
@@ -129,6 +129,11 @@ const USO: UsoDeteccion = {
   recargar: () => Promise.resolve(),
 };
 
+/** El paso «Seleccionar» abre en simple (#105): los tests del detalle pasan antes a avanzado. */
+function pasarAAvanzado() {
+  fireEvent.click(screen.getByRole("radio", { name: "Avanzado" }));
+}
+
 function pintar(respuestas: Record<string, () => unknown>) {
   const llamadas: { comando: string; argumentos: unknown }[] = [];
   mockIPC((comando, argumentos) => {
@@ -161,6 +166,9 @@ describe("Importar", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: /Otro/ }));
     expect(screen.getByText("2 personajes marcados")).toBeTruthy();
     fireEvent.click(siguiente);
+    pasarAAvanzado();
+    // Lo de cuenta no sale marcado: se marca en avanzado y se decide.
+    fireEvent.click(screen.getByRole("checkbox", { name: /^Macros de la cuenta/ }));
 
     const dominos = screen.getByRole("checkbox", { name: /Configuración de addons/ }) as HTMLInputElement;
     expect({ marcada: dominos.checked, desactivada: dominos.disabled }).toEqual({ marcada: false, desactivada: true });
@@ -195,6 +203,9 @@ describe("Importar", () => {
     fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
     fireEvent.click(await screen.findByRole("checkbox", { name: /Goldberg Joestar/ }));
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    pasarAAvanzado();
+    // Lo de cuenta no sale marcado: se marca en avanzado y se decide.
+    fireEvent.click(screen.getByRole("checkbox", { name: /^Macros de la cuenta/ }));
     fireEvent.click(screen.getByRole("radio", { name: "No aplicar" }));
     fireEvent.click(screen.getByRole("button", { name: "Atrás" }));
     expect((screen.getByRole("checkbox", { name: /Goldberg Joestar/ }) as HTMLInputElement).checked).toBe(true);
@@ -245,6 +256,9 @@ describe("Importar", () => {
     fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
     fireEvent.click(await screen.findByRole("checkbox", { name: /Goldberg Joestar/ }));
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    pasarAAvanzado();
+    // Lo de cuenta no sale marcado: se marca en avanzado y se decide.
+    fireEvent.click(screen.getByRole("checkbox", { name: /^Macros de la cuenta/ }));
 
     // Macros, macros de la cuenta, addons y ventanas; la configuración de addons no se importa y no dice nada.
     const queTrae = screen.getAllByText("Qué trae");
@@ -259,6 +273,52 @@ describe("Importar", () => {
     expect(within(decision).getByLabelText("Qué trae: Macros de la cuenta")).toBeTruthy();
     expect(screen.getByLabelText("Qué trae: Addons activos")).toBeTruthy();
     expect(within(decision).getByText("Monta")).toBeTruthy();
+  });
+
+  it("abre en simple: solo lo que no pisa la cuenta ni es genérico, sin decisiones de cuenta", async () => {
+    const entrada = (campos: Partial<EntradaPaquete> & Pick<EntradaPaquete, "id" | "categoria">): EntradaPaquete => ({
+      tipo: "fichero",
+      ambito: "personaje",
+      deCuenta: false,
+      bytes: 100,
+      marcada: true,
+      generica: false,
+      ...campos,
+    });
+    const resumen: ResumenPaquete = {
+      ...RESUMEN,
+      entradas: [
+        ...RESUMEN.entradas,
+        entrada({ id: "opciones-cuenta", categoria: "opciones", ambito: "cuenta", deCuenta: true }),
+        entrada({ id: "prat", categoria: "config-addon", addon: "Prat-3.0", marcada: false, generica: true }),
+        entrada({ id: "carpeta-dominos", categoria: "addon", tipo: "carpeta", ambito: "instalacion", addon: "Dominos" }),
+      ],
+    };
+    const { llamadas } = pintar({
+      abrir_paquete: () => ({ resultado: "abierta", resumen }),
+      plan_importacion: () => VISTA,
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Goldberg Joestar/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+
+    const grupos = screen.getByRole("group", { name: "Qué se lleva" });
+    const casillas = within(grupos).getAllByRole("checkbox") as HTMLInputElement[];
+    expect(casillas.map((c) => [c.labels?.[0]?.textContent, c.checked])).toEqual([
+      ["Macros", true],
+      ["Addons (código)", true],
+    ]);
+    expect(screen.getByText(/es código que el juego ejecuta/)).toBeTruthy();
+    expect(screen.queryAllByRole("radio", { name: /aplicar/i })).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+
+    await waitFor(() => expect(llamadas.some((l) => l.comando === "plan_importacion")).toBe(true));
+    const plan = llamadas.find((l) => l.comando === "plan_importacion");
+    expect((plan?.argumentos as { pedido: unknown }).pedido).toEqual({
+      seleccion: ["macros", "carpeta-dominos"],
+      cuentas: [],
+      perfiles: [],
+    });
   });
 
   it("la vista previa agrupa lo apartado por motivo; los addons que faltan llevan su propia frase", async () => {
@@ -450,11 +510,12 @@ describe("Importar", () => {
     fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
     fireEvent.click(await screen.findByRole("checkbox", { name: /Goldberg Joestar/ }));
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    pasarAAvanzado();
 
     const casilla = screen.getByRole("checkbox", { name: /^Modo Edición/ });
     expect(casilla.closest("label")?.textContent).not.toMatch(/de la cuenta/);
     // No hay que decidir nada por cuenta: no sale ninguna decisión.
-    expect(screen.queryAllByRole("radio")).toHaveLength(0);
+    expect(screen.queryAllByRole("radio", { name: /aplicar/i })).toHaveLength(0);
     fireEvent.click(screen.getByText("Qué trae"));
     expect(screen.getByText(/El diseño «Sanador» del Modo Edición/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
@@ -498,6 +559,7 @@ describe("Importar", () => {
     fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
     fireEvent.click(await screen.findByRole("checkbox", { name: /Goldberg Joestar/ }));
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    pasarAAvanzado();
 
     const addons = screen.getByRole("region", { name: "Addons" });
     const dominos = within(addons).getByRole("checkbox", { name: /Dominos/ });
@@ -569,6 +631,7 @@ describe("Importar", () => {
     fireEvent.click(screen.getByRole("button", { name: /Abrir perfil/ }));
     fireEvent.click(await screen.findByRole("checkbox", { name: /Goldberg Joestar/ }));
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    pasarAAvanzado();
 
     const dominos = screen.getByRole("group", { name: "Dominos" });
     const perfil = within(dominos).getByRole<HTMLInputElement>("checkbox", { name: /Perfil con el nombre del personaje/ });
